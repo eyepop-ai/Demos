@@ -62,7 +62,7 @@ function DisplayPreviewImageCanvas(event) {
     reader.readAsDataURL(event.target.files[0]);
 }
 
-async function DrawImage(imageUrl)
+async function DrawImage(imageUrl, watermark_enabled=true)
 {
     // Prepare the canvas like a canvas preparing... person
     var canvas = document.getElementById('maincanvas');
@@ -106,12 +106,29 @@ async function DrawImage(imageUrl)
     canvas.height = newHeight;
     canvas.style.width = newWidth;
     canvas.style.height = newHeight;
-    
-    
+        
     ctx.clearRect(0, 0, 600, 600);
     ctx.drawImage(img, 0, 0, newWidth, newHeight);
 
+    if(watermark_enabled) 
+    {
+        //try {
+            console.log("drawing watermark");
+            const watermark = new Image();
+            watermark.addEventListener("load", (e) => {
+                x = canvas.width - 228 - 5
+                y = canvas.height - 52 - 5
+                ctx.drawImage(watermark, x, y);
+            });
+            watermark.src = 'example_images/eyepop-logo.svg';
+            
+        //} catch (e) {
+
+        //}
+    }
 }
+
+
 
 function ClearDisplay()
 {

@@ -60,7 +60,7 @@
     <script src="config.js"></script>
     <script src="js/main.js"></script>
     <script src="js/excerptFromSDK.min.js"></script>
-
+    
     <script>
         var rulesState = [];
 
@@ -177,6 +177,7 @@
                             element.source_width = data[0].source_width;
                             console.log(element);
                             DrawEyePopReticle(element);
+                            DrawEyePopPose(element, false);
                         });
                     }
 
