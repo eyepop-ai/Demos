@@ -120,7 +120,7 @@ async function DrawImage(imageUrl, watermark_enabled=true)
                 y = canvas.height - 52 - 5
                 ctx.drawImage(watermark, x, y);
             });
-            watermark.src = 'example_images/eyepop-logo.svg';
+            watermark.src = 'css/images/eyepop-logo.svg';
             
         //} catch (e) {
 
