@@ -106,4 +106,110 @@ The `Rules` class has been specifically crafted for processing the outputs of Ey
 
 ---
 
-This class forms the bedrock for a structured understanding of computer vision results. Proper utilization ensures the extraction of meaningful and relevant data, thereby enhancing the effectiveness and accuracy of the overall system.
+**Developer Documentation**
+
+---
+
+### Setsource
+
+The `Setsource` operation allows developers to modify the source of a live pipeline. There are various ways to set the source, each addressing different use cases. 
+
+---
+
+#### 1. Setsource (image/video upload synchronous)
+
+- **HTTP Method**: `POST`
+- **Endpoint**: `/pipelines/{id}/source`
+- **Description**: Changes the live pipeline to use the uploaded image or video file as a new source.
+
+**Parameters**:
+
+- `file`: The new source as an image or video file. This needs to be provided in the form data.
+- `id`: The ID of the pipeline to change. This is a required path parameter.
+- `mode`: The mode to handle concurrent sources. Available values include: `reject`, `preempt`, and `queue`. This is a required query parameter.
+- `processing`: The processing mode, either to wait for the result or to fire and forget. Available values are: `sync` (synchronous) and `async` (asynchronous). This is a required query parameter.
+
+**Responses**:
+
+- `200 OK`: The operation was successful.
+- `204 No Content`: The operation was successful but there is no content to send in the response.
+
+---
+
+#### 2. Setsource (image url)
+
+- **HTTP Method**: `PATCH`
+- **Endpoint**: `/pipelines/{id}/source`
+- **Description**: Changes the live pipeline to use a new source specified by a URL.
+
+**Parameters**:
+
+- `sourceDef`: Definition of the new source which includes:
+  - `sourceType`: Should be set to `"URL"`.
+  - `url`: The URL of the image.
+  
+  Other parameters in the `sourceDef` object such as `sourceId`, `sources`, `streamId`, and `webrtcSessionId` are not relevant for this use case and can be ignored 
+  
+- `id`: The ID of the pipeline to change. This is a required path parameter.
+- `mode`: The mode to handle concurrent sources. Available values include: `reject`, `preempt`, and `queue`. This is a required query parameter.
+- `processing`: The processing mode, either to wait for the result or to fire and forget. Available values are: `sync` (synchronous) and `async` (asynchronous). This is a required query parameter.
+
+**Responses**:
+
+- `200 OK`: The operation was successful.
+- `204 No Content`: The operation was successful but there is no content to send in the response.
+
+---
+
+#### 3. Setsource (image url list)
+
+- **HTTP Method**: `PATCH`
+- **Endpoint**: `/pipelines/{id}/source`
+- **Description**: Changes the live pipeline to use a new source specified by a list of image URLs synchronously.
+
+**Parameters**:
+
+- `sourceDef`: Definition of the new source which includes:
+  - `sourceType`: Should be set to `"LIST"`.
+  - `sources`: An array containing the list of image URLs.
+  
+  Other parameters in the `sourceDef` object such as `sourceId`, `streamId`, and `webrtcSessionId` are not relevant for this use case and can be ignored.
+
+- `id`: The ID of the pipeline to change. This is a required path parameter.
+- `mode`: The mode to handle concurrent sources. Available values include: `reject`, `preempt`, and `queue`. This is a required query parameter.
+- `processing`: The processing mode, specifically set to `sync` for synchronous processing. This is a required query parameter.
+
+**Responses**:
+
+- `200 OK`: The operation was successful.
+- `204 No Content`: The operation was successful but there is no content to send in the response.
+
+---
+
+#### 4. Setsource (streaming video WebRTC)
+
+- **HTTP Method**: `PATCH`
+- **Endpoint**: `/pipelines/{id}/source`
+- **Description**: Changes the live pipeline to use a new streaming video source via WebRTC.
+
+**Parameters**:
+
+- `sourceDef`: Definition of the new source which includes:
+  - `sourceType`: Should be set to `"WEBRTC_DIRECT"`.
+  - `webrtcSessionId`: The session ID for the WebRTC streaming video.
+  - `streamId`: The session ID for the WebRTC streaming video.
+    
+  Other parameters in the `sourceDef` object such as `sourceId`, `sources`, `streamId`, and `url` are not relevant for this use case and can be ignored.
+
+- `id`: The ID of the pipeline to change. This is a required path parameter.
+- `mode`: The mode to handle concurrent sources. Available values include: `reject`, `preempt`, and `queue`. This is a required query parameter.
+- `processing`: The processing mode, either to wait for the result or to fire and forget. Available values are: `sync` (synchronous) and `async
+
+` (asynchronous). This is a required query parameter.
+
+**Responses**:
+
+- `200 OK`: The operation was successful.
+- `204 No Content`: The operation was successful but there is no content to send in the response.
+
+---
