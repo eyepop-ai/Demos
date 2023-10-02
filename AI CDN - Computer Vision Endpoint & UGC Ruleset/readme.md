@@ -213,3 +213,67 @@ The `Setsource` operation allows developers to modify the source of a live pipel
 - `204 No Content`: The operation was successful but there is no content to send in the response.
 
 ---
+
+**Developer Documentation**
+
+---
+
+### EyePop.ai Computer Vision API Results
+
+The EyePop.ai's computer vision API provides detailed results concerning the contents of the analyzed images. These results are structured in a JSON format and can be found under the "eyepop_results" column within the raw data CSV.
+
+---
+
+#### 1. Source Image Dimensions:
+
+The results include the dimensions of the source image which was analyzed:
+
+- `result."source_width"`: The width of the source image.
+- `result."source_height"`: The height of the source image.
+
+---
+
+#### 2. Objects Detected in Image:
+
+The API identifies various objects within the image and provides details about each of these objects:
+
+- `result."objects"`: An array containing information about each object detected.
+  - `result.objects[0]."confidence"`: The confidence score associated with the detected object. This value indicates the certainty of the detection.
+  - `result.objects[0]."classId"`: An integer identifier for the class of the detected object.
+  - `result.objects[0]."classLabel"`: The label of the class, e.g., "person".
+  - `result.objects[0]."x"`, `"y"`: The top-left coordinates of the detected object within the image.
+  - `result.objects[0]."width"`, `"height"`: The width and height dimensions of the detected object.
+
+---
+
+#### 3. Objects Detected Within Objects:
+
+For some primary detected objects, the API might identify secondary objects within them. For example, within a "person" object, the API could detect a "face" object.
+
+- `result.objects[0]."objects"`: An array containing secondary objects detected within a primary object.
+  - `result.objects[0]."objects"[0]."classLabel"`: The label of the class of the secondary object, e.g., "face".
+
+---
+
+#### 4. Classifications on Objects within Objects:
+
+For some secondary objects, the API performs classifications to identify various attributes:
+
+- `result.objects[0]."objects"[0]."classes"`: Contains the classifications for the secondary object.
+  - `"inferId": 4`: Refers to Emotion classification.
+  - `"inferId": 5`: Refers to Age classification.
+  - `"inferId": 6`: Refers to Gender classification.
+  - `"inferId": 7`: Refers to Race classification.
+
+---
+
+#### 5. Body Keypoints:
+
+For some primary objects like "person", the API identifies body keypoints, indicating specific landmarks such as the eyes, nose, wrists, etc.
+
+- `result.objects[0]."keyPoints"."points"`: An array containing information about each keypoint detected.
+  - `result.objects[0]."keyPoints"."points"[0]."confidence"`: Confidence score for the detected keypoint.
+  - `result.objects[0]."keyPoints"."points"[0]."classLabel"`: The label of the keypoint, e.g., "nose".
+  - `result.objects[0]."keyPoints"."points"[0]."x"`, `"y"`: The coordinates of the detected keypoint within the image.
+
+---
