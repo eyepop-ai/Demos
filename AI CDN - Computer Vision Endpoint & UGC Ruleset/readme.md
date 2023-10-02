@@ -116,7 +116,7 @@ The `Setsource` operation allows developers to modify the source of a live pipel
 
 ---
 
-#### 1. Setsource (image/video upload synchronous)
+#### 1. Setsource (image/video upload)
 
 - **HTTP Method**: `POST`
 - **Endpoint**: `/pipelines/{id}/source`
@@ -136,7 +136,7 @@ The `Setsource` operation allows developers to modify the source of a live pipel
 
 ---
 
-#### 2. Setsource (image url)
+#### 2. Setsource (image/video url)
 
 - **HTTP Method**: `PATCH`
 - **Endpoint**: `/pipelines/{id}/source`
@@ -161,7 +161,7 @@ The `Setsource` operation allows developers to modify the source of a live pipel
 
 ---
 
-#### 3. Setsource (image url list)
+#### 3. Setsource (image/video url list)
 
 - **HTTP Method**: `PATCH`
 - **Endpoint**: `/pipelines/{id}/source`
