@@ -2,6 +2,12 @@
 
 ---
 
+### Need a Web Server locally to test? 
+Option 1) python -m http.server 9023
+Option 2) LiveServer(https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
+
+---
+
 ### Class: Rules
 
 The `Rules` class has been specifically crafted for processing the outputs of EyePop.ai's computer vision system. It provides functionalities to construct semantic rules, helping in the identification and extraction of specific features and attributes from photos and videos.
