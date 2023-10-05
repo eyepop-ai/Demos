@@ -3,8 +3,10 @@
 ---
 
 ### Need a Web Server locally to test? 
-Option 1) python -m http.server 9023
-Option 2) LiveServer(https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
+
+- Easiest: [Web based IDE](https://replit.com/)
+- Option 1) Python: python -m http.server 9001
+- Option 2) [LiveServer Extension to VS Code](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
 
 ---
 
