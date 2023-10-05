@@ -5,7 +5,7 @@
 ### Need a Web Server locally to test? 
 
 - Easiest: [Web based IDE](https://replit.com/)
-- Option 1) Python: python -m http.server 9001
+- Option 1) Python: `python -m http.server 9001`
 - Option 2) [LiveServer Extension to VS Code](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
 
 ---
