@@ -29,16 +29,10 @@
       src="css/images/eyepop-logo.svg" />
     <h1 class="" style="display: inline-block;color: #2e9dd3;font-family: poppins;font-size: 40px;" id="title"></h1>
   </div>
+
+  <script src="config.js"></script>
   <script>
-
-    var config = {};
-    var pop_endpoint = "https://api.eyepop.ai/api/v1/user/pops/78/config";
-    var token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InFUTWx1V2dRLXgxS1JhUlFMWDZueSJ9.eyJlbWFpbCI6ImFuZHlAZXllcG9wLmFpIiwiaXNzIjoiaHR0cHM6Ly9leWVwb3AudXMuYXV0aDAuY29tLyIsInN1YiI6ImF1dGgwfDY1MWI0OGE4NDE5OTNiZDg4OGZkYjc1ZiIsImF1ZCI6WyJodHRwczovL2FwaS5leWVwb3AuYWkiLCJodHRwczovL2V5ZXBvcC51cy5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNjk3MTM1NTA0LCJleHAiOjE2OTcyMjE5MDQsImF6cCI6IlV3VU02WDNndTBMZ2gzdEFDcFEwS3U0bXlsWWRLYjk1Iiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCJ9.N1q_PZExkdUuk_JFc9dzDSUId_6edD7Udhzf_Bn3HvxJswHllJGeSoapjkfFfw8LJgj0wt6JH6OjJZkXA_c-0fdcUElX_vftONWbcCjP9_bd1b2tuKm6GKz7q3u5DmU9X2QCEfScMaQ_7bQ9mYQilY8UELlEZVten8HlB0JyBtD5EIMuFgoHCNvAgS37zhUlTU5PL-Au5ove_d8BxGD4vgz0r3HxQ_fTkdh8dlaroCABQIxhmi3RQdCojrY_W_F60tOcFq-8HixCIao-_vW2ChRXg1CtnwHfToogZTwcdYS7QaiqYSskYmywL72D7PDe0fLeI3z1TgN1uoDy3HUDvQ";
-
     async function FetchPopConfig(pop_endpoint, token) {
-      //const server = "https://staging-api.eyepop.ai";
-      //const server = "http://localhost:8000";
-
       return fetch(pop_endpoint, {
         method: 'GET',
         headers: {
@@ -53,7 +47,7 @@
       .then(response => config = response)
       .then(() => {
 
-        document.getElementById("title").innerHTML = "Count the Curls 💪";
+        document.getElementById("title").innerHTML = config.name;
 
         config.Draw = [
           {"Type": "box", "Targets":["*"]},
