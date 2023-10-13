@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>5 Video Upload (URL)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container" style="max-width: 1200px;">
+        <!-- HEADER: Full width, Logo Image -->
+        <header class="mt-4">
+            <div class="container-fluid d-flex align-items-center">
+                <a href="1_upload_image.html"><img src="css/images/eyepop-logo.svg" alt="EyePop.ai Logo" class="p-2"
+                        style="height: 70px;"></a>
+                <h1 class="p-2">CDN Workshop Step 5 - Video Post</h1>
+            </div>
+        </header>
+
+        <!-- FORM UPLOAD ELEMENT: Centered, Full Width Row -->
+        <div class="container-fluid mt-4">
+            <div class="row justify-content-center">
+                <div id="drop-area" class="col-12">
+                    <form>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" placeholder="MP4 URL" aria-label="MP4 URL"
+                                aria-describedby="basic-addon2" id="txtUrl">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" id="btnPost">Post</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- IMAGE PREVIEW AND TEXT AREA: Half and Half -->
+        <div class="container-fluid mt-4">
+            <div class="row">
+                <div class="col-md-6 d-flex">
+                    Preview:<h3 id="title" class="ms-auto"></h3>
+                </div>
+                <div class="col-md-6 d-flex">
+                    EyePop.ai Results: <h3 id="timing" class="ms-auto">0ms</h3>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 d-flex align-top">
+                    <video id="myLocalVideo" playsinline controls muted style="width:100%;"></video>
+                </div>
+                <div class="col-md-6 d-flex">
+                    <pre id="txt_json" class="form-control h-100 overflow-scroll"
+                        style="max-height:400px;"><span class="text-muted">...a list of objects will go here...</span></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/excerptFromSDK.min.js"></script>
+
+    <script>
+        var cached_data = null;
+        const video = document.getElementById('myLocalVideo');
+
+        FetchPopConfig(pop_endpoint, token)
+            .then(response => config = response)
+            .then(() => {
+                document.getElementById("title").innerHTML = config.name;
+            });
+
+        document.getElementById('btnPost').addEventListener('click', function (event) {
+            let v_url = document.getElementById("txtUrl").value;
+
+            document.getElementById("myLocalVideo").src = v_url;
+
+            GetJSONFromEyePop(v_url);
+        });
+
+        function GetJSONFromEyePop(url) {
+
+            const startTime = performance.now();
+            ClearDisplay();
+
+            fetch(config.url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
+                method: 'PATCH',
+                headers: {
+                    'accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    "sourceType": "URL",
+                    "url": url
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("timing").innerHTML = Math.floor(performance.now() - startTime) + "ms";
+
+                    cached_data = data;
+
+                    video.play();
+                })
+                .catch(error => console.error('The party\'s over, there was an error:', error));
+        }
+
+        video.addEventListener('timeupdate', function () {
+            console.log("video: " + video.currentTime)
+
+            if (!cached_data)
+                return;
+
+            let closestFrameData = cached_data.reduce((prev, curr) => {
+                return (Math.abs(curr.seconds - video.currentTime) < Math.abs(prev.seconds - video.currentTime) ? curr : prev);
+            });
+
+            if (closestFrameData) {
+                console.log(closestFrameData);
+
+                document.getElementById("txt_json").innerHTML = JSON.stringify(closestFrameData, null, 2);
+            }
+        });
+    </script>
+</body>
+
+</html>
