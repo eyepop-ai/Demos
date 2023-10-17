@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AI Photo Overlay</title>
+    <!-- <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
+  <script src="main.js"></script> -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="../../javascript-sdk/dist/EyePopSDK.js"></script>
+</head>
+
+<body>
+    <div class="container" style="max-width: 1200px;">
+        <!-- HEADER: Full width, Logo Image -->
+        <header class="mt-4">
+            <div class="container-fluid d-flex align-items-center">
+                <img src="css/images/eyepop-logo.svg" alt="EyePop.ai Logo" class="p-2" style="height: 70px;">
+                <h1 class="p-2">AI Photo Overlay</h1>
+            </div>
+        </header>
+
+        <!-- FORM UPLOAD ELEMENT: Centered, Full Width Row -->
+        <div class="container-fluid mt-4">
+            <div class="row justify-content-center">
+                <div id="drop-area" class="col-12">
+                    <form>
+                        <input type="file" class="form-control" id="file_upload">
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- IMAGE PREVIEW AND TEXT AREA: Half and Half -->
+        <div class="container-fluid mt-4">
+            <div class="row">
+                <div class="col-md-6 d-flex">
+                    Preview image:<h3 id="title" class="ms-auto"></h3>
+                </div>
+                <div class="col-md-6 d-flex">
+                    EyePop.ai Results: <h3 id="timing" class="ms-auto">0ms</h3>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <video id="myLocalVideo" autoplay playsinline controls muted style="width:1px;height:1px;"></video>
+                    <canvas id="previewcanvas" style="background-color: transparent; width: 1%; height: auto; display:none;"></canvas>
+                  
+                    <canvas id="mobilecanvas" src="css/images/empty.png" alt="Image Preview"
+                                        style="width: 100%;border: #eee solid 1px;"></canvas>                
+                </div>
+                <div class="col-md-6">
+                    <pre id="txt_json"
+                        class="form-control h-100"><span class="text-muted">{<br/> ...JSON Will appear Here...<br/>}</span></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const pop_endpoint = 'https://api.eyepop.ai/api/v1/user/pops/84/config' //https://staging-api.eyepop.ai/api/v1/user/pops/XXX/config'
+        const token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InFUTWx1V2dRLXgxS1JhUlFMWDZueSJ9.eyJlbWFpbCI6ImFuZHlAZXllcG9wLmFpIiwiaXNzIjoiaHR0cHM6Ly9leWVwb3AudXMuYXV0aDAuY29tLyIsInN1YiI6ImF1dGgwfDY1MWI0OGE4NDE5OTNiZDg4OGZkYjc1ZiIsImF1ZCI6WyJodHRwczovL2FwaS5leWVwb3AuYWkiLCJodHRwczovL2V5ZXBvcC51cy5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNjk3NTUxNTE3LCJleHAiOjE2OTc2Mzc5MTcsImF6cCI6IlV3VU02WDNndTBMZ2gzdEFDcFEwS3U0bXlsWWRLYjk1Iiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCJ9.l3EsiBeo5wEK1j8w0ejsKV8TfzzTpTWsH-0nGUUD6NSRiG1DK8s9hrIOEdqncF_UJgFpnBjxKJ0_en6OBS04fZHoFjFVwf9vTYKcGzXYLv9mfnoS6su1GGY2ggiZiOORMPeW0d1dlqqWjqQM7vE_eDKJ3XjVRQcm4d1ivBXbsOh3Du01S48ldjR1rfe1T7RJlLetkt4j5Z1cHkuQNV02xnVFWEsbDo6TLaue2IP9ivAhX5msIpkAXt55HCI2fcjE1WIt8Kbf_y-i3KpW2t_t-yRwSGOfj76alb8SXxwk8x_Wh8R3XXnrbI3dNHnPvMTtAGyk0UFhYjnL_HJcxMYauw'
+        config={};
+
+        EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint,token)
+        .then(response => config = response)
+        .then(() => {
+            config.Input = {"name":"file_upload"};
+            config.Draw = [
+                // {"Type": "box", "Targets":["*"]},
+                { "Type": "pose", "Targets": ["person"] },
+                // {
+                //     "Type": "posefollow",
+                //     "Targets": ["person"],
+                //     "Anchors": ["right eye", "left eye"],
+                //     "Image": "./images/sunglasses3.png",
+                //     "Scale": 2.0
+                // },
+                {
+                    "Type": "posefollow",
+                    "Targets": ["person"],
+                    "Anchors": ["nose", "midpoint_lowest"],
+                    "Image": "./images/green_line.jpg",
+                    "Scale": 3
+                },
+            ]
+
+            console.log(JSON.stringify(config));
+            EyePopSDK.EyePopSDK.init(config)
+        });
+       
+    </script>
+</body>
+
+</html>
