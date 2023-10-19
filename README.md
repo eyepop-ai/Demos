@@ -21,10 +21,27 @@ Next level meme building powered by AI
 Have AI count reps for you!
 [Demo](./Fitness%20Rep%20Counter/)
 
+Bicep Curls
 ```
 Biggest Person left wrist below Biggest Person left elbow
 Biggest Person right wrist below Biggest Person right elbow
-Biggest Person left wrist above Biggest Person left elbow        
+Biggest Person left wrist above Biggest Person left elbow
 Biggest Person right wrist above Biggest Person right elbow
+```
+
+Jumping Jacks
+```
+Biggest Person left wrist below Biggest Person nose
+Biggest Person right wrist below Biggest Person nose
+Biggest Person left wrist above Biggest Person nose
+Biggest Person right wrist above Biggest Person nose
+```
+
+Shoulder Press
+```
+Biggest Person left wrist below Biggest Person nose
+Biggest Person right wrist below Biggest Person nose
+Biggest Person left wrist above Biggest Person nose
+Biggest Person right wrist above Biggest Person nose
 ```
 
