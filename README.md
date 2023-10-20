@@ -5,6 +5,8 @@
 
 ## Sign up for EyePop.ai
 [Sign up](https://app.eyepop.ai/sign-up)
+
+## Documentation
 [Documentation](./EyePop.ai_Developer_Documentation_202310131200.pdf)
 
 ## Demos
