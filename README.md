@@ -7,7 +7,7 @@
 [Sign up](https://app.eyepop.ai/sign-up)
 
 ## Documentation
-[Documentation](./EyePop.ai_Developer_Documentation_202310131200.pdf)
+[Documentation](https://docs.google.com/document/d/1Bww57Zfn4csWAebSh-xSDa6c4aJ-l1RgFbSgqbew9S0/edit)
 
 ## Demos
 
