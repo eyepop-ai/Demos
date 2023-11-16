@@ -118,55 +118,61 @@ def draw_eye_pop_reticle(obj, label, ax):
     return ax
 
 
-def show_image(image_url, eyepop_results):
+def show_image(image_path, eyepop_results, is_url=True):
     # Open the image
-    with Image.open(requests.get(image_url, stream=True).raw) as img:
-        plt.imshow(img)
-        ax = plt.gca()
+    if is_url:
+        img = Image.open(requests.get(image_path, stream=True).raw)
+    else:
+        img = Image.open(image_path)
+
+    plt.imshow(img)
+    ax = plt.gca()
+
+    print(eyepop_results)
+
+    if eyepop_results is None:
+        img.close()
+        return False
+
+    results = eyepop_results[0]
+
+    # results = json.loads(eyepop_results)
+    if (len(results) == 0 or ('objects' not in results)):
+        print("blank")
+    else:
+        print("Objects Found: "+str(len(results['objects'])))
+        print('source_height: ' + str(results['source_height']))
+        print('source_id: ' + str(results['source_id']))
+        print('source_width: ' + str(results['source_width']))
+        print('timestamp: ' + str(results['timestamp']))
 
         print(eyepop_results)
 
-        if (eyepop_results is None):
-            return False
+        for obj in results['objects']:
+            print(obj['classLabel'])
+            label = obj['classLabel']
+            if (label == 'person'):
+                if ('objects' in obj):
+                    for f in obj['objects']:
+                        if ('classLabel' in f and f['classLabel'] == 'face'):
+                            if ('classes' in f):
+                                for c in f['classes']:
+                                    if ('classLabel' in c):
+                                        if (c['confidence'] == 1):
+                                            label = label + "\n" + \
+                                                c['classLabel']
+                                        else:
+                                            label = label + "\n" + \
+                                                c['classLabel'] + \
+                                                f" {c['confidence']*100:.0f}%" + ""
 
-        results = eyepop_results[0]
+            ax = draw_eye_pop_reticle(obj, label, ax)
 
-        # results = json.loads(eyepop_results)
-        if (len(results) == 0 or ('objects' not in results)):
-            print("blank")
-        else:
-            print("Objects Found: "+str(len(results['objects'])))
-            print('source_height: ' + str(results['source_height']))
-            print('source_id: ' + str(results['source_id']))
-            print('source_width: ' + str(results['source_width']))
-            print('timestamp: ' + str(results['timestamp']))
-
-            print(eyepop_results)
-
-            for obj in results['objects']:
-                print(obj['classLabel'])
-                label = obj['classLabel']
-                if (label == 'person'):
-                    if ('objects' in obj):
-                        for f in obj['objects']:
-                            if ('classLabel' in f and f['classLabel'] == 'face'):
-                                if ('classes' in f):
-                                    for c in f['classes']:
-                                        if ('classLabel' in c):
-                                            if (c['confidence'] == 1):
-                                                label = label + "\n" + \
-                                                    c['classLabel']
-                                            else:
-                                                label = label + "\n" + \
-                                                    c['classLabel'] + \
-                                                    f" {c['confidence']*100:.0f}%" + ""
-
-                ax = draw_eye_pop_reticle(obj, label, ax)
-
-        plt.show()
-        plt.pause(1)
-        plt.close()
-        return True
+    plt.show()
+    plt.pause(1)
+    plt.close()
+    img.close()
+    return True
 
 
 def fetch_pop_config(pop_endpoint, token):
@@ -180,13 +186,13 @@ def get_json_from_eye_pop(config, url):
     target_url = f"{config['url']}/pipelines/{config['pipeline_id']}/source?mode=preempt&processing=sync"
     headers = {'accept': 'application/json'}
     data = {"sourceType": "URL", "url": url}
-    start_time = time.time()
+    # start_time = time.time()
 
     try:
         print(target_url, headers, data)
         response = requests.patch(target_url, headers=headers, json=data)
         response.raise_for_status()
-        timing = int((time.time() - start_time) * 1000)
+        # timing = int((time.time() - start_time) * 1000)
 
         j = response.json()
         # j["request_time"] = timing
@@ -197,15 +203,49 @@ def get_json_from_eye_pop(config, url):
         print(f"Error: {err}")
 
 
-signal.signal(signal.SIGINT, signal.SIG_DFL)
+def get_json_from_eye_pop_upload(config, file_path):
+    with open(file_path, 'rb') as f:
+        files = {'file': f}
 
-# https://api.eyepop.ai/api/v1/user/pops/<Your Pop ID>/config
-pop_endpoint = ''
+        target_url = f"{config['url']}/pipelines/{config['pipeline_id']}/source?mode=preempt&processing=sync"
+        headers = {'accept': 'application/json'}
+
+        try:
+            response = requests.post(target_url, headers=headers, files=files)
+            response.raise_for_status()
+
+            j = response.json()
+            # j["request_time"] = timing
+            return j
+        except requests.HTTPError as http_err:
+            print(f"HTTP error: {http_err}")
+        except Exception as err:
+            print(f"Error: {err}")
+
+
+# Setup Configuration to AI Worker Server
+pop_endpoint = ''  # Ex. https://api.eyepop.ai/api/v1/user/pops/<Your Pop ID>/config
 token = ''  # <YOUR TOKEN>
-config = fetch_pop_config(pop_endpoint, token)
-print(config, type(config))
 
+config = fetch_pop_config(pop_endpoint, token)
+print("\r\n")
+print("-Pop Config-")
+print(config, type(config))
+print("\r\n")
+
+# Posting a publicly accessible URL Example
+print("\r\n")
+print("-Post URL to EyePop.ai-")
 url = 'https://raw.githubusercontent.com/eyepop-ai/Demos/main/AI%20CDN%20-%20Computer%20Vision%20Endpoint%20%26%20UGC%20Ruleset/example_images/photo_for_demo4.webp'
 data = get_json_from_eye_pop(config, url)
-
 show_image(url, data)
+print("\r\n")
+
+
+# Posting a local image
+print("\r\n")
+print("-Post FILE to EyePop.ai-")
+file_path = 'Python Upload/test_images/morgan-freeman.jpeg'
+data = get_json_from_eye_pop_upload(config, file_path)
+show_image(file_path, data, False)
+print("\r\n")
