@@ -1,12 +1,18 @@
 **Developer Documentation**
 
 ---
+### Getting started 
+- Log into your EyePop account at https://dashboard.eyepop.ai/sign-in
+- Create your own __API Pop__ and select *Live - People and Common Object* from the object library
+- Check out the __API Info__ section of your Pop and copy'n paste the `endboint` and `Auth Token` into `config.js` of your local copy of this repo.
 
 ### Need a Web Server locally to test? 
 
 - Easiest: [Web based IDE](https://replit.com/)
-- Option 1) Python: `python -m http.server 9001`
+- Option 1) Python: `python3 -m http.server 9001`
 - Option 2) [LiveServer Extension to VS Code](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
+
+Start your web server from within this directory and check out the examples: http://localhost:9001/1_upload_image.html 
 
 ---
 
