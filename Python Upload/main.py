@@ -182,9 +182,12 @@ def fetch_pop_config(pop_endpoint, token):
     return response.json() if response.status_code == 200 else {"error": "Something went wrong!"}
 
 
-def get_json_from_eye_pop(config, url):
+def get_json_from_eye_pop(config, token, url):
     target_url = f"{config['url']}/pipelines/{config['pipeline_id']}/source?mode=preempt&processing=sync"
-    headers = {'accept': 'application/json'}
+    headers = {
+        'Accept': 'application/json',
+        'Authorization': f'Bearer {token}'
+    }
     data = {"sourceType": "URL", "url": url}
     # start_time = time.time()
 
@@ -203,12 +206,15 @@ def get_json_from_eye_pop(config, url):
         print(f"Error: {err}")
 
 
-def get_json_from_eye_pop_upload(config, file_path):
+def get_json_from_eye_pop_upload(config, token, file_path):
     with open(file_path, 'rb') as f:
         files = {'file': f}
 
         target_url = f"{config['url']}/pipelines/{config['pipeline_id']}/source?mode=preempt&processing=sync"
-        headers = {'accept': 'application/json'}
+        headers = {
+            'Accept': 'application/json',
+            'Authorization': f'Bearer {token}'
+        }
 
         try:
             response = requests.post(target_url, headers=headers, files=files)
@@ -237,7 +243,7 @@ print("\r\n")
 print("\r\n")
 print("-Post URL to EyePop.ai-")
 url = 'https://raw.githubusercontent.com/eyepop-ai/Demos/main/AI%20CDN%20-%20Computer%20Vision%20Endpoint%20%26%20UGC%20Ruleset/example_images/photo_for_demo4.webp'
-data = get_json_from_eye_pop(config, url)
+data = get_json_from_eye_pop(config, token, url)
 show_image(url, data)
 print("\r\n")
 
@@ -246,6 +252,6 @@ print("\r\n")
 print("\r\n")
 print("-Post FILE to EyePop.ai-")
 file_path = 'Python Upload/test_images/morgan-freeman.jpeg'
-data = get_json_from_eye_pop_upload(config, file_path)
+data = get_json_from_eye_pop_upload(config, token, file_path)
 show_image(file_path, data, False)
 print("\r\n")
