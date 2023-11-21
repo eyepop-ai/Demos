@@ -1,8 +1,8 @@
-import ast
-import json
-import signal
-import time
+import argparse
+import logging
+import os
 
+import matplotlib
 import matplotlib.patches as patches
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
@@ -229,29 +229,47 @@ def get_json_from_eye_pop_upload(config, token, file_path):
             print(f"Error: {err}")
 
 
-# Setup Configuration to AI Worker Server
-pop_endpoint = ''  # Ex. https://api.eyepop.ai/api/v1/user/pops/<Your Pop ID>/config
-token = ''  # <YOUR TOKEN>
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger("EyePop")
 
-config = fetch_pop_config(pop_endpoint, token)
-print("\r\n")
-print("-Pop Config-")
-print(config, type(config))
-print("\r\n")
+parser = argparse.ArgumentParser(description='Upload images to EyePop Inference API')
+parser.add_argument('--pop-config-url', required=False, help='EyePop Url to fetch Pop Config, defaults to '
+                                                             '$POP_CONFIG_URL')
+parser.add_argument('--pop-access-token', required=False, help='EyePop access token to authenticate the Pop owner, '
+                                                               'defaults to $POP_ACCESS_TOKEN')
+parser.add_argument('files', type=str, nargs='+',
+                    help='List of files to upload, either local file paths or http(s): Urls')
 
-# Posting a publicly accessible URL Example
-print("\r\n")
-print("-Post URL to EyePop.ai-")
-url = 'https://raw.githubusercontent.com/eyepop-ai/Demos/main/AI%20CDN%20-%20Computer%20Vision%20Endpoint%20%26%20UGC%20Ruleset/example_images/photo_for_demo4.webp'
-data = get_json_from_eye_pop(config, token, url)
-show_image(url, data)
-print("\r\n")
+args = parser.parse_args()
 
+if not args.pop_config_url:
+    pop_config_url = os.environ.get("POP_CONFIG_URL")
+else:
+    pop_config_url = args.pop_config_url
 
-# Posting a local image
-print("\r\n")
-print("-Post FILE to EyePop.ai-")
-file_path = 'Python Upload/test_images/morgan-freeman.jpeg'
-data = get_json_from_eye_pop_upload(config, token, file_path)
-show_image(file_path, data, False)
-print("\r\n")
+if not pop_config_url:
+    log.error("--pop-config-url or $POP_CONFIG_URL is required")
+    exit(-1)
+
+if not args.pop_access_token:
+    pop_access_token = os.environ.get("POP_ACCESS_TOKEN")
+else:
+    pop_access_token = args.pop_access_token
+
+if not pop_access_token:
+    log.error("--pop-access-token or $POP_ACCESS_TOKEN is required")
+    exit(-1)
+
+config = fetch_pop_config(pop_config_url, pop_access_token)
+log.info("using config: %s", str(config))
+
+for file in args.files:
+    if file.startswith('https:') or file.startswith('http:'):
+        log.info('posting url: %s', file)
+        data = get_json_from_eye_pop(config, pop_access_token, file)
+        show_image(file, data)
+    else:
+        log.info('posting local file: %s', file)
+        data = get_json_from_eye_pop_upload(config, pop_access_token, file)
+        show_image(file, data, False)
+

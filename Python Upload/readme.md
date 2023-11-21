@@ -13,7 +13,7 @@ This Python project provides tools for analyzing images using the EyePop AI serv
 
 Before you begin, ensure you have met the following requirements:
 - Python 3.6 or above.
-- Required Python libraries: `requests`, `matplotlib`, `Pillow`.
+- Using a virtual environment is recommended. 
 
 ## Installation
 
@@ -23,7 +23,8 @@ Before you begin, ensure you have met the following requirements:
    ```
 2. Install the required Python libraries:
    ```bash
-   pip install requests matplotlib Pillow
+   cd "Demos/Python Upload"
+   pip3 install -r requirements.txt
    ```
 
 ## Usage
@@ -31,24 +32,18 @@ Before you begin, ensure you have met the following requirements:
 To use the EyePop Image Analysis tool:
 
 1. Set up the configuration for the AI Worker Server. Provide your EyePop API endpoint and token in the `pop_endpoint` and `token` variables.
-2. For analyzing a publicly accessible image URL, provide the URL in the `url` variable and call `get_json_from_eye_pop`.
-3. For analyzing a local image file, provide the file path in the `file_path` variable and call `get_json_from_eye_pop_upload`.
-4. Use `show_image` to display the analyzed image.
-
-Example:
-```python
-pop_endpoint = ''  # Your EyePop API endpoint
-token = ''  # Your API token
-
-config = fetch_pop_config(pop_endpoint, token)
-
-# Analyze a public URL
-url = 'https://example.com/image.jpg'
-data = get_json_from_eye_pop(config, url)
-show_image(url, data)
-
-# Analyze a local file
-file_path = '/path/to/your/image.jpg'
-data = get_json_from_eye_pop_upload(config, file_path)
-show_image(file_path, data, False)
-```
+2. Use the values from above to et environment variables:
+   ```bash
+   export POP_CONFIG_URL=...
+   ```
+   ```bash
+   export POP_ACCESS_TOKEN=...
+   ```
+5. Run the example with a public Url:
+   ```bash
+   python3 main.py https://raw.githubusercontent.com/eyepop-ai/Demos/main/AI%20CDN%20-%20Computer%20Vision%20Endpoint%20%26%20UGC%20Ruleset/example_images/photo_for_demo4.webp
+   ```
+5. Run the example with a local file:
+   ```bash
+   python3 main.py  test_images/morgan-freeman.jpeg
+   ```
