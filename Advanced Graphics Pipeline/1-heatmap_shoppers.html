@@ -72,16 +72,16 @@
         <script src="config.js"></script>
 
         <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three/examples/jsm/"
+            {
+                "imports": {
+                    "three": "https://unpkg.com/three/build/three.module.js",
+                    "three/addons/": "https://unpkg.com/three/examples/jsm/"
+                }
             }
-        }
-    </script>
+        </script>
 
         <script type="module">
-            import ThirdEyePop from "./js/src/ThirdEyePop.js";
+            import ThirdEyePop from "../utils/ThirdEyePop.js";
 
             var cached_data = [];
             const video = document.getElementById("myLocalVideo");

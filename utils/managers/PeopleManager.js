@@ -68,9 +68,8 @@ export default class PeopleManager
     loadEdgeObjects()
     {
         const scope = this;
-        // load the edgesGlb file found in the ../../../../assets/edges.glb
         const loader = new GLTFLoader();
-        loader.load('../../../../assets/edges.glb', (gltf) =>
+        loader.load('../utils/assets/edges.glb', (gltf) =>
         {
             const cornerMaterial = new THREE.MeshBasicMaterial({ transparent: true, side: THREE.DoubleSide, reflectivity: 0, fog: false, blending: THREE.MixOperation });
 

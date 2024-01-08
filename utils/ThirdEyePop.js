@@ -9,6 +9,9 @@ import SceneManager from './managers/SceneManager.js';
 // TODO: 
 //   - Add workflow for dispose and reset of objects
 //   - Improve buffering of video to match prediction data
+//   - expose drawing toggles as parameters and API
+
+
 export default class ThirdEyePop
 {
     constructor({
