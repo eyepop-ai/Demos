@@ -248,13 +248,6 @@ export default class ThirdEyePop
         }
 
 
-        function pushFrameData(frame)
-        {
-
-            predictionDataManager.pushFrameData(frame);
-
-        }
-
 
         // Main loop
         function render()
@@ -298,6 +291,21 @@ export default class ThirdEyePop
 
         }
 
+        function pushFrameData(frameData)
+        {
+            predictionDataManager.pushFrameData(frameData);
+        }
+
+        function popFrameData()
+        {
+            predictionDataManager.popFrameData();
+        }
+
+        function getFrameData()
+        {
+            return predictionDataManager.getFrameData();
+        }
+
 
         // //////////////////// end BODY /////////////////////////////
 
@@ -306,8 +314,10 @@ export default class ThirdEyePop
 
         scope.setup = setup;
         scope.render = render;
-        scope.pushFrameData = pushFrameData;
         scope.getPercentAnalyzed = getPercentAnalyzed;
+        scope.pushFrameData = pushFrameData;
+        scope.popFrameData = popFrameData;
+        scope.getFrameData = getFrameData;
 
         // //////////////////// end API /////////////////////////////
 

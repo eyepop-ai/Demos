@@ -18,6 +18,16 @@ export default class PredictionDataManager
         this.frameData.push(frameData);
     }
 
+    popFrameData()
+    {
+        return this.frameData.shift();
+    }
+
+    getFrameData()
+    {
+        return this.frameData;
+    }
+
     hasFrameData()
     {
         return this.frameData.length > 0;

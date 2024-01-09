@@ -1,9 +1,14 @@
-// a class that builds and manages adding meshes and moving them around
+/**
+ * @class SceneManager
+ * @description A class that builds and manages adding meshes and moving them around in a scene.
+ */
+
 import * as THREE from 'https://unpkg.com/three/build/three.module.js';
 import { TextGeometry } from 'https://unpkg.com/three/examples/jsm/geometries/TextGeometry.js';
 import { FontLoader } from 'https://unpkg.com/three/examples/jsm/loaders/FontLoader.js';
 import PeopleManager from './PeopleManager.js';
 import { PeopleState } from '../data/Constants.js';
+
 
 export default class SceneManager
 {
@@ -116,20 +121,23 @@ export default class SceneManager
                 case "point":
                     person.centerSphere && (person.centerSphere.visible = !person.centerSphere.visible);
                     break;
+
                 case "path":
                     person.pathLine && (person.pathLine.visible = !person.pathLine.visible);
                     break;
+
                 case "bounds":
-
                     person.boundsBoxParent.visible = !person.boundsBoxParent.visible;
-
                     break;
+
                 case "traceId":
                     person.traceIdText && (person.traceIdText.visible = !person.traceIdText.visible);
                     break;
+
                 case "pose":
                     person.poseData.mesh && (person.poseData.mesh.visible = !person.poseData.mesh.visible);
                     break;
+
             }
         });
     }
