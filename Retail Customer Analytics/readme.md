@@ -1,4 +1,4 @@
-## Advanged Graphics Pipeline
+## Retail Customer Analytics
 
 ### Quick Start
 
