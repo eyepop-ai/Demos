@@ -85,8 +85,9 @@
 
             config.Draw = [
 
-                // { "Type": "pose", "Targets": [ "person" ] },
-                { "Type": "box", "Targets": [ "person" ] },
+                { "Type": "pose", "Targets": [ "person" ] },
+                { "Type": "box", "Targets": [ "*" ] },
+
             ];
 
             const ep = EyePopSDK.EyePopSDK.init(config);
@@ -98,7 +99,6 @@
             EyePopSDK.EyePopAPI.instance.OnPrediction = function (data)
             {
                 jsonPreviewBox.innerHTML = JSON.stringify(data, null, 2);
-                console.log(data);
 
                 data.timestamp = data.timestamp / 1000000000;
 
