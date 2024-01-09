@@ -1,16 +1,26 @@
-## Retail Customer Analytics
+## 🛒 Retail Customer Analytics 🛒
 
-### Quick Start
+---
 
-To get started, run your local server from the root directory of this project **not** the Advanced Graphics Pipeline folder.
+### Getting started
 
-This documentation assumes you're up and running with the previous demos. Please refer to the `Getting started` section in the [`AI CDN - Computer Vision Endpoint & UGC Ruleset\readme.md`](../AI%20CDN%20-%20Computer%20Vision%20Endpoint%20%26%20UGC%20Ruleset/readme.md) folder to get started.
+- Log into your EyePop account at https://dashboard.eyepop.ai/sign-in
+- Create your own **API Pop** and select _Live - People and Common Object_ from the object library
+- Check out the **API Info** section of your Pop and copy'n paste the `endpoint` and `Auth Token` into `config.js` of your local copy of this repo.
+
+### Need a Web Server locally to test?
+
+- Easiest: [Web based IDE](https://replit.com/)
+- Option 1) Python: `python3 -m http.server 9001`
+- Option 2) [LiveServer Extension to VS Code](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
+
+Start your web server from within the **_parent_** directory and check out the examples: http://localhost:9001/1_upload_image.html
 
 ---
 
 ### Overview
 
-<img src="./imgs/readme_example_heatmap.gif" />
+<img src="./imgs/readme_example_heatmap.gif"  width="75%"/>
 
 In this documentation, we'll talk about the basic architecture choices to allow for advanced graphics drawing with the EyePopSDK.
 To get started let's dive into the [`1-heatmap_shoppers.html`](./1-heatmap_shoppers.html) demo.
