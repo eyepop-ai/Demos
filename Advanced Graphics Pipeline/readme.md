@@ -1,300 +1,55 @@
-**Developer Documentation**
+## Advanged Graphics Pipeline
+
+### Quick Start
+
+To get started, run your local server from the root directory of this project **not** the Advanced Graphics Pipeline folder.
+
+This documentation assumes you're up and running with the previous demos. Please refer to the `Getting started` section in the [`AI CDN - Computer Vision Endpoint & UGC Ruleset\readme.md`](../AI%20CDN%20-%20Computer%20Vision%20Endpoint%20%26%20UGC%20Ruleset/readme.md) folder to get started.
 
 ---
 
-### Getting started
+### Overview
 
-- Log into your EyePop account at https://dashboard.eyepop.ai/sign-in
-- Create your own **API Pop** and select _Live - People and Common Object_ from the object library
-- Check out the **API Info** section of your Pop and copy'n paste the `endboint` and `Auth Token` into `config.js` of your local copy of this repo.
+<img src="./imgs/readme_example_heatmap.gif" />
 
-### Need a Web Server locally to test?
+In this documentation, we'll talk about the basic architecture choices to allow for advanced graphics drawing with the EyePopSDK.
+To get started let's dive into the [`1-heatmap_shoppers.html`](./1-heatmap_shoppers.html) demo.
+Our html contains a background canvas and video element and the main script components are in:
 
-- Easiest: [Web based IDE](https://replit.com/)
-- Option 1) Python: `python3 -m http.server 9001`
-- Option 2) [LiveServer Extension to VS Code](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
+- `run()`: Starts the drawing loop
+- `save()`: Saves the prediction data to a json data file
+- `load()`: Loads the saved json data file
 
-Start your local server from the **_root directory_** of the project!
-
----
-
-**Developer Documentation**
+The majority of this code can be found in the [`develop documentation`](https://docs.google.com/document/d/1Bww57Zfn4csWAebSh-xSDa6c4aJ-l1RgFbSgqbew9S0/edit#heading=h.bxxeegbkyqlg) so next lets dive into the specifics of the Three.js setup.
 
 ---
 
-### Setsource
+## Advanced Graphics Architecture Overview
 
-The `Setsource` operation allows developers to modify the source of a live pipeline. There are various ways to set the source, each addressing different use cases.
+This project uses the [`../util/ThirdEyePop.js`]('../utils/ThirdEyePop.js') framework to handle our Three.js setup.
 
----
+Features:
 
-#### 1. Setsource (image/video upload)
+- Display responsive
+- On Hover of Canvas Shows Controls
 
-- **HTTP Method**: `POST`
-- **Endpoint**: `/pipelines/{id}/source`
-- **Description**: Changes the live pipeline to use the uploaded image or video file as a new source.
+`../util/ThirdEyePop.js`
 
-**Parameters**:
+Description:
 
-- `file`: The new source as an image or video file. This needs to be provided in the form data.
-- `id`: The ID of the pipeline to change. This is a required path parameter.
-- `mode`: The mode to handle concurrent sources. Available values include: `reject`, `preempt`, and `queue`. This is a required query parameter.
-- `processing`: The processing mode, either to wait for the result or to fire and forget. Available values are: `sync` (synchronous) and `async` (asynchronous). This is a required query parameter.
+This is the main utility class, it handles rendering the scene, moving meshes to match the prediction data, drawing post effects, including heatmaps, and more.
 
-**Responses**:
+**API**
 
-- `200 OK`: The operation was successful.
-- `204 No Content`: The operation was successful but there is no content to send in the response.
+- `setup()`: Initializes the renderer and mesh managers
+- `getPercentAnalyzed()`: Returns a 0-100 integer percentage of the prediction data loaded.
+- `render()`: Runs the render loop manually, automatically renders otherwise
+- `pushFrameData(frameData)`: Takes prediction data and stores it to an internal stack.
+- `popFrameData()`: Pops one frame off the stack with `frameData.shift()`.
+- `getFrameData()`: Gets all the prediction frame data.
 
----
+`managers/SceneManager.js`
 
-#### 2. Setsource (image/video url)
+The class that builds and manages adding meshes. Currently handles drawing center points, person paths, person bounds, person trace ids, and person poses.
 
-- **HTTP Method**: `PATCH`
-- **Endpoint**: `/pipelines/{id}/source`
-- **Description**: Changes the live pipeline to use a new source specified by a URL.
-
-**Parameters**:
-
-- `sourceDef`: Definition of the new source which includes:
-
-  - `sourceType`: Should be set to `"URL"`.
-  - `url`: The URL of the image.
-
-  Other parameters in the `sourceDef` object such as `sourceId`, `sources`, `streamId`, and `webrtcSessionId` are not relevant for this use case and can be ignored
-
-- `id`: The ID of the pipeline to change. This is a required path parameter.
-- `mode`: The mode to handle concurrent sources. Available values include: `reject`, `preempt`, and `queue`. This is a required query parameter.
-- `processing`: The processing mode, either to wait for the result or to fire and forget. Available values are: `sync` (synchronous) and `async` (asynchronous). This is a required query parameter.
-
-**Responses**:
-
-- `200 OK`: The operation was successful.
-- `204 No Content`: The operation was successful but there is no content to send in the response.
-
----
-
-#### 3. Setsource (image/video url list)
-
-- **HTTP Method**: `PATCH`
-- **Endpoint**: `/pipelines/{id}/source`
-- **Description**: Changes the live pipeline to use a new source specified by a list of image URLs synchronously.
-
-**Parameters**:
-
-- `sourceDef`: Definition of the new source which includes:
-
-  - `sourceType`: Should be set to `"LIST"`.
-  - `sources`: An array containing the list of image URLs.
-
-  Other parameters in the `sourceDef` object such as `sourceId`, `streamId`, and `webrtcSessionId` are not relevant for this use case and can be ignored.
-
-- `id`: The ID of the pipeline to change. This is a required path parameter.
-- `mode`: The mode to handle concurrent sources. Available values include: `reject`, `preempt`, and `queue`. This is a required query parameter.
-- `processing`: The processing mode, specifically set to `sync` for synchronous processing. This is a required query parameter.
-
-**Responses**:
-
-- `200 OK`: The operation was successful.
-- `204 No Content`: The operation was successful but there is no content to send in the response.
-
----
-
-#### 4. Setsource (streaming video WebRTC)
-
-- **HTTP Method**: `PATCH`
-- **Endpoint**: `/pipelines/{id}/source`
-- **Description**: Changes the live pipeline to use a new streaming video source via WebRTC.
-
-**Parameters**:
-
-- `sourceDef`: Definition of the new source which includes:
-
-  - `sourceType`: Should be set to `"WEBRTC_DIRECT"`.
-  - `webrtcSessionId`: The session ID for the WebRTC streaming video.
-  - `streamId`: The session ID for the WebRTC streaming video.
-
-  Other parameters in the `sourceDef` object such as `sourceId`, `sources`, `streamId`, and `url` are not relevant for this use case and can be ignored.
-
-- `id`: The ID of the pipeline to change. This is a required path parameter.
-- `mode`: The mode to handle concurrent sources. Available values include: `reject`, `preempt`, and `queue`. This is a required query parameter.
-- `processing`: The processing mode, either to wait for the result or to fire and forget. Available values are: `sync` (synchronous) and `async
-
-` (asynchronous). This is a required query parameter.
-
-**Responses**:
-
-- `200 OK`: The operation was successful.
-- `204 No Content`: The operation was successful but there is no content to send in the response.
-
----
-
-**Developer Documentation**
-
----
-
-### EyePop.ai Computer Vision API Results
-
-The EyePop.ai's computer vision API provides detailed results concerning the contents of the analyzed images. These results are structured in a JSON format and can be found under the "eyepop_results" column within the raw data CSV.
-
----
-
-#### 1. Source Image Dimensions:
-
-The results include the dimensions of the source image which was analyzed:
-
-- `result."source_width"`: The width of the source image.
-- `result."source_height"`: The height of the source image.
-
----
-
-#### 2. Objects Detected in Image:
-
-The API identifies various objects within the image and provides details about each of these objects:
-
-- `result."objects"`: An array containing information about each object detected.
-  - `result.objects[0]."confidence"`: The confidence score associated with the detected object. This value indicates the certainty of the detection.
-  - `result.objects[0]."classId"`: An integer identifier for the class of the detected object.
-  - `result.objects[0]."classLabel"`: The label of the class, e.g., "person".
-  - `result.objects[0]."x"`, `"y"`: The top-left coordinates of the detected object within the image.
-  - `result.objects[0]."width"`, `"height"`: The width and height dimensions of the detected object.
-
----
-
-#### 3. Objects Detected Within Objects:
-
-For some primary detected objects, the API might identify secondary objects within them. For example, within a "person" object, the API could detect a "face" object.
-
-- `result.objects[0]."objects"`: An array containing secondary objects detected within a primary object.
-  - `result.objects[0]."objects"[0]."classLabel"`: The label of the class of the secondary object, e.g., "face".
-
----
-
-#### 4. Classifications on Objects within Objects:
-
-For some secondary objects, the API performs classifications to identify various attributes:
-
-- `result.objects[0]."objects"[0]."classes"`: Contains the classifications for the secondary object.
-  - `"inferId": 4`: Refers to Emotion classification.
-  - `"inferId": 5`: Refers to Age classification.
-  - `"inferId": 6`: Refers to Gender classification.
-  - `"inferId": 7`: Refers to Race classification.
-
----
-
-#### 5. Body Keypoints:
-
-For some primary objects like "person", the API identifies body keypoints, indicating specific landmarks such as the eyes, nose, wrists, etc.
-
-- `result.objects[0]."keyPoints"."points"`: An array containing information about each keypoint detected.
-  - `result.objects[0]."keyPoints"."points"[0]."confidence"`: Confidence score for the detected keypoint.
-  - `result.objects[0]."keyPoints"."points"[0]."classLabel"`: The label of the keypoint, e.g., "nose".
-  - `result.objects[0]."keyPoints"."points"[0]."x"`, `"y"`: The coordinates of the detected keypoint within the image.
-
----
-
-#### Labels (People & Common Objects)
-
-0. eyepop logo
-1. person
-2. bicycle
-3. car
-4. motorcycle
-5. airplane
-6. bus
-7. train
-8. truck
-9. boat
-10. traffic light
-11. fire hydrant
-12. street sign
-13. stop sign
-14. parking meter
-15. bench
-16. bird
-17. cat
-18. dog
-19. horse
-20. sheep
-21. cow
-22. elephant
-23. bear
-24. zebra
-25. giraffe
-26. hat
-27. backpack
-28. umbrella
-29. shoe
-30. eye glasses
-31. handbag
-32. tie
-33. suitcase
-34. frisbee
-35. skis
-36. snowboard
-37. sports ball
-38. kite
-39. baseball bat
-40. baseball glove
-41. skateboard
-42. surfboard
-43. tennis racket
-44. bottle
-45. plate
-46. wine glass
-47. cup
-48. fork
-49. knife
-50. spoon
-51. bowl
-52. banana
-53. apple
-54. sandwich
-55. orange
-56. broccoli
-57. carrot
-58. hot dog
-59. pizza
-60. donut
-61. cake
-62. chair
-63. couch
-64. potted plant
-65. bed
-66. mirror
-67. dining table
-68. window
-69. desk
-70. toilet
-71. door
-72. tv
-73. laptop
-74. mouse
-75. remote
-76. keyboard
-77. cell phone
-78. microwave
-79. oven
-80. toaster
-81. sink
-82. refrigerator
-83. blender
-84. book
-85. clock
-86. vase
-87. scissors
-88. teddy bear
-89. hair drier
-90. toothbrush
-
----
-
-#### Labels (Emotions)
-
-0. happy
-1. neutral
-2. sad
-3. surprise
-4. angry
-5. fear
-6. disgust
+`managers/RenderManager.js`
