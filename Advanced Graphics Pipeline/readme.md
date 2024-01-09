@@ -26,20 +26,23 @@ The majority of this code can be found in the [`develop documentation`](https://
 
 ## Advanced Graphics Architecture Overview
 
-This project uses the [`../util/ThirdEyePop.js`]('../utils/ThirdEyePop.js') framework to handle our Three.js setup.
+This project uses the [`../util/ThirdEyePop.js`]('../utils/ThirdEyePop.js') framework to handle the Three.js rendering and scene creation.
 
-Features:
+Notable Features:
 
-- Display responsive
-- On Hover of Canvas Shows Controls
+- Custom post effect stack for rendering video directly to canvas, heatmap rendering
+- Video playback buffers and syncs to prediction data
+- Display responsive and OnHoverOver/OnHoverOff shows dat.gui controls
+- Procedural geometry building for pose bones and more!
+
+---
 
 `../util/ThirdEyePop.js`
 
-Description:
+**_Description:_**
+This is the main utility class, it handles rendering the scene, moving meshes to match the prediction data, buffering video playback, the render loop, and more.
 
-This is the main utility class, it handles rendering the scene, moving meshes to match the prediction data, drawing post effects, including heatmaps, and more.
-
-**API**
+**_API_**
 
 - `setup()`: Initializes the renderer and mesh managers
 - `getPercentAnalyzed()`: Returns a 0-100 integer percentage of the prediction data loaded.
@@ -48,8 +51,23 @@ This is the main utility class, it handles rendering the scene, moving meshes to
 - `popFrameData()`: Pops one frame off the stack with `frameData.shift()`.
 - `getFrameData()`: Gets all the prediction frame data.
 
+---
+
 `managers/SceneManager.js`
 
+**_Description:_**
 The class that builds and manages adding meshes. Currently handles drawing center points, person paths, person bounds, person trace ids, and person poses.
 
+---
+
+`managers/SceneManager.js`
+
+**_Description:_**
+The class that builds and manages adding meshes and moving them around in a scene. It notably has a PeopleManager subclass which is used to track any objects with the person classLabel.
+
+---
+
 `managers/RenderManager.js`
+
+**_Description:_**
+The main rendering class, contains an Effect Compositor and camera creation/rendering.
