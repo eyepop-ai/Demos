@@ -268,13 +268,10 @@ export default class SceneManager
             // next we add the four edgeObject corners to the corners of the boundsPlaneMesh so that we can use them to draw the inset and outset corners
             edgeObjects = this.peopleManager.edgeObjects;
 
-
             // create a buffer geometry for the top left vertex, at .01 units in size
             // and add it to a LineSegments object to be added to the parent
-            const topLeftGeometry = new THREE.BufferGeometry().setFromPoints([ new THREE.Vector3(person.bounds.min.x, person.bounds.min.y, 0), new THREE.Vector3(person.bounds.min.x + width / 4, person.bounds.min.y, 0) ]);
-
-            topLeftEdgeMesh = new THREE.LineSegments(topLeftGeometry, this.boxLineMaterial);
-
+            // const topLeftGeometry = new THREE.BufferGeometry().setFromPoints([ new THREE.Vector3(person.bounds.min.x, person.bounds.min.y, 0), new THREE.Vector3(person.bounds.min.x + width / 4, person.bounds.min.y, 0) ]);
+            // topLeftEdgeMesh = new THREE.LineSegments(topLeftGeometry, this.boxLineMaterial);
 
             topLeftEdgeMesh = edgeObjects.topLeft.clone();
             topRightEdgeMesh = edgeObjects.topRight.clone();
