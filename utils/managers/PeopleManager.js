@@ -63,24 +63,6 @@ export default class PeopleManager
             [ 'left ankle', 'left heel' ],
             [ 'left heel', 'left foot index' ],
         ]
-
-
-        this.connectionsCoco = [
-            [ 'left shoulder', 'right shoulder' ],
-            [ 'left hip', 'right hip' ],
-
-            [ 'left shoulder', 'left elbow' ],
-            [ 'left elbow', 'left wrist' ],
-            [ 'left shoulder', 'right hip' ],
-            [ 'left hip', 'left knee' ],
-            [ 'left knee', 'left ankle' ],
-
-            [ 'right shoulder', 'right elbow' ],
-            [ 'right elbow', 'right wrist' ],
-            [ 'right shoulder', 'left hip' ],
-            [ 'right hip', 'right knee' ],
-            [ 'right knee', 'right ankle' ],
-        ]
     }
 
     loadEdgeObjects()
@@ -219,40 +201,39 @@ export default class PeopleManager
 
     updatePoseGeometry(person, trackedPerson)
     {
+        let poseIndex = null;
 
-        // We can recieve pose data in two different formats, either as a keyPoints array or in an objects array
-
-        if ("keyPoints" in person && person.keyPoints.length > 0)
-        {
-
-            if (person.keyPoints[ 0 ].type == "body-coco-17")
-            {
-                this.buildPoseGeometryCoco17(person, trackedPerson);
-            } else if (person.keyPoints[ 0 ].type == "body-mediapipe-33")
-            {
-                this.buildPoseGeometryMediaPipe33(person, trackedPerson, 0);
-            }
-
-        } else if ("objects" in person)
+        if ("objects" in person)
         {
             // find the pose index, there may be other objects like face, and hands in the array
-            const poseIndex = person.objects.findIndex(object => object.classLabel === 'pose');
-
-            if (poseIndex < 0) return;
-
-            const poseType = person.objects[ poseIndex ].keyPoints[ 0 ].type;
-
-            if (poseType == "body-mediapipe-33")
-            {
-                this.buildPoseGeometryMediaPipe33(person, trackedPerson, poseIndex);
-            }
-
+            poseIndex = person.objects.findIndex(object => object.classLabel === 'pose');
         }
+
+        // if theres no pose index found, assume ther pose data is in the keyPoints array
+        if (poseIndex < 0)
+        {
+            poseIndex = null
+        }
+
+        this.buildPoseGeometryMediaPipe33(person, trackedPerson, poseIndex);
+
     }
 
-    buildPoseGeometryMediaPipe33(person, trackedPerson, poseIndex)
+    buildPoseGeometryMediaPipe33(person, trackedPerson, poseIndex = null)
     {
-        person.objects[ poseIndex ].keyPoints[ 0 ].points.forEach((point) =>
+        if (!("keyPoints" in person) && !poseIndex) return;
+
+        let keyPoints = null;
+
+        if (poseIndex)
+        {
+            keyPoints = person.objects[ poseIndex ].keyPoints[ 0 ].points;
+        } else
+        {
+            keyPoints = person.keyPoints[ 0 ].points;
+        }
+
+        keyPoints.forEach((point) =>
         {
             const tempPoint = new THREE.Vector3(point.x, point.y, 0);
             const normalizedPoint = this.normalizePosition(tempPoint, person.source_width, person.source_height);
@@ -262,43 +243,6 @@ export default class PeopleManager
 
         // next we create a 2d array of the connection points based on the poseDataConnections array
         trackedPerson.poseData.edges = this.poseConnections33.map((connection) =>
-        {
-            return [ trackedPerson.poseData.points[ connection[ 0 ] ], trackedPerson.poseData.points[ connection[ 1 ] ] ];
-        });
-
-        // create multiple line segments based on the edges and merge them all into one mesh then add that to the poseData.mesh object
-        let poseGeometry = [];
-        trackedPerson.poseData.edges.forEach((edgePoints) =>
-        {
-            // skip if any edgePoints are null
-            if (!edgePoints[ 0 ] || !edgePoints[ 1 ])
-            {
-                return;
-            }
-            const edgeGeometry = new THREE.BufferGeometry().setFromPoints(edgePoints);
-
-            poseGeometry.push(edgeGeometry);
-        });
-
-
-        if (poseGeometry.length > 0)
-        {
-            trackedPerson.poseData.geometry = BufferGeometryUtils.mergeGeometries(poseGeometry, 0);
-        }
-    }
-
-    buildPoseGeometryCoco17(person, trackedPerson)
-    {
-        person.keyPoints[ 0 ].points.forEach((point) =>
-        {
-            const tempPoint = new THREE.Vector3(point.x, point.y, 0);
-            const normalizedPoint = this.normalizePosition(tempPoint, person.source_width, person.source_height);
-
-            trackedPerson.poseData.points[ point.classLabel ] = new THREE.Vector3(normalizedPoint.x, normalizedPoint.y, 0);
-        });
-
-        // next we create a 2d array of the connection points based on the poseDataConnections array
-        trackedPerson.poseData.edges = this.connectionsCoco.map((connection) =>
         {
             return [ trackedPerson.poseData.points[ connection[ 0 ] ], trackedPerson.poseData.points[ connection[ 1 ] ] ];
         });
