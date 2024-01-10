@@ -7,7 +7,7 @@
   <meta name="description" content="EyePop SDK Test Page" />
   <link rel="icon" href="./images/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="./styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk@0.0.18"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk"></script>
 </head>
 
 <body style="background-color: black;">
@@ -29,38 +29,26 @@
     style="display:flex; align-items: center; justify-content: left; gap: 1rem;
   padding:10px;position: absolute;top: 10px;left: 10px;z-index:10001;background: rgba(255, 255, 255, 0.4);border-radius: 15px 50px 30px 5px;">
     <img class="" style="width:250px;display: inline-block;" id="octofull" onclick="EyePopSDK.EyePopSDK.goFullScreen()"
-      src="./images/colored-eyepop-octopus.png" />
+      src="./css/images/eyepop-logo.svg" />
     <h1 class="" style="display: inline-block;color: #2e9dd3;font-family: poppins;font-size: 40px;" id="title"></h1>
   </div>
   <script src="config.js"></script>
   <script>
 
-    async function FetchPopConfig(pop_endpoint, token) {
-
-      return fetch(pop_endpoint, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer ' + token
-        }
-      })
-        .then(response => response.json())
-    }
-
-    FetchPopConfig(pop_endpoint, token)
+    EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token)
       .then(response => config = response)
       .then(() => {
 
         document.getElementById("title").innerHTML = "Count the Curls 💪";
 
         config.Draw = [
-          {"Type": "box", "Targets":["*"]},
-          { "Type": "pose", "Targets": ["person"] },
+           {"Type": "box", "Targets":["*"]},
+          { "Type": "pose", "Targets": ["*"] },
           {
-            "Type": "counter", "RulesLowCode": "Biggest Person left wrist below Biggest Person left elbow" + "\r\n" +
-              "Biggest Person right wrist below Biggest Person right elbow" + "\r\n" +
+            "Type": "counter", "RulesLowCode":  "\n" + "Biggest Person left wrist below Biggest Person left elbow " + "\r\n" +
+              "Biggest Person right wrist below Biggest Person right elbow  " + "\r\n" +
               "Biggest Person left wrist above Biggest Person left elbow" + "\r\n" +
-              "Biggest Person right wrist above Biggest Person right elbow"
+              "Biggest Person right wrist above Biggest Person right elbow" + "\r\n"
           }
         ];
         
@@ -68,6 +56,20 @@
 
         console.log(EyePopSDK.EyePopSDK.init);
       });
+
+
+    document.getElementById("octofull").addEventListener("click",(event)=>{
+      EyePopSDK.EyePopSDK.goFullScreen();
+
+      // EyePopSDK.EyePopSDK.UpdateDraw(
+      //   [
+      //     //Draw instructions  
+      //   ])
+    });
+
+    // add clear link to display
+    // add clear epconditional
+    // draw on find (for example I want to have a small X that moves when I change the sentence Draw "X" on right wrist)
 
   </script>
 </body>
