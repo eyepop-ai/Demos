@@ -21,7 +21,7 @@ export default class PeopleManager
 
         this.loadEdgeObjects();
 
-        this.poseConnections = [
+        this.poseConnections33 = [
             [ 'mouth (right)', 'mouth (left)' ],
             [ 'right ear', 'right eye (outer)' ],
             [ 'right eye (outer)', 'right eye' ],
@@ -62,6 +62,24 @@ export default class PeopleManager
             [ 'left ankle', 'left foot index' ],
             [ 'left ankle', 'left heel' ],
             [ 'left heel', 'left foot index' ],
+        ]
+
+
+        this.connectionsCoco = [
+            [ 'left shoulder', 'right shoulder' ],
+            [ 'left hip', 'right hip' ],
+
+            [ 'left shoulder', 'left elbow' ],
+            [ 'left elbow', 'left wrist' ],
+            [ 'left shoulder', 'right hip' ],
+            [ 'left hip', 'left knee' ],
+            [ 'left knee', 'left ankle' ],
+
+            [ 'right shoulder', 'right elbow' ],
+            [ 'right elbow', 'right wrist' ],
+            [ 'right shoulder', 'left hip' ],
+            [ 'right hip', 'right knee' ],
+            [ 'right knee', 'right ankle' ],
         ]
     }
 
@@ -121,21 +139,22 @@ export default class PeopleManager
 
     addPerson(person)
     {
-        let cachedPerson = this.getPerson(person.traceId);
+        let trackedPerson = this.getPerson(person.traceId);
 
-        if (!cachedPerson)
+        if (!trackedPerson)
         {
-            cachedPerson = new People();
+            trackedPerson = new People();
         }
 
+        // Sanity check for valid frame data
         if (!person.source_width || !person.source_height)
         {
-            return cachedPerson;
+            return trackedPerson;
         }
 
 
-        cachedPerson.traceId = person.traceId;
-        cachedPerson.pose = person.objects;
+        trackedPerson.traceId = person.traceId;
+        trackedPerson.pose = person.objects;
 
 
         // BOUNDING BOX
@@ -143,8 +162,8 @@ export default class PeopleManager
         // the top left position of the person
         // Flip the X, Y coordinates to match THREE.js
         let normalizedTopLeft = this.normalizePosition(person, person.source_width, person.source_height);
-        cachedPerson.topLeftPoint.x = normalizedTopLeft.x / 2;
-        cachedPerson.topLeftPoint.y = normalizedTopLeft.y / 2;
+        trackedPerson.topLeftPoint.x = normalizedTopLeft.x / 2;
+        trackedPerson.topLeftPoint.y = normalizedTopLeft.y / 2;
 
         let maxX = person.x + person.width;
         let maxY = person.y + person.height;
@@ -155,21 +174,21 @@ export default class PeopleManager
             person.source_height
         );
 
-        cachedPerson.bottomRightPoint.x = normalizedBottomRight.x / 2;
-        cachedPerson.bottomRightPoint.y = normalizedBottomRight.y / 2;
+        trackedPerson.bottomRightPoint.x = normalizedBottomRight.x / 2;
+        trackedPerson.bottomRightPoint.y = normalizedBottomRight.y / 2;
 
-        cachedPerson.bounds = new THREE.Box3();
-        cachedPerson.bounds.min.x = normalizedTopLeft.x;
-        cachedPerson.bounds.min.y = normalizedTopLeft.y;
-        cachedPerson.bounds.max.x = normalizedBottomRight.x;
-        cachedPerson.bounds.max.y = normalizedBottomRight.y;
+        trackedPerson.bounds = new THREE.Box3();
+        trackedPerson.bounds.min.x = normalizedTopLeft.x;
+        trackedPerson.bounds.min.y = normalizedTopLeft.y;
+        trackedPerson.bounds.max.x = normalizedBottomRight.x;
+        trackedPerson.bounds.max.y = normalizedBottomRight.y;
 
-        cachedPerson.boundsWidth = Math.abs(normalizedTopLeft.x - normalizedBottomRight.x);
-        cachedPerson.boundsHeight = Math.abs(normalizedTopLeft.y - normalizedBottomRight.y);
+        trackedPerson.boundsWidth = Math.abs(normalizedTopLeft.x - normalizedBottomRight.x);
+        trackedPerson.boundsHeight = Math.abs(normalizedTopLeft.y - normalizedBottomRight.y);
 
-        cachedPerson.position = new THREE.Vector3();
-        cachedPerson.position.x = (normalizedTopLeft.x + normalizedBottomRight.x) / 2;
-        cachedPerson.position.y = (normalizedTopLeft.y + normalizedBottomRight.y) / 2;
+        trackedPerson.position = new THREE.Vector3();
+        trackedPerson.position.x = (normalizedTopLeft.x + normalizedBottomRight.x) / 2;
+        trackedPerson.position.y = (normalizedTopLeft.y + normalizedBottomRight.y) / 2;
 
         // PATH
         // Capturing the path of the person
@@ -177,64 +196,132 @@ export default class PeopleManager
         {
             const pathPoint = { ...normalizedBottomRight };
             // clamp path point to -1 and 1
-            pathPoint.x = cachedPerson.position.x;
+            pathPoint.x = trackedPerson.position.x;
 
             pathPoint.y = Math.min(Math.max(pathPoint.y, -1), 1);
 
             this.trackNewPosition(pathPoint);
-            cachedPerson.position.x = pathPoint.x;
-            cachedPerson.position.y = pathPoint.y;
+            trackedPerson.position.x = pathPoint.x;
+            trackedPerson.position.y = pathPoint.y;
         } else
         {
-            this.trackNewPosition(cachedPerson.position);
+            this.trackNewPosition(trackedPerson.position);
         }
 
-        cachedPerson.addPathPoint(cachedPerson.position);
-        this.peopleMap.set(person.traceId, cachedPerson);
+        trackedPerson.addPathPoint(trackedPerson.position);
+        this.peopleMap.set(person.traceId, trackedPerson);
 
+        this.updatePoseGeometry(person, trackedPerson);
 
-        // POSE
-        // the pose of the person, person.objects[0].keypoints
-        // the keypoints of the person
-        if (person.objects && person.objects.length > 0 && "keyPoints" in person.objects[ 0 ])
+        return trackedPerson;
+
+    }
+
+    updatePoseGeometry(person, trackedPerson)
+    {
+
+        // We can recieve pose data in two different formats, either as a keyPoints array or in an objects array
+
+        if ("keyPoints" in person && person.keyPoints.length > 0)
         {
-            // cachedPerson.poseData = { points: {}, edges: [], mesh: null, geometry: null };
 
-            person.objects[ 0 ].keyPoints[ 0 ].points.forEach((point) =>
+            if (person.keyPoints[ 0 ].type == "body-coco-17")
             {
-                const tempPoint = new THREE.Vector3(point.x, point.y, 0);
-                const normalizedPoint = this.normalizePosition(tempPoint, person.source_width, person.source_height);
-
-                cachedPerson.poseData.points[ point.classLabel ] = new THREE.Vector3(normalizedPoint.x, normalizedPoint.y, 0);
-            });
-
-            // next we create a 2d array of the connection points based on the poseDataConnections array
-            cachedPerson.poseData.edges = this.poseConnections.map((connection) =>
+                this.buildPoseGeometryCoco17(person, trackedPerson);
+            } else if (person.keyPoints[ 0 ].type == "body-mediapipe-33")
             {
-                return [ cachedPerson.poseData.points[ connection[ 0 ] ], cachedPerson.poseData.points[ connection[ 1 ] ] ];
-            });
+                this.buildPoseGeometryMediaPipe33(person, trackedPerson, 0);
+            }
 
-            // create multiple line segments based on the edges and merge them all into one mesh then add that to the poseData.mesh object
-            let poseGeometry = [];
-            cachedPerson.poseData.edges.forEach((edgePoints) =>
+        } else if ("objects" in person)
+        {
+            // find the pose index, there may be other objects like face, and hands in the array
+            const poseIndex = person.objects.findIndex(object => object.classLabel === 'pose');
+
+            if (poseIndex < 0) return;
+
+            const poseType = person.objects[ poseIndex ].keyPoints[ 0 ].type;
+
+            if (poseType == "body-mediapipe-33")
             {
-                // skip if any edgePoints are null
-                if (!edgePoints[ 0 ] || !edgePoints[ 1 ])
-                {
-                    return;
-                }
-                const edgeGeometry = new THREE.BufferGeometry().setFromPoints(edgePoints);
-
-                poseGeometry.push(edgeGeometry);
-            });
-
-            cachedPerson.poseData.geometry = BufferGeometryUtils.mergeGeometries(poseGeometry, 0);
+                this.buildPoseGeometryMediaPipe33(person, trackedPerson, poseIndex);
+            }
 
         }
+    }
+
+    buildPoseGeometryMediaPipe33(person, trackedPerson, poseIndex)
+    {
+        person.objects[ poseIndex ].keyPoints[ 0 ].points.forEach((point) =>
+        {
+            const tempPoint = new THREE.Vector3(point.x, point.y, 0);
+            const normalizedPoint = this.normalizePosition(tempPoint, person.source_width, person.source_height);
+
+            trackedPerson.poseData.points[ point.classLabel ] = new THREE.Vector3(normalizedPoint.x, normalizedPoint.y, 0);
+        });
+
+        // next we create a 2d array of the connection points based on the poseDataConnections array
+        trackedPerson.poseData.edges = this.poseConnections33.map((connection) =>
+        {
+            return [ trackedPerson.poseData.points[ connection[ 0 ] ], trackedPerson.poseData.points[ connection[ 1 ] ] ];
+        });
+
+        // create multiple line segments based on the edges and merge them all into one mesh then add that to the poseData.mesh object
+        let poseGeometry = [];
+        trackedPerson.poseData.edges.forEach((edgePoints) =>
+        {
+            // skip if any edgePoints are null
+            if (!edgePoints[ 0 ] || !edgePoints[ 1 ])
+            {
+                return;
+            }
+            const edgeGeometry = new THREE.BufferGeometry().setFromPoints(edgePoints);
+
+            poseGeometry.push(edgeGeometry);
+        });
 
 
-        return cachedPerson;
+        if (poseGeometry.length > 0)
+        {
+            trackedPerson.poseData.geometry = BufferGeometryUtils.mergeGeometries(poseGeometry, 0);
+        }
+    }
 
+    buildPoseGeometryCoco17(person, trackedPerson)
+    {
+        person.keyPoints[ 0 ].points.forEach((point) =>
+        {
+            const tempPoint = new THREE.Vector3(point.x, point.y, 0);
+            const normalizedPoint = this.normalizePosition(tempPoint, person.source_width, person.source_height);
+
+            trackedPerson.poseData.points[ point.classLabel ] = new THREE.Vector3(normalizedPoint.x, normalizedPoint.y, 0);
+        });
+
+        // next we create a 2d array of the connection points based on the poseDataConnections array
+        trackedPerson.poseData.edges = this.connectionsCoco.map((connection) =>
+        {
+            return [ trackedPerson.poseData.points[ connection[ 0 ] ], trackedPerson.poseData.points[ connection[ 1 ] ] ];
+        });
+
+        // create multiple line segments based on the edges and merge them all into one mesh then add that to the poseData.mesh object
+        let poseGeometry = [];
+        trackedPerson.poseData.edges.forEach((edgePoints) =>
+        {
+            // skip if any edgePoints are null
+            if (!edgePoints[ 0 ] || !edgePoints[ 1 ])
+            {
+                return;
+            }
+            const edgeGeometry = new THREE.BufferGeometry().setFromPoints(edgePoints);
+
+            poseGeometry.push(edgeGeometry);
+        });
+
+
+        if (poseGeometry.length > 0)
+        {
+            trackedPerson.poseData.geometry = BufferGeometryUtils.mergeGeometries(poseGeometry, 0);
+        }
     }
 
     removePerson(traceID)

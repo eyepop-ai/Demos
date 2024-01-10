@@ -1,8 +1,8 @@
-## 🏋️ Fitness Rep Counter
+## 🏋️ Fitness Rep Counter 🏋️
 
-<img src="./imgs/reps.gif" width="100%" />
+<img src="./css/images/reps.gif" width="100%" />
 
-### Quick Start
+### Getting Start
 
 - Log into your EyePop account at https://dashboard.eyepop.ai/sign-in
 - Create your own **API Pop** and select _Live - People and Common Object_ from the object library

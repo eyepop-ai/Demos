@@ -18,7 +18,7 @@ Start your web server from within the **_parent_** directory and check out the e
 
 ---
 
-### Overview
+## Overview
 
 <img src="./imgs/readme_example_heatmap.gif"  width="75%"/>
 
