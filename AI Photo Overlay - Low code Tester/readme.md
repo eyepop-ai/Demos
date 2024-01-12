@@ -2,6 +2,8 @@
 
 ---
 
+<img src="./css/images/brave_IOR7hRMEgL.png" width="100%" height="100%" />
+
 ### Getting started
 
 - Log into your EyePop account at https://dashboard.eyepop.ai/sign-in
