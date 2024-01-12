@@ -29,7 +29,7 @@
       style="display:flex; align-items: center; justify-content: left; gap: 1rem;
   padding:10px;position: absolute;top: 10px;left: 10px;z-index:10001;background: rgba(255, 255, 255, 0.4);border-radius: 15px 50px 30px 5px;">
     <img class="" style="width:250px;display: inline-block;" id="octofull" onclick="EyePopSDK.EyePopSDK.goFullScreen()"
-      src="./css/images/eyepop-logo.svg" />
+        src="./css/images/eyepop-logo.svg" />
     <h1 class="" style="display: inline-block;color: #2e9dd3;font-family: poppins;font-size: 40px;" id="title"></h1>
   </div>
   <script src="config.js"></script>
@@ -43,14 +43,14 @@
         document.getElementById("title").innerHTML = "Count the Curls 💪";
 
         config.Draw = [
-            {"Type": "box", "Targets":["*"]},
-            { "Type": "pose", "Targets": ["*"] },
-            {
-              "Type": "counter", "RulesLowCode":  "\n" + "Biggest Person left wrist below Biggest Person left elbow " + "\r\n" +
-                "Biggest Person right wrist below Biggest Person right elbow  " + "\r\n" +
-                "Biggest Person left wrist above Biggest Person left elbow" + "\r\n" +
-                "Biggest Person right wrist above Biggest Person right elbow" + "\r\n"
-            }
+          { "Type": "box", "Targets": [ "*" ] },
+          { "Type": "pose", "Targets": [ "*" ] },
+          {
+            "Type": "counter", "RulesLowCode": "\n" + "Biggest Person left wrist below Biggest Person left elbow " + "\r\n" +
+              "Biggest Person right wrist below Biggest Person right elbow  " + "\r\n" +
+              "Biggest Person left wrist above Biggest Person left elbow" + "\r\n" +
+              "Biggest Person right wrist above Biggest Person right elbow" + "\r\n"
+          }
         ];
 
         const ep = EyePopSDK.EyePopSDK.init(config)
@@ -58,7 +58,8 @@
       });
 
 
-    document.getElementById("octofull").addEventListener("click",(event)=>{
+    document.getElementById("octofull").addEventListener("click", (event) =>
+    {
       EyePopSDK.EyePopSDK.goFullScreen();
 
       // EyePopSDK.EyePopSDK.UpdateDraw(

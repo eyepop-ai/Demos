@@ -120,6 +120,7 @@
                     return
 
                 var el = cached_data[ closestIndex ];
+                jsonPreviewBox.innerHTML = JSON.stringify(el, null, 2);
 
                 //console.log(video.currentTime, el, cached_data.length);
                 EyePopSDK.EyePopAPI.instance.lastmsg = el;
