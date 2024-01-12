@@ -131,7 +131,21 @@
                 if (!url) return;
                 let percentBuffered = 0;
 
-                const thirdEyePop = new ThirdEyePop({ canvas: renderCanvas, videoUrl: urlInput.value, frameData: cached_data, DEBUG: true });
+                const thirdEyePop = new ThirdEyePop(
+                    {
+                        canvas: renderCanvas,
+                        videoUrl: urlInput.value,
+                        frameData: cached_data,
+                        DEBUG: true,
+                        drawParams: {
+                            showHeatmap: true,
+                            showPoint: true,
+                            showPath: true,
+                            showBounds: true,
+                            showTraceId: true,
+                            showPose: true,
+                        }
+                    });
 
                 thirdEyePop.setup();
 
@@ -176,3 +190,6 @@
 </body>
 
 </html>
+
+
+<!-- https://raw.githubusercontent.com/64blit/files/main/videos/store_cctv.mp4 -->

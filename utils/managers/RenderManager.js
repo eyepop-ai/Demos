@@ -8,22 +8,12 @@ import { GammaCorrectionShader } from 'https://unpkg.com/three/examples/jsm/shad
 
 export default class RenderManager
 {
-    constructor(canvas, videoUrl, params = {
-        fov: 45,
-        postEffects: {
-            enabled: true,
-            antialias: {
-                enabled: true
-            },
-            bloom: {
-                enabled: true,
-                strength: 1.5,
-                radius: 0.4,
-                threshold: 0.85,
-                exposure: 1
-            }
-        }
-    })
+    constructor(
+        canvas,
+        videoUrl,
+        drawParams = {
+            showHeatmap: false,
+        })
     {
         THREE.Cache.enabled = true
         this.canvas = canvas;
@@ -32,12 +22,11 @@ export default class RenderManager
 
         this.renderer = null;
         this.finalComposer = null;
-        this.bloomPass = null;
         this.time = 0;
         this.heatmapPoints = [];
         this.maxHeatmapPoints = 10000;
 
-        this.showHeatmap = true;
+        this.showHeatmap = drawParams.showHeatmap;
         this.heatmapIntensity = 0.5;
 
         console.log("RenderManager constructor");
@@ -47,9 +36,6 @@ export default class RenderManager
         {
             console.error(' ..... Canvas not found. Make sure this element is valid:, ', canvas)
         }
-
-        this.isPostEffectsEnabled = params.postEffects.enabled;
-        this.isAntialiasEnabled = params.postEffects.antialias.enabled && this.isPostEffectsEnabled;
 
         this.width = this.canvas.clientWidth
         this.height = this.canvas.clientHeight
@@ -183,7 +169,7 @@ export default class RenderManager
             canvas: this.canvas,
             powerPreference: 'high-performance',
             failIfMajorPerformanceCaveat: true,
-            antialias: this.isAntialiasEnabled,
+            antialias: true,
             alpha: true,
         });
 
@@ -214,6 +200,8 @@ export default class RenderManager
 
     onWindowResized()
     {
+        if (!this.renderer) return;
+
         const clientAspect = this.canvas.clientWidth / this.canvas.clientHeight;
         const videoAspect = this.video.videoWidth / this.video.videoHeight;
 
@@ -231,11 +219,6 @@ export default class RenderManager
         this.renderer.domElement.height = this.height
 
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-
-        if (!this.isPostEffectsEnabled)
-        {
-            return
-        }
 
         this.finalComposer.setSize(this.width, this.height)
         this.finalComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -309,6 +292,11 @@ export default class RenderManager
                 void main() {
                     vec3 video = texture2D(tDiffuse, vUv).rgb;
 
+                    if (!uShowHeatmap) {
+                        gl_FragColor = vec4(video, 1);
+                        return; 
+                    }
+
                     float gridX = floor(vUv.x * uGridSpacesX);
                     float gridY = floor(vUv.y * uGridSpacesY);
                     
@@ -317,7 +305,7 @@ export default class RenderManager
                     vec3 high = vec3(1, 0, 0); // red
                     vec3 heatColor = mix(low, high, heat);
                     
-                    if (uShowHeatmap && heat > 0.0) {
+                    if (heat > 0.0) {
                         video = mix(video, heatColor, uIntensity);
                     }
                     
@@ -336,7 +324,9 @@ export default class RenderManager
 
         this.finalComposer.addPass(renderScene);
         this.finalComposer.addPass(this.copyPass);
+
         this.finalComposer.addPass(this.heatmapPass);
+
         this.finalComposer.addPass(newSMAAPass);
     }
 

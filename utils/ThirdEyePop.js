@@ -18,7 +18,15 @@ export default class ThirdEyePop
         DEBUG = true,
         canvas = null,
         videoUrl = null,
-        frameData = []
+        frameData = [],
+        drawParams: {
+            showHeatmap = true,
+            showPoint = true,
+            showPath = true,
+            showBounds = true,
+            showTraceId = true,
+            showPose = true,
+        }
     })
     {
         console.log("ThirdEyePop constructor");
@@ -60,16 +68,26 @@ export default class ThirdEyePop
         function initManagers()
         {
 
-
             renderManager = new RenderManager(
                 canvas,
-                videoUrl
+                videoUrl,
+                {
+                    showHeatmap: showHeatmap,
+                }
             );
 
             predictionDataManager = new PredictionDataManager(frameData);
 
-            sceneManager = new SceneManager(renderManager.getScene(), renderManager.getCamera(), renderManager.getDimensions());
-
+            sceneManager = new SceneManager(renderManager.getScene(),
+                renderManager.getCamera(),
+                renderManager.getDimensions(),
+                {
+                    showPoint,
+                    showPath,
+                    showBounds,
+                    showPose,
+                    showTraceId
+                });
 
         }
 

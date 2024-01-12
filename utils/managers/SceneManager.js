@@ -13,7 +13,18 @@ import { PeopleState } from '../data/Constants.js';
 export default class SceneManager
 {
 
-    constructor(scene, camera, dimensions)
+    constructor(
+        scene,
+        camera,
+        dimensions,
+        drawParams = {
+            showPoint: false,
+            showPath: false,
+            showBounds: false,
+            showPose: false,
+            showTraceId: false
+        }
+    )
     {
         this.scene = scene;
         this.camera = camera;
@@ -21,11 +32,11 @@ export default class SceneManager
         this.peopleManager = new PeopleManager(dimensions);
         this.activePeople = [];
 
-        this.showPoint = true;
-        this.showPath = true;
-        this.showBounds = true;
-        this.showPose = true;
-        this.showTraceId = true;
+        this.showPoint = drawParams.showPoint;
+        this.showPath = drawParams.showPath;
+        this.showBounds = drawParams.showBounds;
+        this.showPose = drawParams.showPose;
+        this.showTraceId = drawParams.showTraceId;
 
         this.font = null;
         const scope = this;
@@ -70,7 +81,6 @@ export default class SceneManager
         const previousActivePeople = [ ...this.activePeople ];
         this.activePeople = [];
 
-        // console.log(frameData)
         for (let i = 0; i < frameData.objects.length && this.activePeople.length < this.maxPersons; i++)
         {
             let objects = frameData.objects[ i ];
@@ -119,23 +129,28 @@ export default class SceneManager
             switch (name)
             {
                 case "point":
-                    person.centerSphere && (person.centerSphere.visible = !person.centerSphere.visible);
+                    this.showPoint = !this.showPoint;
+                    person.centerSphere && (person.centerSphere.visible = this.showPoint);
                     break;
 
                 case "path":
-                    person.pathLine && (person.pathLine.visible = !person.pathLine.visible);
+                    this.showPath = !this.showPath;
+                    person.pathLine && (person.pathLine.visible = this.showPath);
                     break;
 
                 case "bounds":
-                    person.boundsBoxParent.visible = !person.boundsBoxParent.visible;
+                    this.showBounds = !this.showBounds;
+                    person.boundsBoxParent && (person.boundsBoxParent.visible = this.showBounds);
                     break;
 
                 case "traceId":
-                    person.traceIdText && (person.traceIdText.visible = !person.traceIdText.visible);
+                    this.showTraceId = !this.showTraceId;
+                    person.traceIdText && (person.traceIdText.visible = this.showTraceId);
                     break;
 
                 case "pose":
-                    person.poseData.mesh && (person.poseData.mesh.visible = !person.poseData.mesh.visible);
+                    this.showPose = !this.showPose;
+                    person.poseData.mesh && (person.poseData.mesh.visible = this.showPose);
                     break;
 
             }
