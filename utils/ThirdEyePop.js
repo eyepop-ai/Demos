@@ -4,12 +4,14 @@ import { GUI } from 'https://unpkg.com/dat.gui/build/dat.gui.module.js';
 import RenderManager from './managers/RenderManager.js';
 import PredictionDataManager from './managers/PredictionDataManager.js';
 import SceneManager from './managers/SceneManager.js';
+import AnimationManager from './managers/AnimationManager.js';
+import CameraControls from 'https://unpkg.com/camera-controls/dist/camera-controls.module.js';
+
+CameraControls.install({ THREE: THREE });
 
 
 // TODO: 
 //   - Add workflow for dispose and reset of objects
-//   - Improve buffering of video to match prediction data
-//   - expose drawing toggles as parameters and API
 
 
 export default class ThirdEyePop
@@ -19,32 +21,44 @@ export default class ThirdEyePop
         canvas = null,
         videoUrl = null,
         frameData = [],
+        maxFrames = 1000,
         drawParams: {
+            bgCanvas = null,
             showHeatmap = true,
             showPoint = true,
             showPath = true,
             showBounds = true,
             showTraceId = true,
             showPose = true,
+            showFace = true,
+            showHands = true,
         }
     })
     {
         console.log("ThirdEyePop constructor");
-        console.log("DEBUG: ", DEBUG);
         console.log("canvas: ", canvas);
 
+        // ///////////////////// VARIABLES /////////////////////////////
         let scope = this;
         let renderManager = null;
         let predictionDataManager = null;
         let sceneManager = null;
+        let animationManager = null;
+        let cameraControls = null;
 
-        let stats = null;
-        let canvasNeedsReset = false
+        // render automatically, or manually
         let autoRender = true;
 
+        // flag to reset the canvas when the window size changes
+        let canvasNeedsReset = false
+
+        // stats for debugging
+        let stats = null;
+
+        let isStreamingVideo = videoUrl == "webcam";
         let videoTime = 0;
         let pause = false;
-
+        // ///////////////////// END VARIABLES /////////////////////////////
 
         window.DEBUG_thirdEyePop = {
             pathDistanceThreshold: 0.1,
@@ -55,30 +69,33 @@ export default class ThirdEyePop
         async function setup()
         {
 
-
-            initManagers();
+            await initManagers();
             initEventListeners();
 
             DEBUG && setupDebuggingTools();
             autoRender && render();
 
-
         }
 
-        function initManagers()
+        async function initManagers()
         {
 
             renderManager = new RenderManager(
                 canvas,
                 videoUrl,
+                isStreamingVideo,
                 {
                     showHeatmap: showHeatmap,
+                    bgCanvas: bgCanvas,
                 }
             );
 
-            predictionDataManager = new PredictionDataManager(frameData);
+            predictionDataManager = new PredictionDataManager(frameData, maxFrames);
 
-            sceneManager = new SceneManager(renderManager.getScene(),
+            await renderManager.isLoadedPromise();
+
+            sceneManager = new SceneManager(
+                renderManager.getScene(),
                 renderManager.getCamera(),
                 renderManager.getDimensions(),
                 {
@@ -86,11 +103,42 @@ export default class ThirdEyePop
                     showPath,
                     showBounds,
                     showPose,
-                    showTraceId
+                    showFace,
+                    showTraceId,
+                    showHands,
                 });
 
-        }
+            animationManager = new AnimationManager(renderManager.getScene());
 
+            // loop in interval until renderManager is ready
+            const interval = setInterval(() =>
+            {
+                console.log("renderManager.isLoaded(): ", renderManager.isLoaded());
+                if (renderManager.isLoaded())
+                {
+                    cameraControls = new CameraControls(
+                        renderManager.getCamera(),
+                        renderManager.renderer.domElement
+                    );
+
+                    cameraControls.saveState();
+
+                    clearInterval(interval);
+                    window.addEventListener('keydown', event =>
+                    {
+                        if (event.key == "Escape")
+                        {
+                            cameraControls.reset(true);
+                        } else if (event.key == "f")
+                        {
+                            renderManager.toggleFullscreen();
+                        }
+                    });
+                }
+            }, 100);
+
+
+        }
 
         function initEventListeners()
         {
@@ -187,9 +235,12 @@ export default class ThirdEyePop
             var playObj = { Play: function () { pause = false; renderManager.playVideo(); renderManager.render(); } };
             var pauseObj = { Pause: function () { pause = true; renderManager.pauseVideo(); renderManager.render(); } };
 
-            gui.add(renderManager.video, 'currentTime', 0, renderManager.video.duration).name('Video Time').listen();
-            gui.add(playObj, 'Play');
-            gui.add(pauseObj, 'Pause');
+            if (!isStreamingVideo && videoUrl)
+            {
+                gui.add(renderManager.video, 'currentTime', 0, renderManager.video.duration).name('Video Time').listen();
+                gui.add(playObj, 'Play');
+                gui.add(pauseObj, 'Pause');
+            }
 
             gui.add(window.DEBUG_thirdEyePop, 'pathDistanceThreshold', 0, 1)
                 .name('Path Distance Threshold')
@@ -220,11 +271,18 @@ export default class ThirdEyePop
             gui.add(sceneManager, 'showPose')
                 .name('Show Pose')
                 .onChange(function (value) { sceneManager.toggleVisibility('pose'); renderManager.render(); });
-
+            gui.add(sceneManager, 'showFace')
+                .name('Show Face')
+                .onChange(function (value) { sceneManager.toggleVisibility('face'); renderManager.render(); });
+            gui.add(sceneManager, 'showHands')
+                .name('Show Hands')
+                .onChange(function (value) { sceneManager.toggleVisibility('hands'); renderManager.render(); });
         }
 
         function bufferVideo()
         {
+            if (!videoUrl) return;
+            if (isStreamingVideo) return;
             // If the latest prediction datais more than 1 seconds away from the current frame
             // or if the last frame videoTime is greater than the video videoTime
             // then we need to pause and wait for more prediction frames
@@ -270,22 +328,26 @@ export default class ThirdEyePop
         // Main loop
         function render()
         {
-
             if (pause || !predictionDataManager.hasFrameData())
             {
+                renderManager.render();
                 autoRender && requestAnimationFrame(render);
                 return;
             }
 
             DEBUG && stats.begin();
 
+
             videoTime = renderManager.getVideoTime();
 
             // This is where we handle the rendering, including video playback
             renderManager.render();
 
-            // This is a simple data frame manager
-            predictionDataManager.setCurrentFrame(videoTime);
+            if (!predictionDataManager.setCurrentFrame(videoTime))
+            {
+                autoRender && requestAnimationFrame(render);
+                return;
+            }
 
             // This is where we draw and manage meshes
             sceneManager.update(
@@ -297,11 +359,15 @@ export default class ThirdEyePop
                 sceneManager.getAllPathPoints()
             );
 
+            cameraControls && cameraControls.update(.01);
+
             // We buffer video if we need more prediction frames
             bufferVideo();
 
             // We also reset the canvas when window size changes
             resetCanvas();
+
+            scope.onUpdate && scope.onUpdate();
 
             DEBUG && stats.end();
 
@@ -324,6 +390,26 @@ export default class ThirdEyePop
             return predictionDataManager.getFrameData();
         }
 
+        function getScene()
+        {
+            return sceneManager.getScene();
+        }
+
+        function getCamera()
+        {
+            return renderManager.getCamera();
+        }
+
+
+        function getRenderer()
+        {
+            return renderManager.renderer;
+        }
+
+        function getActivePeople()
+        {
+            return sceneManager.activePeople;
+        }
 
         // //////////////////// end BODY /////////////////////////////
 
@@ -336,6 +422,11 @@ export default class ThirdEyePop
         scope.pushFrameData = pushFrameData;
         scope.popFrameData = popFrameData;
         scope.getFrameData = getFrameData;
+        scope.onUpdate = null;
+        scope.getScene = getScene;
+        scope.getCamera = getCamera;
+        scope.getRenderer = getRenderer;
+        scope.getActivePeople = getActivePeople;
 
         // //////////////////// end API /////////////////////////////
 

@@ -15,6 +15,8 @@ export default class People
         this.bottomRightPoint = new THREE.Vector3();
 
         this.poseData = { points: {}, edges: [], mesh: null, geometry: null }
+        this.faceData = { points: [], mesh: null, geometry: null };
+        this.handData = { leftHandPoints: [], rightHandPoints: [], points: [], mesh: null, geometry: null };
 
         this.path = [];
         this.pathLine = null;

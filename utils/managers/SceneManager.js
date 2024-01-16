@@ -8,6 +8,11 @@ import { TextGeometry } from 'https://unpkg.com/three/examples/jsm/geometries/Te
 import { FontLoader } from 'https://unpkg.com/three/examples/jsm/loaders/FontLoader.js';
 import PeopleManager from './PeopleManager.js';
 import { PeopleState } from '../data/Constants.js';
+import { GLTFLoader } from 'https://unpkg.com/three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'https://unpkg.com/three/examples/jsm/loaders/DRACOLoader.js';
+import { RGBELoader } from 'https://unpkg.com/three/examples/jsm/loaders/RGBELoader.js';
+import { EXRLoader } from 'https://unpkg.com/three/examples/jsm/loaders/EXRLoader.js';
+
 
 
 export default class SceneManager
@@ -22,7 +27,9 @@ export default class SceneManager
             showPath: false,
             showBounds: false,
             showPose: false,
-            showTraceId: false
+            showFace: false,
+            showTraceId: false,
+            showHands: true,
         }
     )
     {
@@ -36,6 +43,8 @@ export default class SceneManager
         this.showPath = drawParams.showPath;
         this.showBounds = drawParams.showBounds;
         this.showPose = drawParams.showPose;
+        this.showFace = drawParams.showFace;
+        this.showHands = drawParams.showHands;
         this.showTraceId = drawParams.showTraceId;
 
         this.font = null;
@@ -47,28 +56,80 @@ export default class SceneManager
         });
 
         this.textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-
-        // #FFFFFF - white
-        // #30A7D7 - light blue (inset corner) (0.188235, 0.654902, 0.843137)
-        // #2674C4 - dark blue (background) (0.14902, 0.45490, 0.76863)
-        // #1D47B3 - darker blue (outset corner) (0.11373, 0.27843, 0.70196)
-        // #000000 - black
-        this.boxMaterial = new THREE.MeshBasicMaterial({ color: 0x30A7D7, transparent: true, opacity: 0.25, side: THREE.DoubleSide });
         this.boxLineMaterial = new THREE.LineBasicMaterial({ color: 0x1d47b3 });
-
-        this.boxMaterial.blending = THREE.CustomBlending;
-        this.boxMaterial.blendEquation = THREE.AddEquation; //default 
-        this.boxMaterial.blendSrc = THREE.OneFactor;  //default 
 
         this.pointMaterial = new THREE.MeshBasicMaterial({ color: 0x1d47b3 });
         this.pathMaterial = new THREE.LineBasicMaterial({ vertexColors: true, linewidth: 100, });
         this.poseMaterial = new THREE.LineBasicMaterial({ vertexColors: true, linewidth: 100, });
+        this.faceMaterial = new THREE.PointsMaterial({ vertexColors: true, size: 3 });
+        this.handMaterial = new THREE.PointsMaterial({ vertexColors: true, size: 10 });
 
         this.boxQueue = [];
 
         this.maxPersons = 100;
         this.personBoxGroup = new Array(this.maxPersons).fill(null);
         this.personPathGeometry = new Array(this.maxPersons).fill(null);
+
+
+        const dracoLoader = new DRACOLoader()
+        // TODO: add a proper decoder library path
+        dracoLoader.setDecoderPath(
+            'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/jsm/libs/draco/'
+        )
+        this.gltfLoader = new GLTFLoader()
+        this.gltfLoader.setDRACOLoader(dracoLoader)
+
+        this.dog = {
+            model: null,
+            clips: []
+        }
+
+        this.person = {
+            model: null,
+            clips: []
+        }
+
+        this.scene.add(new THREE.AmbientLight(0x404040, 20)); // soft white light
+        // this.loadGlbModel('./models/doggo.glb', this.dog, Math.PI, 0.25).then((result) =>
+        // {
+        //     result.position.y = -1;
+        // });
+
+        // this.loadGlbModel('./models/person.glb', this.person, Math.PI, 2).then((result) =>
+        // {
+        //     this.person.model.position.y = -2.5;
+        //     this.person.model.position.x = -1;
+        // });
+
+        // this.animationData = [ this.dog ];
+    }
+
+    getScene()
+    {
+        return this.scene;
+    }
+
+    async loadGlbModel(path, parent, rotationY = Math.PI, scale = 0.25)
+    {
+        return new Promise(resolve =>
+        {
+            return this.gltfLoader.load(path, (gltf) =>
+            {
+                // rotate the scene 180 degrees on the z
+                gltf.scene.rotation.y = rotationY;
+
+                gltf.scene.scale.set(scale, scale * 2, scale);
+                this.scene.add(gltf.scene);
+                parent.model = gltf.scene;
+
+                if (!gltf.clips) return resolve(gltf.scene);
+                // play animation clip named play_dead
+                gltf.clips.forEach((clip) =>
+                {
+                    parent.clips.push({ name: clip.name, clip });
+                });
+            });
+        });
     }
 
     getAllPathPoints()
@@ -93,11 +154,12 @@ export default class SceneManager
                 person.index = this.activePeople.length;
                 this.activePeople.push(person);
 
-                this.showPoint && this.drawPoint(person);
                 this.showTraceId && this.drawTraceIdText(person);
                 this.showPath && this.drawPath(person);
                 this.showBounds && this.drawBoundingBox(person);
                 this.showPose && this.drawPose(person);
+                this.showFace && this.drawFace(person);
+                this.showHands && this.drawHands(person);
             }
         }
 
@@ -113,11 +175,12 @@ export default class SceneManager
             const person = previousActivePeople[ i ];
             const personOnScreen = this.activePeople.includes(person);
 
-            this.showPoint && person.centerSphere && (person.centerSphere.visible = personOnScreen);
             this.showPath && person.pathLine && (person.pathLine.visible = personOnScreen);
             this.showTraceId && person.traceIdText && (person.traceIdText.visible = personOnScreen);
             this.showBounds && person.boundsBoxParent && (person.boundsBoxParent.visible = personOnScreen);
             this.showPose && person.poseData.mesh && (person.poseData.mesh.visible = personOnScreen);
+            this.showFace && person.faceData.mesh && (person.faceData.mesh.visible = personOnScreen);
+            this.showHands && person.handData.mesh && (person.handData.mesh.visible = personOnScreen);
         }
     }
 
@@ -129,28 +192,30 @@ export default class SceneManager
             switch (name)
             {
                 case "point":
-                    this.showPoint = !this.showPoint;
-                    person.centerSphere && (person.centerSphere.visible = this.showPoint);
                     break;
 
                 case "path":
-                    this.showPath = !this.showPath;
                     person.pathLine && (person.pathLine.visible = this.showPath);
                     break;
 
                 case "bounds":
-                    this.showBounds = !this.showBounds;
                     person.boundsBoxParent && (person.boundsBoxParent.visible = this.showBounds);
                     break;
 
                 case "traceId":
-                    this.showTraceId = !this.showTraceId;
                     person.traceIdText && (person.traceIdText.visible = this.showTraceId);
                     break;
 
                 case "pose":
-                    this.showPose = !this.showPose;
                     person.poseData.mesh && (person.poseData.mesh.visible = this.showPose);
+                    break;
+
+                case "face":
+                    person.faceData.mesh && (person.faceData.mesh.visible = this.showFace);
+                    break;
+
+                case "hands":
+                    person.handData.mesh && (person.handData.mesh.visible = this.showHands);
                     break;
 
             }
@@ -252,8 +317,6 @@ export default class SceneManager
     // TODO: Draw a sexier bounding box with a sprite or shader
     drawBoundingBox(person)
     {
-        if (!this.peopleManager.edgesLoaded) return;
-
         const bounds = person.bounds;
         if (!bounds) return;
 
@@ -262,17 +325,13 @@ export default class SceneManager
         let width = person.boundsWidth;
         let height = person.boundsHeight;
         let boundsGeometry = person.boundsGeometry;
-        let edgeObjects = person.edgeObjects;
-        let topLeftEdgeMesh = null;
-        let topRightEdgeMesh = null;
-        let bottomLeftEdgeMesh = null;
-        let bottomRightEdgeMesh = null;
 
+        let boundsPlaneMesh = null;
 
         if (!boundsBoxParent)
         {
             boundsGeometry = new THREE.PlaneGeometry(width, height);
-            const boundsPlaneMesh = new THREE.Mesh(boundsGeometry, this.boxMaterial);
+            boundsPlaneMesh = new THREE.Mesh(boundsGeometry, this.GetBoundingBoxMaterial());
             boundsPlaneMesh.name = "bounds";
             this.personBoxGroup[ person.index ] = new THREE.Group();
             this.personBoxGroup[ person.index ].name = "bounds";
@@ -280,35 +339,19 @@ export default class SceneManager
             boundsBoxParent = this.personBoxGroup[ person.index ];
             boundsBoxParent.add(boundsPlaneMesh);
 
-            // next we add the four edgeObject corners to the corners of the boundsPlaneMesh so that we can use them to draw the inset and outset corners
-            edgeObjects = this.peopleManager.edgeObjects;
-
-            // create a buffer geometry for the top left vertex, at .01 units in size
-            // and add it to a LineSegments object to be added to the parent
-            // const topLeftGeometry = new THREE.BufferGeometry().setFromPoints([ new THREE.Vector3(person.bounds.min.x, person.bounds.min.y, 0), new THREE.Vector3(person.bounds.min.x + width / 4, person.bounds.min.y, 0) ]);
-            // topLeftEdgeMesh = new THREE.LineSegments(topLeftGeometry, this.boxLineMaterial);
-
-            topLeftEdgeMesh = edgeObjects.topLeft.clone();
-            topRightEdgeMesh = edgeObjects.topRight.clone();
-            bottomLeftEdgeMesh = edgeObjects.bottomLeft.clone();
-            bottomRightEdgeMesh = edgeObjects.bottomRight.clone();
-
-            // add the edges of the bounds to the parent
-            boundsBoxParent.add(topLeftEdgeMesh);
-            boundsBoxParent.add(topRightEdgeMesh);
-            boundsBoxParent.add(bottomLeftEdgeMesh);
-            boundsBoxParent.add(bottomRightEdgeMesh);
-
             this.scene.add(boundsBoxParent);
             person.boundsGeometry = boundsGeometry;
             person.boundsBoxParent = boundsBoxParent;
         } else
         {
-            topLeftEdgeMesh = boundsBoxParent.children[ 1 ];
-            topRightEdgeMesh = boundsBoxParent.children[ 2 ];
-            bottomLeftEdgeMesh = boundsBoxParent.children[ 3 ];
-            bottomRightEdgeMesh = boundsBoxParent.children[ 4 ];
+            boundsPlaneMesh = boundsBoxParent.children[ 0 ];
         }
+
+
+        boundsPlaneMesh.material.uniforms.uDimensions.value = [ width, height ];
+        boundsPlaneMesh.material.uniforms.uShowCenter.value = this.showPoint;
+
+        if (!boundsGeometry) return;
 
         let verticesOfBox = [
             bounds.min.x, bounds.min.y, 0,
@@ -320,34 +363,7 @@ export default class SceneManager
         boundsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(verticesOfBox, 3));
         // set the boundingGeometry to the new bounds
         boundsGeometry.needsUpdate = true;
-
-
-        let scaleFactor = width / 2;
-
-        // move the edges to the corners of the bounds
-        topLeftEdgeMesh.position.x = bounds.min.x;
-        topLeftEdgeMesh.position.y = bounds.min.y;
-        topLeftEdgeMesh.scale.x = scaleFactor;
-        topLeftEdgeMesh.scale.y = scaleFactor;
-        topLeftEdgeMesh.scale.z = scaleFactor;
-
-        topRightEdgeMesh.position.x = bounds.max.x;
-        topRightEdgeMesh.position.y = bounds.min.y;
-        topRightEdgeMesh.scale.x = scaleFactor;
-        topRightEdgeMesh.scale.y = scaleFactor;
-        topRightEdgeMesh.scale.z = scaleFactor;
-
-        bottomLeftEdgeMesh.position.x = bounds.min.x;
-        bottomLeftEdgeMesh.position.y = bounds.max.y;
-        bottomLeftEdgeMesh.scale.x = scaleFactor;
-        bottomLeftEdgeMesh.scale.y = scaleFactor;
-        bottomLeftEdgeMesh.scale.z = scaleFactor;
-
-        bottomRightEdgeMesh.position.x = bounds.max.x;
-        bottomRightEdgeMesh.position.y = bounds.max.y;
-        bottomRightEdgeMesh.scale.x = scaleFactor;
-        bottomRightEdgeMesh.scale.y = scaleFactor;
-        bottomRightEdgeMesh.scale.z = scaleFactor;
+        boundsGeometry.computeBoundingBox();
 
     }
 
@@ -362,61 +378,268 @@ export default class SceneManager
         if (!poseMesh)
         {
             pose.mesh = new THREE.LineSegments(pose.geometry, this.poseMaterial);
-
-            poseMesh = pose.mesh;
             this.scene.add(pose.mesh);
+            poseMesh = pose.mesh;
         } else
         {
             // Get the new positions
             let newPositions = pose.geometry.attributes.position.array;
 
-            // If the new geometry has fewer vertices, fill the remaining space with duplicates of the last vertex
-            if (newPositions.length < poseMesh.geometry.attributes.position.count * 3)
+            poseMesh.geometry.setAttribute('position', new THREE.Float32BufferAttribute(newPositions, 3));
+
+            let furthesLeftPoint = 9999;
+            let furthestRightPoint = 0;
+
+            poseMesh.geometry.attributes.position.array.forEach((position, index) =>
             {
-                let lastVertex = newPositions.slice(-3);
-                while (newPositions.length < poseMesh.geometry.attributes.position.count * 3)
+                // get the x vertex position from the geometry array
+                if (index % 3 !== 0) return;
+
+                const xPosition = poseMesh.geometry.attributes.position.array[ index ];
+
+                if (xPosition < furthesLeftPoint)
                 {
-                    newPositions = newPositions.concat(lastVertex);
+                    furthesLeftPoint = xPosition;
                 }
-            }
 
-            // If the new geometry has more vertices, slice it to the correct length
-            if (newPositions.length > poseMesh.geometry.attributes.position.count * 3)
-            {
-                newPositions = newPositions.slice(0, poseMesh.geometry.attributes.position.count * 3);
-            }
-
-            // Update the positions of the vertices
-            poseMesh.geometry.attributes.position.array = new Float32Array(newPositions);
-            poseMesh.geometry.attributes.position.needsUpdate = true;
+                if (xPosition > furthestRightPoint)
+                {
+                    furthestRightPoint = xPosition;
+                }
+            });
 
             // Update the colors
             const colors = [];
             pose.geometry.attributes.position.array.forEach((position, index) =>
             {
+                // create a gradient effect from left to right points from blue to green
                 const color = new THREE.Color();
                 // get the x vertex position from the geometry array
                 if (index % 3 !== 0) return;
 
-                const xPosition = pose.geometry.attributes.position.array[ index ];
+                const xPosition = poseMesh.geometry.attributes.position.array[ index ];
 
-                const onLeft = xPosition < person.position.x;
-                const red = onLeft ? 1 : 0;
+                // a gradient from blue to green based on the x position of the vertex
+                const red = (xPosition - furthesLeftPoint) / (furthestRightPoint - furthesLeftPoint);
                 const green = 1 - red;
 
                 color.setRGB(red, green, 0);
-
                 colors.push(color.r, color.g, color.b);
             });
 
             poseMesh.geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-            // set posemesh needsUpdate to true
-            poseMesh.geometry.attributes.color.needsUpdate = true;
+
+            poseMesh.geometry.computeBoundingBox();
         }
-
-
     }
 
+    drawFace(person)
+    {
+        const face = person.faceData;
+        if (!face.geometry) return;
+
+        let faceMesh = face.mesh;
+
+        if (!faceMesh)
+        {
+            face.mesh = new THREE.Points(face.geometry, this.faceMaterial);
+
+            faceMesh = face.mesh;
+            this.scene.add(face.mesh);
+        } else
+        {
+            // Get the new positions
+            let newPositions = face.geometry.attributes.position.array;
+
+            // Update the positions of the vertices
+            faceMesh.geometry.setAttribute('position', new THREE.Float32BufferAttribute(newPositions, 3));
+
+            let furthesLeftPoint = 9999;
+            let furthestRightPoint = 0;
+
+            face.geometry.attributes.position.array.forEach((position, index) =>
+            {
+                // get the x vertex position from the geometry array
+                if (index % 3 !== 0) return;
+
+                const xPosition = face.geometry.attributes.position.array[ index ];
+
+                if (xPosition < furthesLeftPoint)
+                {
+                    furthesLeftPoint = xPosition;
+                }
+
+                if (xPosition > furthestRightPoint)
+                {
+                    furthestRightPoint = xPosition;
+                }
+            });
+
+            // Update the colors
+            const colors = [];
+            face.geometry.attributes.position.array.forEach((position, index) =>
+            {
+                // create a gradient effect from left to right points from blue to green
+                const color = new THREE.Color();
+                // get the x vertex position from the geometry array
+                if (index % 3 !== 0) return;
+
+                const xPosition = face.geometry.attributes.position.array[ index ];
+
+                // a gradient from blue to green based on the x position of the vertex
+                const blue = (xPosition - furthesLeftPoint) / (furthestRightPoint - furthesLeftPoint);
+                const green = 1 - blue;
+
+                color.setRGB(0, green, blue * 20);
+                colors.push(color.r, color.g, color.b);
+
+            });
+
+            faceMesh.geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            // set posemesh needsUpdate to true
+            faceMesh.geometry.computeBoundingBox();
+        }
+    }
+
+    drawHands(person)
+    {
+        const hand = person.handData;
+        if (!hand.geometry) return;
+
+        let handMesh = hand.mesh;
+
+        if (!handMesh)
+        {
+            handMesh = new THREE.Points(hand.geometry, this.handMaterial);
+            this.scene.add(handMesh);
+            hand.mesh = handMesh;
+        } else
+        {
+            // Get the new positions
+            let newPositions = hand.geometry.attributes.position.array;
+
+            handMesh.geometry.setAttribute('position', new THREE.Float32BufferAttribute(newPositions, 3));
+
+            let furthesLeftPoint = 9999;
+            let furthestRightPoint = 0;
+
+            handMesh.geometry.attributes.position.array.forEach((position, index) =>
+            {
+                // get the x vertex position from the geometry array
+                if (index % 3 !== 0) return;
+
+                const xPosition = handMesh.geometry.attributes.position.array[ index ];
+
+                if (xPosition < furthesLeftPoint)
+                {
+                    furthesLeftPoint = xPosition;
+                }
+
+                if (xPosition > furthestRightPoint)
+                {
+                    furthestRightPoint = xPosition;
+                }
+            });
+
+            // Update the colors
+            const colors = [];
+            handMesh.geometry.attributes.position.array.forEach((position, index) =>
+            {
+                // create a gradient effect from left to right points from blue to green
+                const color = new THREE.Color();
+                // get the x vertex position from the geometry array
+                if (index % 3 !== 0) return;
+
+                const xPosition = handMesh.geometry.attributes.position.array[ index ];
+
+                // a gradient from blue to green based on the x position of the vertex
+                const blue = (xPosition - furthesLeftPoint) / (furthestRightPoint - furthesLeftPoint);
+                const green = 1 - blue;
+
+                color.setRGB(0, green, blue);
+                colors.push(color.r, color.g, color.b);
+            });
+
+            handMesh.geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            handMesh.geometry.computeBoundingBox();
+        }
+    }
+
+    GetBoundingBoxMaterial() 
+    {
+        return new THREE.ShaderMaterial({
+            uniforms: {
+                uCornerLineWidth: { value: 1.0 },
+                uCornerLineLength: { value: 0.2 },
+                uShowCenter: { value: this.showPoint },
+                uCenterRadius: { value: 2.0 },
+                uInsetPadding: { value: 8.0 },
+                uDimensions: { value: [] },
+                uScreenResolution: { value: [ this.dimensions.width, this.dimensions.height ] }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = vec2(1.0 - uv.x, uv.y);
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+                }
+            `,
+            fragmentShader: `
+                uniform vec2 uDimensions; // [-1, 1]
+                uniform vec2 uScreenResolution; // pixels
+                varying vec2 vUv;
+
+                // BOUNDING BOX
+                const vec4 background = vec4(0.14902, 0.45490, 0.76863, 0.5);
+
+                // CORNERS
+                uniform float uCornerLineWidth; // pixels
+                uniform float uInsetPadding; // padding between corner and inset
+                uniform float uCornerLineLength; // percent width
+                const vec4 outsetCorner = vec4(0.11373, 0.27843, 0.70196, 1);
+                const vec4 insetCorner = vec4(0.588235, 0.854902, 0.973137, 1);
+
+                // CENTER
+                uniform bool uShowCenter;
+                uniform float uCenterRadius; // percent width
+                const vec4 centerColor = vec4(0.40373, 0.70843, 0.99196, 1);
+
+                void main() {
+                    vec4 color = background;
+                    vec2 res = uScreenResolution * 0.5 * uDimensions;
+
+                    vec2 lineWidth = vec2(uCornerLineWidth) / res;
+                    vec2 lineLength = vec2(uCornerLineLength, uCornerLineLength * res.x / res.y);
+
+                    if (((vUv.x < lineLength.x || vUv.x > 1.0 - lineLength.x) && (vUv.y <= lineWidth.y || vUv.y >= 1.0 - lineWidth.y))
+                        || ((vUv.y < lineLength.y || vUv.y > 1.0 - lineLength.y) && (vUv.x <= lineWidth.x || vUv.x >= 1.0 - lineWidth.x))) {
+                        color = outsetCorner;
+                    }
+
+                    vec2 inset = uInsetPadding / res;
+                    vec2 insetUV = vUv + inset * vec2(vUv.x < 0.5 ? -1 : 1, vUv.y < 0.5 ? -1 : 1);
+                    vec2 insetLength = lineLength - inset;
+                    vec2 insetWidth = lineWidth;
+                    if ((((0.0 < insetUV.x && insetUV.x < insetLength.x) || (1.0 > insetUV.x && insetUV.x > 1.0 - insetLength.x)) && ((0.0 <= insetUV.y && insetUV.y <= insetWidth.y) || (1.0 >= insetUV.y && insetUV.y >= 1.0 - insetWidth.y)))
+                        || (((0.0 < insetUV.y && insetUV.y < insetLength.y) || (1.0 > insetUV.y && insetUV.y > 1.0 - insetLength.y)) && ((0.0 <= insetUV.x && insetUV.x <= insetWidth.x) || (1.0 >= insetUV.x && insetUV.x >= 1.0 - insetWidth.x)))) {
+                        color = insetCorner;
+                    }
+
+                    if (uShowCenter) {
+                        vec2 centerUV = vec2(vUv.x - 0.5, (vUv.y - 0.5) * res.y / res.x);
+                        color = mix(centerColor, color, pow(smoothstep(0.0, uCenterRadius / res.x, length(centerUV)), 6.0));
+                    }
+
+                    gl_FragColor = color;
+                }
+            `,
+            transparent: true,
+            depthTest: true,
+            depthWrite: true,
+            side: THREE.DoubleSide,
+        });
+    }
 
 }
 

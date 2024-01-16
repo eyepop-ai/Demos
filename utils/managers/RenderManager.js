@@ -11,8 +11,10 @@ export default class RenderManager
     constructor(
         canvas,
         videoUrl,
+        isStreamingVideo,
         drawParams = {
             showHeatmap: false,
+            bgCanvas: null,
         })
     {
         THREE.Cache.enabled = true
@@ -37,8 +39,8 @@ export default class RenderManager
             console.error(' ..... Canvas not found. Make sure this element is valid:, ', canvas)
         }
 
-        this.width = this.canvas.clientWidth
-        this.height = this.canvas.clientHeight
+        this.width = 0;
+        this.height = 0;
 
         this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1);
         // Adjust the camera's frustum planes
@@ -56,11 +58,98 @@ export default class RenderManager
         this.scene = new THREE.Scene();
         this.video = null;
         this.videoTexture = null;
+        this.isReady = false;
 
         this.gridSpacesX = 25.0;
         this.gridSpacesY = 25.0;
+        this.testMaterial = null;
 
-        this.setupVideo(videoUrl);
+        this.domElement = null;
+        this.fullScreen = false;
+
+        if (drawParams.bgCanvas)
+        {
+            // setup the background canvas, and use it as the video texture
+            this.bgCanvas = drawParams.bgCanvas;
+            this.videoTexture = new THREE.CanvasTexture(this.bgCanvas);
+            this.videoTexture.magFilter = THREE.NearestFilter;
+            this.videoTexture.minFilter = THREE.NearestFilter;
+
+            this.setupRenderer();
+            this.setupEffectComposer();
+            this.onWindowResized();
+            this.isReady = true;
+
+            return;
+        }
+
+        if (isStreamingVideo)
+        {
+            // setup the webcam
+            this.setupWebCam();
+        } else if (videoUrl)
+        {
+            // setup the video
+            this.setupVideo(videoUrl);
+        } else
+        {
+            // no video, just setup the renderer
+            this.setupRenderer();
+            this.setupEffectComposer();
+            this.onWindowResized();
+            this.isReady = true;
+        }
+
+    }
+
+    toggleFullscreen()
+    {
+        // toggle fullscreen
+        if (this.fullScreen)
+        {
+            this.domElement.style.position = '';
+            this.domElement.style.top = '';
+            this.domElement.style.left = '';
+            this.domElement.style.width = '';
+            this.domElement.style.height = '';
+
+            // if document is in fullscreen
+            if (document.fullscreenElement)
+            {
+                document.exitFullscreen();
+            }
+        } else
+        {
+            // make renderer canvas render fullscreen behind other dom elements
+            this.domElement.style.position = 'fixed';
+            this.domElement.style.top = 0;
+            this.domElement.style.left = 0;
+            this.domElement.style.width = '100%';
+            this.domElement.style.height = '100%';
+            this.domElement.style.zIndex = 9999;
+            this.domElement.requestFullscreen({ navigationUI: "hide" });
+        }
+        this.fullScreen = !this.fullScreen;
+    }
+
+    isLoadedPromise()
+    {
+        return new Promise((resolve, reject) =>
+        {
+            const interval = setInterval(() =>
+            {
+                if (this.isLoaded())
+                {
+                    clearInterval(interval);
+                    resolve();
+                }
+            }, 100);
+        });
+    }
+
+    isLoaded()
+    {
+        return this.isReady;
     }
 
     updateHeatmapPoints(points)
@@ -126,8 +215,10 @@ export default class RenderManager
 
         const scope = this;
 
+
         this.video.addEventListener('loadedmetadata', () =>
         {
+            scope.isReady = true;
             scope.videoTexture = new THREE.VideoTexture(scope.video);
             scope.videoTexture.crossOrigin = "Anonymous";
             scope.videoTexture.minFilter = THREE.LinearFilter;
@@ -135,29 +226,73 @@ export default class RenderManager
             scope.videoTexture.generateMipmaps = false;
             scope.videoTexture.flipY = true;
 
-
             scope.width = scope.video.videoWidth;
             scope.height = scope.video.videoHeight;
 
-            const planeGeometry = new THREE.PlaneGeometry(1, 1, 1, 1);
-            const plane = new THREE.Mesh(planeGeometry, new THREE.MeshBasicMaterial({ map: scope.videoTexture, side: THREE.DoubleSide }));
-            // this.scene.add(plane);
-
             scope.setupRenderer();
-            scope.setupPostEffects();
+            scope.setupEffectComposer();
             scope.onWindowResized();
         });
+    }
 
+    setupWebCam()
+    {
+        const scope = this;
+
+        this.video = document.getElementById('myLocalVideo');
+        this.video.playsInline = true;
+        this.video.crossOrigin = "Anonymous";
+        this.video.loop = true;
+        this.video.preload = "auto";
+        this.video.autoplay = true;
+        this.video.volume = 1;
+
+        const constraints = {
+            audio: false,
+            video: {
+                facingMode: "user",
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+            }
+        };
+
+
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(function (mediaStream)
+            {
+                scope.video.srcObject = mediaStream;
+                scope.video.onloadedmetadata = function (e)
+                {
+                    scope.isReady = true;
+                    scope.video.play();
+                    scope.videoTexture = new THREE.VideoTexture(scope.video);
+                    scope.videoTexture.crossOrigin = "Anonymous";
+                    scope.videoTexture.minFilter = THREE.LinearFilter;
+                    scope.videoTexture.magFilter = THREE.LinearFilter;
+                    // scope.videoTexture.generateMipmaps = false;
+                    // scope.videoTexture.flipY = true;
+
+                    scope.width = scope.video.videoWidth;
+                    scope.height = scope.video.videoHeight;
+
+                    scope.setupRenderer();
+                    scope.setupEffectComposer();
+                    scope.onWindowResized();
+                };
+            })
+            .catch(function (err) { console.log(err.name + ": " + err.message); }); // always check for errors at the end.
     }
 
     pauseVideo()
     {
+        if (!this.video) return;
         if (this.video.paused) return;
         this.video.pause();
     }
 
     playVideo()
     {
+        if (!this.video) return;
         if (!this.video.paused) return;
 
         this.video.play();
@@ -173,11 +308,11 @@ export default class RenderManager
             alpha: true,
         });
 
-        this.renderer.shadowMap.enabled = false;
+        this.renderer.shadowMap.enabled = true;
         this.renderer.toneMapping = THREE.NoToneMapping;
+        this.renderer.backgroundColor = new THREE.Color(0x000000);
 
         this.camera.layers.enableAll();
-        // Calculate the aspect ratio of the canvas
 
         // Adjust the camera's frustum planes
         this.camera.left = -1;
@@ -188,49 +323,77 @@ export default class RenderManager
         // Update the camera's projection matrix
         this.camera.updateProjectionMatrix();
 
-        const clientAspect = this.canvas.clientWidth / this.canvas.clientHeight;
-        const videoAspect = this.video.videoWidth / this.video.videoHeight;
+        // Calculate the aspect ratio of the canvas
 
-        this.width = this.canvas.clientWidth * (videoAspect / clientAspect);
-        this.height = this.canvas.clientHeight * (clientAspect / videoAspect);
+        if (this.video)
+        {
+            const clientAspect = this.canvas.clientWidth / this.canvas.clientHeight;
+            const videoAspect = this.video.videoWidth / this.video.videoHeight;
 
-        this.renderer.setSize(this.width, this.height)
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+            this.width = this.canvas.clientWidth * (videoAspect / clientAspect);
+            this.height = this.canvas.clientHeight * (clientAspect / videoAspect);
+        } else if (this.bgCanvas)
+        {
+            this.width = this.bgCanvas.clientWidth;
+            this.height = this.bgCanvas.clientHeight;
+        } else
+        {
+            this.width = this.canvas.clientWidth;
+            this.height = this.canvas.clientHeight;
+        }
+
+        this.renderer.setSize(this.width, this.height);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        this.domElement = this.renderer.domElement;
     }
 
     onWindowResized()
     {
+
+        if (this.video)
+        {
+            const clientAspect = this.canvas.clientWidth / this.canvas.clientHeight;
+            const videoAspect = this.video.videoWidth / this.video.videoHeight;
+
+            this.width = this.canvas.clientWidth * (videoAspect / clientAspect);
+            this.height = this.canvas.clientHeight * (clientAspect / videoAspect);
+
+            this.renderer.domElement.style.width = this.width;
+            this.renderer.domElement.style.height = this.height;
+            this.renderer.domElement.width = this.width;
+            this.renderer.domElement.height = this.height;
+        } else if (this.bgCanvas)
+        {
+            this.width = this.bgCanvas.clientWidth;
+            this.height = this.bgCanvas.clientHeight;
+        } else
+        {
+            this.width = this.canvas.clientWidth;
+            this.height = this.canvas.clientHeight;
+        }
+
         if (!this.renderer) return;
 
-        const clientAspect = this.canvas.clientWidth / this.canvas.clientHeight;
-        const videoAspect = this.video.videoWidth / this.video.videoHeight;
-
-        this.width = this.canvas.clientWidth * (videoAspect / clientAspect);
-        this.height = this.canvas.clientHeight * (clientAspect / videoAspect);
+        this.renderer.setSize(this.width, this.height);
 
         this.camera.aspect = this.width / this.height;
         this.camera.updateProjectionMatrix();
 
-        this.renderer.setSize(this.width, this.height);
-
-        this.renderer.domElement.style.width = this.width;
-        this.renderer.domElement.style.height = this.height;
-        this.renderer.domElement.width = this.width
-        this.renderer.domElement.height = this.height
-
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
-        this.finalComposer.setSize(this.width, this.height)
-        this.finalComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+        this.finalComposer.setSize(this.width, this.height);
+        this.finalComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     }
 
     reset()
     {
         this.onWindowResized();
+        this.setupEffectComposer();
     }
 
     // TODO: modularize post effects and split this into multiple functions
-    setupPostEffects()
+    setupEffectComposer()
     {
         const renderScene = new RenderPass(this.scene, this.camera);
         // A pass that copies the texture on the bufferCanvas to the main canvas
@@ -323,9 +486,16 @@ export default class RenderManager
         const newSMAAPass = new SMAAPass(this.width, this.height);
 
         this.finalComposer.addPass(renderScene);
-        this.finalComposer.addPass(this.copyPass);
 
-        this.finalComposer.addPass(this.heatmapPass);
+        if (this.videoTexture)
+        {
+            this.finalComposer.addPass(this.copyPass);
+        }
+
+        if (this.showHeatmap)
+        {
+            this.finalComposer.addPass(this.heatmapPass);
+        }
 
         this.finalComposer.addPass(newSMAAPass);
     }
@@ -347,17 +517,31 @@ export default class RenderManager
 
     render()
     {
+
+        if (this.bgCanvas)
+        {
+            this.videoTexture = new THREE.CanvasTexture(this.bgCanvas);
+        }
+
         if (this.videoTexture)
         {
             this.videoTexture.needsUpdate = true;
-            this.copyPass.uniforms.tDiffuse.value = this.videoTexture;
-            this.time = this.video.currentTime;
+            this.copyPass.uniforms.tImage.value = this.videoTexture;
+            this.copyPass.needsUpdate = true;
             this.heatmapPass.uniforms.uIntensity.value = this.heatmapIntensity;
             this.heatmapPass.uniforms.uShowHeatmap.value = this.showHeatmap;
         }
 
-        if (!this.finalComposer) return;
-        this.finalComposer.render();
+        if (this.video)
+        {
+            this.time = this.video.currentTime;
+        }
+
+        if (this.finalComposer)
+        {
+            this.finalComposer.render();
+        }
 
     }
+
 }

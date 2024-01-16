@@ -2,9 +2,10 @@
 
 export default class PredictionDataManager
 {
-    constructor(frameData = [])
+    constructor(frameData = [], maxFrames = 1000)
     {
         this.frameData = frameData;
+        this.maxFrames = maxFrames;
         this.currentFrame = null;
     }
 
@@ -15,6 +16,11 @@ export default class PredictionDataManager
 
     pushFrameData(frameData)
     {
+        if (this.frameData.length > this.maxFrames)
+        {
+            this.frameData.shift();
+        }
+
         this.frameData.push(frameData);
     }
 
@@ -53,12 +59,15 @@ export default class PredictionDataManager
         return this.currentFrame.seconds;
     }
 
+    // TODO: 
+    //  - make this more efficient
     setCurrentFrame(time)
     {
         let closestFrame = null;
         let closestTime = null;
         this.frameData.forEach((frame) =>
         {
+            if (!frame) return;
             let frameTime = frame.seconds;
             if (closestTime === null || Math.abs(frameTime - time) < Math.abs(closestTime - time))
             {
