@@ -32,6 +32,12 @@ export default class ThirdEyePop
             showPose = true,
             showFace = true,
             showHands = true,
+            showBloom = true,
+            bloomParams = {
+                strength: 1,
+                radius: .5,
+                threshold: 0.01,
+            }
         }
     })
     {
@@ -79,7 +85,6 @@ export default class ThirdEyePop
 
         async function initManagers()
         {
-
             renderManager = new RenderManager(
                 canvas,
                 videoUrl,
@@ -87,6 +92,8 @@ export default class ThirdEyePop
                 {
                     showHeatmap: showHeatmap,
                     bgCanvas: bgCanvas,
+                    showBloom,
+                    bloomParams,
                 }
             );
 
@@ -423,10 +430,12 @@ export default class ThirdEyePop
         scope.popFrameData = popFrameData;
         scope.getFrameData = getFrameData;
         scope.onUpdate = null;
+        scope.getControls = () => cameraControls;
         scope.getScene = getScene;
         scope.getCamera = getCamera;
         scope.getRenderer = getRenderer;
         scope.getActivePeople = getActivePeople;
+
 
         // //////////////////// end API /////////////////////////////
 

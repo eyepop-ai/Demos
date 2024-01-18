@@ -14,9 +14,9 @@
             <div class="container-fluid d-flex align-items-center justify-content-between">
                 <a href="1_upload_image.html"><img src="css/images/eyepop-logo.svg" alt="EyePop.ai Logo" class="p-2"
                         style="height: 70px;"></a>
-                <h1 class="p-2">3D Motion Capture</h1>
+                <h1 class="p-2">Laser Pointer</h1>
             </div>
-            <h6 id="popConfigName" class="mx-auto">test</h6>
+            <h6 id="popConfigName" class="mx-auto"></h6>
         </header>
 
         <div class="container d-flex" style="scale: .75; margin-top: -5rem;">
@@ -93,8 +93,14 @@
                             showTraceId: false,
                             showPose: false,
                             showHands: true,
-                            showFace: false,
+                            showFace: true,
                             // bgCanvas: canvas,
+                            showBloom: true,
+                            bloomParams: {
+                                strength: 1,
+                                radius: .5,
+                                threshold: .1
+                            }
                         }
                     });
 
@@ -106,9 +112,6 @@
                     });
 
                 config.Draw = [
-                    // { "Type": "pose", "Targets": [ "*" ] },
-                    // { "Type": "hand", "Targets": [ "*" ] },
-                    // { "Type": "face", "Targets": [ "*" ] },
                 ];
 
                 config.Input = { "name": "webcam_on_page" };
@@ -123,7 +126,7 @@
                 {
                     // load json file ./test_data/pose_capture_data.json and every 100ms push a frame to thirdEyePop
                     let frames = [];
-                    fetch("./test_data/pose_capture_data.json")
+                    fetch("./test_data/spider_man_capture.json")
                         .then(response => response.json())
                         .then(data => frames = data)
                         .then(() =>
@@ -132,7 +135,7 @@
                             setInterval(() =>
                             {
                                 thirdEyePop.pushFrameData(frames[ i++ % frames.length ]);
-                            }, 10);
+                            }, 1);
 
                         });
 

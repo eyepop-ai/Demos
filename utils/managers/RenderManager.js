@@ -15,6 +15,12 @@ export default class RenderManager
         drawParams = {
             showHeatmap: false,
             bgCanvas: null,
+            showBloom: true,
+            bloomParams: {
+                strength: 0.5,
+                radius: 0.5,
+                threshold: 0.5
+            },
         })
     {
         THREE.Cache.enabled = true
@@ -28,8 +34,11 @@ export default class RenderManager
         this.heatmapPoints = [];
         this.maxHeatmapPoints = 10000;
 
+        this.showBloom = drawParams.showBloom;
+        this.bloomParams = drawParams.bloomParams;
         this.showHeatmap = drawParams.showHeatmap;
-        this.heatmapIntensity = 0.5;
+
+        this.heatmapIntensity = 0.1;
 
         console.log("RenderManager constructor");
 
@@ -43,6 +52,7 @@ export default class RenderManager
         this.height = 0;
 
         this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1);
+
         // Adjust the camera's frustum planes
         this.camera.left = -1;
         this.camera.right = 1;
@@ -245,7 +255,6 @@ export default class RenderManager
         this.video.loop = true;
         this.video.preload = "auto";
         this.video.autoplay = true;
-        this.video.volume = 1;
 
         const constraints = {
             audio: false,
@@ -483,13 +492,20 @@ export default class RenderManager
         this.finalComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.finalComposer.setSize(this.width, this.height);
 
-        const newSMAAPass = new SMAAPass(this.width, this.height);
+        const newSMAAPass = new SMAAPass(this.width / 2, this.height / 2);
 
         this.finalComposer.addPass(renderScene);
 
         if (this.videoTexture)
         {
             this.finalComposer.addPass(this.copyPass);
+        }
+
+
+        if (this.showBloom)
+        {
+            const bloomPass = new UnrealBloomPass(new THREE.Vector2(this.width / 2, this.height / 2), this.bloomParams.intesity, this.bloomParams.radius, this.bloomParams.threshold);
+            this.finalComposer.addPass(bloomPass);
         }
 
         if (this.showHeatmap)

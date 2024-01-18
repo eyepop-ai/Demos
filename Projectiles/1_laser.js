@@ -1,5 +1,6 @@
 import * as THREE from 'https://unpkg.com/three/build/three.module.js';
 import { RGBELoader } from 'https://unpkg.com/three/examples/jsm/loaders/RGBELoader.js';
+import { EXRLoader } from 'https://unpkg.com/three/examples/jsm/loaders/EXRLoader.js';
 
 // import "https://unpkg.com/three-laser-pointer@1.2.3/dist/three-laser-pointer.min.js";
 
@@ -19,24 +20,28 @@ const createRandomBoxes = (scene, count) =>
     {
         const box = new THREE.Mesh(
             new THREE.BoxGeometry(0.1, 0.1, 0.1),
-            new THREE.MeshStandardMaterial({ color: getRandomBrightColor(), roughness: .01, transparent: true, opacity: .5 + (Math.random() * .5) })
+            new THREE.MeshStandardMaterial({ color: getRandomBrightColor(), roughness: .5, metalness: .8 })
         );
         let x = Math.random() * 2 - 1;
-        let y = Math.random() * 2 - 1;
-        let z = Math.random() * 2 - 1;
+        let y = (Math.random() * 2 - 1);
+        let z = (Math.random() * 2 - 1) - 1;
         box.position.set(x, y, z);
+        let scale = 3;
         box.rotation.set(Math.random(), Math.random(), Math.random());
-        box.scale.set(5 * Math.random(), 5 * Math.random(), 5 * Math.random());
+        box.scale.set(scale * Math.random(), scale * Math.random(), scale * Math.random());
+        box.castShadow = true;
+        box.receiveShadow = true;
+
         scene.add(box);
         boxes.push(box);
     }
 
-
-    const boundingBoxGeometry = new THREE.SphereGeometry(1.5, 16, 16);
-    const boundingBoxMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, side: THREE.BackSide });
-    const boundingBoxMesh = new THREE.Mesh(boundingBoxGeometry, boundingBoxMaterial);
-    scene.add(boundingBoxMesh);
-    boxes.push(boundingBoxMesh);
+    const boundsGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+    const boundingMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, side: THREE.BackSide });
+    const boundinMesh = new THREE.Mesh(boundsGeometry, boundingMaterial);
+    boundinMesh.name = "bounds";
+    scene.add(boundinMesh);
+    boxes.push(boundinMesh);
 
     return boxes;
 
@@ -44,57 +49,50 @@ const createRandomBoxes = (scene, count) =>
 
 const buildScene = (scene, renderer) =>
 {
-
     // add an hdr environment map to the scene
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     pmremGenerator.compileEquirectangularShader();
+    // Create a new EXRLoader instance
+    const exrLoader = new EXRLoader();
 
-    new RGBELoader().load(
-        './imgs/bg.hdr',
-        (envMap) =>
-        {
-            scene.environment = envMap;
+    // Load the EXR file
+    exrLoader.load('./imgs/bg.exr', function (texture)
+    {
 
-            const boxGeometry = new THREE.BoxGeometry(3, 3, 3); // adjust size to your needs
-            boxGeometry.scale(-1, 1, 1); // invert the geometry on the x-axis so that all of the faces point inward
-            const sphereMaterial = new THREE.MeshBasicMaterial({ map: envMap });
-            const bgCube = new THREE.Mesh(boxGeometry, sphereMaterial);
-            scene.add(bgCube);
+        texture.minFilter = THREE.NearestFilter;
+        texture.magFilter = THREE.NearestFilter;
 
-            pmremGenerator.dispose()
-        });
+        // Set the environment map to the loaded texture
+        scene.environment = pmremGenerator.fromEquirectangular(texture).texture;
+        // scene.background = texture;
+        pmremGenerator.dispose();
+    });
 
 
     let cylinderGeometry = new THREE.CylinderGeometry(.01, .01, 1, 8);
     cylinderGeometry.rotateX(Math.PI / 2);
     const cylinderL = new THREE.Mesh(
         cylinderGeometry,
-        new THREE.MeshStandardMaterial({ color: 0x00aaff, emissive: 0x00aaff, emissiveIntensity: 4, transparent: true, roughness: 0, opacity: 0.2 })
+        new THREE.MeshStandardMaterial({ color: 0x00aaff, emissive: 0x00aaff, emissiveIntensity: 5, transparent: true, roughness: 0.5, opacity: 0.1 })
     );
-
-    scene.add(cylinderL);
 
     cylinderGeometry = new THREE.CylinderGeometry(.01, .01, 1, 8);
     cylinderGeometry.rotateX(Math.PI / 2);
 
     const cylinderR = new THREE.Mesh(
         cylinderGeometry,
-        new THREE.MeshStandardMaterial({ color: 0x00aaff, emissive: 0x00aaff, emissiveIntensity: 4, transparent: true, roughness: 0, opacity: 0.2 })
+        new THREE.MeshStandardMaterial({ color: 0x00aaff, emissive: 0x00aaff, emissiveIntensity: 5, transparent: true, roughness: 0.5, opacity: 0.1 })
     );
-
-    scene.add(cylinderR);
 
     const pointLightL = new THREE.PointLight(0x00f0ff, 10, 1);
 
-    pointLightL.position.set(0, 0, 0);
+    pointLightL.position.set(-999, 0, 0);
     pointLightL.castShadow = true;
-    scene.add(pointLightL);
 
     const pointLightR = new THREE.PointLight(0x00f0ff, 10, 1);
 
-    pointLightR.position.set(0, 0, 0);
+    pointLightR.position.set(-999, 0, 0);
     pointLightR.castShadow = true;
-    scene.add(pointLightR);
 
     // load the blue_particle.jpg texture and make the black background transparent
     const textureLoader = new THREE.TextureLoader();
@@ -112,15 +110,38 @@ const buildScene = (scene, renderer) =>
         new THREE.PlaneGeometry(.5, .5),
         particleMaterial
     );
-    scene.add(particleL);
 
     const particleR = new THREE.Mesh(
         new THREE.PlaneGeometry(.5, .5),
         particleMaterial
     );
-    scene.add(particleR);
 
     return { cylinderL, cylinderR, pointLightL, pointLightR, particleL, particleR };
+}
+
+const hideInactiveElements = (lasers, activePeople) =>
+{
+    for (let i = 0; i < lasers.length; i++)
+    {
+        const laserData = lasers[ i ];
+        const key = Object.keys(lasers)[ i ];
+
+        if (!laserData) continue;
+
+        if (!activePeople.find(p => p.traceId === key))
+        {
+            laserData.cylinderL.visible = false;
+            laserData.cylinderR.visible = false;
+            laserData.particleL.visible = false;
+            laserData.particleR.visible = false;
+        } else
+        {
+            laserData.cylinderL.visible = true;
+            laserData.cylinderR.visible = true;
+            laserData.particleL.visible = true;
+            laserData.particleR.visible = true;
+        }
+    }
 }
 
 export const updateScene = (thirdEyePop) =>
@@ -129,13 +150,11 @@ export const updateScene = (thirdEyePop) =>
     const scene = thirdEyePop.getScene();
     const renderer = thirdEyePop.getRenderer();
 
-    const randomBoxes = createRandomBoxes(scene, 30);
-
-    let leftPositionTarget = new THREE.Vector3();
-
-    let rightPositionTarget = new THREE.Vector3();
+    const randomBoxes = createRandomBoxes(scene, 100);
 
     const { cylinderL, cylinderR, pointLightL, pointLightR, particleL, particleR } = buildScene(scene, renderer);
+
+    const lasers = [];
 
     thirdEyePop.onUpdate = function ()
     {
@@ -153,86 +172,106 @@ export const updateScene = (thirdEyePop) =>
             return;
         }
 
-        const person = activePeople[ 0 ];
+        hideInactiveElements(lasers, activePeople);
 
-        if (!(person.handData.geometry)) return;
-
-        const leftIndexTip = person.handData.leftHandPoints[ "index finger tip" ];
-        const leftIndexBase = person.handData.leftHandPoints[ "index finger mcp" ];
-
-        const rightIndexTip = person.handData.rightHandPoints[ "index finger tip" ];
-        const rightIndexBase = person.handData.rightHandPoints[ "index finger mcp" ];
-
-        if (leftIndexTip && leftIndexBase)
+        for (const person of activePeople)
         {
+            if (!person.handData) return;
+            if (!(person.handData.geometry)) return;
+            if (!person.traceId) return;
 
-            const from = leftIndexBase;
-            let to = new THREE.Vector3(); // The direction of the raycaster
-            to.subVectors(leftIndexTip, leftIndexBase); // We get the direction by substracting the origin from the target
-            to.normalize(); // We normalize the direction to get the unit vector
-
-            raycaster.set(from, to);
-
-            const intersects = raycaster.intersectObjects(randomBoxes);
-
-            if (intersects && intersects.length > 0)
+            let laserData = lasers[ person.traceId ];
+            if (!laserData)
             {
-                const firstIntersect = intersects[ 0 ];
-                const length = firstIntersect.distance;
-                cylinderL.visible = true;
+                laserData = {
+                    cylinderL: cylinderL.clone(),
+                    cylinderR: cylinderR.clone(),
+                    pointLightL: pointLightL.clone(),
+                    pointLightR: pointLightR.clone(),
+                    particleL: particleL.clone(),
+                    particleR: particleR.clone(),
+                    leftPositionTarget: new THREE.Vector3(),
+                    rightPositionTarget: new THREE.Vector3(),
+                };
 
-                pointLightL.position.lerp(firstIntersect.point, .5);
-                particleL.position.lerp(firstIntersect.point, .5);
+                scene.add(laserData.cylinderL);
+                scene.add(laserData.cylinderR);
+                scene.add(laserData.pointLightL);
+                scene.add(laserData.pointLightR);
+                scene.add(laserData.particleL);
+                scene.add(laserData.particleR);
 
-                leftPositionTarget.copy(from);
-                cylinderL.lookAt(firstIntersect.point);
-
-                cylinderL.scale.z = length;
-                cylinderL.translateZ(length / 2);
-
-            } else
-            {
-                cylinderL.visible = false;
+                lasers[ person.traceId ] = laserData;
             }
-        }
-
-        cylinderL.position.lerp(leftPositionTarget, 0.5);
 
 
-        if (rightIndexTip && rightIndexBase)
-        {
-            const from = rightIndexBase;
-            let to = new THREE.Vector3(); // The direction of the raycaster
-            to.subVectors(rightIndexTip, rightIndexBase); // We get the direction by substracting the origin from the target
-            to.normalize(); // We normalize the direction to get the unit vector
-
-            raycaster.set(from, to);
-
-            const intersects = raycaster.intersectObjects(randomBoxes);
-
-            if (intersects && intersects.length > 0)
+            for (let i = 0; i < 2; i++)
             {
-                const firstIntersect = intersects[ 0 ];
-                const length = firstIntersect.distance;
-                cylinderR.visible = true;
 
-                pointLightR.position.lerp(firstIntersect.point, .5);
-                particleR.position.lerp(firstIntersect.point, .5);
+                let element = null;
 
-                rightPositionTarget.copy(from);
-                cylinderR.lookAt(firstIntersect.point);
+                if (i == 0) element = person.handData.leftHandPoints;
+                if (i == 1) element = person.handData.rightHandPoints;
+
+                const tip = element[ "index finger tip" ];
+                const base = element[ "index finger mcp" ];
+
+                if (!tip || !base)
+                {
+                    laserData.cylinderL.visible = false;
+                    laserData.cylinderR.visible = false;
+                    continue;
+                }
+
+                const from = base;
+                let to = new THREE.Vector3(); // The direction of the raycaster
+                to.subVectors(tip, base); // We get the direction by substracting the origin from the target
+                to.normalize(); // We normalize the direction to get the unit vector
+
+                raycaster.set(from, to);
+
+                const intersects = raycaster.intersectObjects(randomBoxes);
+
+                if (!intersects || intersects.length <= 0) continue;
+
+                const closestIntersect = intersects.sort((a, b) => a.distance - b.distance)[ 0 ];
+
+                const length = closestIntersect.distance;
+
+                if (i == 0)
+                {
+                    laserData.cylinderL.visible = true;
+                    laserData.pointLightL.position.copy(closestIntersect.point);
+                    laserData.particleL.position.copy(closestIntersect.point);
+                    laserData.leftPositionTarget.copy(from);
+                    laserData.cylinderL.lookAt(closestIntersect.point);
+                    laserData.cylinderL.scale.z = length;
+                    laserData.cylinderL.translateZ(length / 2);
+                } else
+                {
+                    laserData.cylinderR.visible = true;
+                    laserData.pointLightR.position.copy(closestIntersect.point);
+                    laserData.particleR.position.copy(closestIntersect.point);
+                    laserData.rightPositionTarget.copy(from);
+                    laserData.cylinderR.lookAt(closestIntersect.point);
+                    laserData.cylinderR.scale.z = length;
+                    laserData.cylinderR.translateZ(length / 2);
+                }
+
+                // remove all intersected object from scene and add an explosion animated sprite of the laser beam on impact that fades out
+                for (let i = 0; i < intersects.length; i++)
+                {
+                    const intersect = intersects[ i ];
+                    if (intersect.object.name === "bounds") continue;
+                    scene.remove(intersect.object);
+                }
 
 
-                cylinderR.scale.z = length;
-                cylinderR.translateZ(length / 2);
-
-            } else
-            {
-                cylinderR.visible = false;
             }
+
+            laserData.cylinderL.position.lerp(laserData.leftPositionTarget, 0.5);
+            laserData.cylinderR.position.lerp(laserData.rightPositionTarget, 0.5);
+
         }
-
-        cylinderR.position.lerp(rightPositionTarget, 0.5);
-
     };
 }
