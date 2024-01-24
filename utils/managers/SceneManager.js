@@ -88,20 +88,6 @@ export default class SceneManager
             model: null,
             clips: []
         }
-
-        this.scene.add(new THREE.AmbientLight(0x404040, 20)); // soft white light
-        // this.loadGlbModel('./models/doggo.glb', this.dog, Math.PI, 0.25).then((result) =>
-        // {
-        //     result.position.y = -1;
-        // });
-
-        // this.loadGlbModel('./models/person.glb', this.person, Math.PI, 2).then((result) =>
-        // {
-        //     this.person.model.position.y = -2.5;
-        //     this.person.model.position.x = -1;
-        // });
-
-        // this.animationData = [ this.dog ];
     }
 
     getScene()
@@ -270,7 +256,7 @@ export default class SceneManager
             person.traceIdText = text;
         }
 
-        text.name = "traceIdText";
+        text.name = "traceId";
         let point = person.position;
         text.scale.x = -1;
         text.position.x = point.x + person.boundsWidth / 2;
@@ -378,6 +364,7 @@ export default class SceneManager
         if (!poseMesh)
         {
             pose.mesh = new THREE.LineSegments(pose.geometry, this.poseMaterial);
+            pose.mesh.name = "pose";
             this.scene.add(pose.mesh);
             poseMesh = pose.mesh;
         } else
@@ -445,6 +432,7 @@ export default class SceneManager
             face.mesh = new THREE.Points(face.geometry, this.faceMaterial);
 
             faceMesh = face.mesh;
+            faceMesh.name = "face";
             this.scene.add(face.mesh);
         } else
         {

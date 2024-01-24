@@ -7,169 +7,158 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
-<body class="overflow-auto">
-    <div class="container">
+<body class="overflow-hidden d-flex align-content-center bg-black" style="width: 100vw; height: 100vh;">
 
-        <header class="mt-4">
-            <div class="container-fluid d-flex align-items-center justify-content-between">
-                <a href="1_upload_image.html"><img src="css/images/eyepop-logo.svg" alt="EyePop.ai Logo" class="p-2"
-                        style="height: 70px;"></a>
-                <h1 class="p-2">Laser Pointer</h1>
-            </div>
-            <h6 id="popConfigName" class="mx-auto"></h6>
-        </header>
-
-        <div class="container d-flex" style="scale: .75; margin-top: -5rem;">
-
-            <!-- The video placeholder for -->
-            <video id="myLocalVideo" autoplay playsinline controls muted style="width:1px;height:1px;"></video>
-
-            <!-- The rendering canvas which three.js is writing to object-fit-contain -->
-            <div id="canvasParent" class="d-flex w-100">
-                <canvas id="rendercanvas" class="w-100 object-fit-contain z-2 bg-black"></canvas>
-            </div>
-
-
-            <!-- A hidden canvas element only used for sending video frames to the EyePop endpoint -->
-            <div class="d-flex w-100 justify-content-center"
-                style="width:640px;height:480px;margin:auto auto; position: absolute; left: -9999px;">
-                <canvas id="mobilecanvas" class="bg-transparent w-100 z-3 opacity-100"
-                    style="background-color: transparent; opacity: 1; margin:auto auto;z-index:1000;" width="100%"
-                    height="100%"></canvas>
-            </div>
+    <header
+        class="d-flex align-self-center justify-content-center align-content-center mt-4 position-absolute w-100 top-0 mx-auto z-3">
+        <div class="container-fluid d-flex align-items-center justify-content-between text-center">
+            <a href="1_upload_image.html"><img src="css/images/eyepop-logo.svg" alt="EyePop.ai Logo" class="p-2"
+                    style="height: 70px;"></a>
+            <h1 class="p-2 text-center text-white">Laser</h1>
+            <h6 id="popConfigName" class="text-center text-white">test</h6>
         </div>
+    </header>
 
-        <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk"></script>
-        <script src="config.js"></script>
+    <!-- A spinning loading animation -->
+    <div id="loading"
+        class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center bg-black flex-column"
+        style="z-index: 1000;">
+        <div class="text-white text-start p-5">Loading Pop...</div>
+        <div class="spinner-border text-light align-self-center" role="status">
 
-        <script type="importmap">
-            {
-                "imports": {
-                    "three": "https://unpkg.com/three/build/three.module.js",
-                    "three/addons/": "https://unpkg.com/three/examples/jsm/"
-                }
+            <span class="visually-hidden">Loading...</span>
+
+        </div>
+    </div>
+
+    <!-- The rendering canvas which three.js is writing to object-fit-contain -->
+    <div id="canvasParent" class="d-flex w-100 align-self-center justify-content-end align-content-center">
+        <canvas id="rendercanvas" class="w-100 object-fit-scale z-2"></canvas>
+    </div>
+
+    <div class="container position-absolute" style="margin-top: -5rem;">
+
+        <!-- The video placeholder for -->
+        <video id="myLocalVideo" autoplay playsinline controls muted style="width:1px;height:1px;"></video>
+
+
+        <!-- A hidden canvas element only used for sending video frames to the EyePop endpoint -->
+        <div class="d-flex w-100 justify-content-center"
+            style="width:640px;height:480px;margin:auto auto; position: absolute; left: -9999px;">
+            <canvas id="mobilecanvas" class="bg-transparent w-100 z-3 opacity-100"
+                style="background-color: transparent; opacity: 1; margin:auto auto;z-index:1000;" width="100%"
+                height="100%"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk"></script>
+    <script src="config.js"></script>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three/examples/jsm/"
             }
-        </script>
+        }
+    </script>
 
-        <script type="module">
-            import ThirdEyePop from "../utils/ThirdEyePop.js";
-            import { updateScene } from "./1_laser.js";
+    <script type="module">
+        import ThirdEyePop from "../utils/ThirdEyePop.js";
+        import { updateScene } from "./1_laser.js";
 
-            var cached_data = [];
-            const video = document.getElementById("myLocalVideo");
-            const canvas = document.getElementById("mobilecanvas");
-            const renderCanvas = document.getElementById("rendercanvas");
+        var cached_data = [];
+        const video = document.getElementById("myLocalVideo");
+        const canvas = document.getElementById("mobilecanvas");
+        const renderCanvas = document.getElementById("rendercanvas");
+        const loading = document.getElementById("loading");
+        const popConfigName = document.getElementById("popConfigName");
 
-            const save = () =>
-            {
-                const a = document.createElement("a");
-                document.body.appendChild(a);
-                a.style = "display: none";
+        const save = () =>
+        {
+            const a = document.createElement("a");
+            document.body.appendChild(a);
+            a.style = "display: none";
 
-                const json = JSON.stringify(cached_data);
-                const blob = new Blob([ json ], { type: "octet/stream" });
-                const url = window.URL.createObjectURL(blob);
-                a.href = url;
-                a.download = "pose_capture_data.json";
-                a.click();
-                window.URL.revokeObjectURL(url);
-            }
+            const json = JSON.stringify(cached_data);
+            const blob = new Blob([ json ], { type: "octet/stream" });
+            const url = window.URL.createObjectURL(blob);
+            a.href = url;
+            a.download = "pose_capture_data.json";
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
 
-            const run = () =>
-            {
+        const run = () =>
+        {
+            let debug = false;
 
-                const thirdEyePop = new ThirdEyePop(
-                    {
-                        canvas: renderCanvas,
-                        // videoUrl: "webcam",
-                        frameData: cached_data,
-                        maxFrames: 1,
-                        DEBUG: true,
-                        drawParams: {
-                            showHeatmap: false,
-                            showPoint: false,
-                            showPath: false,
-                            showBounds: false,
-                            showTraceId: false,
-                            showPose: false,
-                            showHands: true,
-                            showFace: true,
-                            // bgCanvas: canvas,
-                            showBloom: true,
-                            bloomParams: {
-                                strength: 1,
-                                radius: .5,
-                                threshold: .1
-                            }
-                        }
-                    });
-
-                thirdEyePop
-                    .setup()
-                    .then(() =>
-                    {
-                        updateScene(thirdEyePop);
-                    });
-
-                config.Draw = [
-                ];
-
-                config.Input = { "name": "webcam_on_page" };
-
-                console.log(config);
-
-                // makes page title config.name
-                document.getElementById("popConfigName").innerHTML = "Pop Name: " + config.name;
-
-                const DEBUG_FRAMES = false;
-                if (DEBUG_FRAMES)
+            const thirdEyePop = new ThirdEyePop(
                 {
-                    // load json file ./test_data/pose_capture_data.json and every 100ms push a frame to thirdEyePop
-                    let frames = [];
-                    fetch("./test_data/spider_man_capture.json")
-                        .then(response => response.json())
-                        .then(data => frames = data)
-                        .then(() =>
-                        {
-                            let i = 0;
-                            setInterval(() =>
-                            {
-                                thirdEyePop.pushFrameData(frames[ i++ % frames.length ]);
-                            }, 1);
-
-                        });
-
-                    return;
-                }
-
-                const ep = EyePopSDK.EyePopSDK.init(config);
-
-                const SAVE_FRAMES = false;
-                const SAVE_FRAMES_INTERVAL = 1000;
-
-
-                EyePopSDK.EyePopAPI.instance.OnDrawFrameEnd = function (prediction)
-                {
-                    thirdEyePop.pushFrameData(prediction);
-
-                    if (SAVE_FRAMES)
-                    {
-                        cached_data.push(prediction);
-
-                        if (cached_data.length % SAVE_FRAMES_INTERVAL == 0)
-                        {
-                            save();
+                    canvas: renderCanvas,
+                    videoUrl: "webcam",
+                    frameData: cached_data,
+                    frameBufferSize: 1,
+                    DEBUG: debug,
+                    drawParams: {
+                        // bgCanvas: canvas,
+                        showFace: true,
+                        showHands: true,
+                        showPose: true,
+                        showCameraInCorner: true,
+                        showBloom: true,
+                        bloomParams: {
+                            strength: 2,
+                            radius: .15,
+                            threshold: .01
                         }
                     }
-                }
+                });
 
+
+            thirdEyePop
+                .setup()
+                .then(() =>
+                {
+                    updateScene(thirdEyePop, debug);
+                });
+
+            if (debug)
+            {
+                return;
             }
 
-            EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token)
-                .then(response => config = response)
-                .then(() => { run() });
+            console.log(config);
 
-        </script>
+
+            config.Input = { "name": "webcam_on_page" };
+            config.Draw = [];
+            console.log("Config: ", config);
+            const ep = EyePopSDK.EyePopSDK.init(config);
+
+            // makes page title config.name
+            popConfigName.innerHTML = "Pop Name: " + config.name;
+
+            EyePopSDK.EyePopAPI.instance.OnPrediction = function (prediction)
+            {
+                if (!prediction) return;
+
+                // console.log(prediction);
+                thirdEyePop.pushFrameData(prediction);
+
+                if (loading)
+                {
+                    loading.remove();
+                }
+            }
+
+        }
+
+        EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token)
+            .then(response => config = response)
+            .then(() => { run() });
+
+    </script>
 </body>
 
 </html>

@@ -11,11 +11,13 @@ export default class RenderManager
     constructor(
         canvas,
         videoUrl,
-        isStreamingVideo,
+        isWebcam,
         drawParams = {
             showHeatmap: false,
             bgCanvas: null,
-            showBloom: true,
+            showBloom: false,
+            showGammaCorrection: false,
+            showCameraInCorner: false,
             bloomParams: {
                 strength: 0.5,
                 radius: 0.5,
@@ -37,6 +39,8 @@ export default class RenderManager
         this.showBloom = drawParams.showBloom;
         this.bloomParams = drawParams.bloomParams;
         this.showHeatmap = drawParams.showHeatmap;
+        this.showCameraInCorner = drawParams.showCameraInCorner;
+        this.showGammaCorrection = drawParams.showGammaCorrection;
 
         this.heatmapIntensity = 0.1;
 
@@ -93,7 +97,7 @@ export default class RenderManager
             return;
         }
 
-        if (isStreamingVideo)
+        if (isWebcam)
         {
             // setup the webcam
             this.setupWebCam();
@@ -137,7 +141,7 @@ export default class RenderManager
             this.domElement.style.width = '100%';
             this.domElement.style.height = '100%';
             this.domElement.style.zIndex = 9999;
-            this.domElement.requestFullscreen({ navigationUI: "hide" });
+            this.domElement.requestFullscreen({ navigationUI: "show" });
         }
         this.fullScreen = !this.fullScreen;
     }
@@ -228,8 +232,9 @@ export default class RenderManager
 
         this.video.addEventListener('loadedmetadata', () =>
         {
-            scope.isReady = true;
             scope.videoTexture = new THREE.VideoTexture(scope.video);
+            scope.videoTexture.flipY = false;
+            scope.videoTexture.premultiplyAlpha = false;
             scope.videoTexture.crossOrigin = "Anonymous";
             scope.videoTexture.minFilter = THREE.LinearFilter;
             scope.videoTexture.magFilter = THREE.LinearFilter;
@@ -242,13 +247,13 @@ export default class RenderManager
             scope.setupRenderer();
             scope.setupEffectComposer();
             scope.onWindowResized();
+            scope.isReady = true;
         });
     }
 
     setupWebCam()
     {
         const scope = this;
-
         this.video = document.getElementById('myLocalVideo');
         this.video.playsInline = true;
         this.video.crossOrigin = "Anonymous";
@@ -265,21 +270,20 @@ export default class RenderManager
             }
         };
 
-
         navigator.mediaDevices.getUserMedia(constraints)
             .then(function (mediaStream)
             {
                 scope.video.srcObject = mediaStream;
                 scope.video.onloadedmetadata = function (e)
                 {
-                    scope.isReady = true;
                     scope.video.play();
                     scope.videoTexture = new THREE.VideoTexture(scope.video);
                     scope.videoTexture.crossOrigin = "Anonymous";
                     scope.videoTexture.minFilter = THREE.LinearFilter;
                     scope.videoTexture.magFilter = THREE.LinearFilter;
-                    // scope.videoTexture.generateMipmaps = false;
-                    // scope.videoTexture.flipY = true;
+                    scope.videoTexture.flipY = false;
+                    scope.videoTexture.premultiplyAlpha = false;
+                    scope.videoTexture.flipY = true;
 
                     scope.width = scope.video.videoWidth;
                     scope.height = scope.video.videoHeight;
@@ -287,9 +291,12 @@ export default class RenderManager
                     scope.setupRenderer();
                     scope.setupEffectComposer();
                     scope.onWindowResized();
+
+                    scope.isReady = true;
+
                 };
             })
-            .catch(function (err) { console.log(err.name + ": " + err.message); }); // always check for errors at the end.
+            .catch(function (err) { console.log(err.name + ": " + err.message); });
     }
 
     pauseVideo()
@@ -311,14 +318,13 @@ export default class RenderManager
     {
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvas,
-            powerPreference: 'high-performance',
             failIfMajorPerformanceCaveat: true,
             antialias: true,
             alpha: true,
         });
 
         this.renderer.shadowMap.enabled = true;
-        this.renderer.toneMapping = THREE.NoToneMapping;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.backgroundColor = new THREE.Color(0x000000);
 
         this.camera.layers.enableAll();
@@ -332,23 +338,13 @@ export default class RenderManager
         // Update the camera's projection matrix
         this.camera.updateProjectionMatrix();
 
-        // Calculate the aspect ratio of the canvas
+        this.width = this.canvas.clientWidth;
+        this.height = this.canvas.clientHeight;
 
-        if (this.video)
-        {
-            const clientAspect = this.canvas.clientWidth / this.canvas.clientHeight;
-            const videoAspect = this.video.videoWidth / this.video.videoHeight;
-
-            this.width = this.canvas.clientWidth * (videoAspect / clientAspect);
-            this.height = this.canvas.clientHeight * (clientAspect / videoAspect);
-        } else if (this.bgCanvas)
+        if (this.bgCanvas)
         {
             this.width = this.bgCanvas.clientWidth;
             this.height = this.bgCanvas.clientHeight;
-        } else
-        {
-            this.width = this.canvas.clientWidth;
-            this.height = this.canvas.clientHeight;
         }
 
         this.renderer.setSize(this.width, this.height);
@@ -360,26 +356,13 @@ export default class RenderManager
     onWindowResized()
     {
 
-        if (this.video)
-        {
-            const clientAspect = this.canvas.clientWidth / this.canvas.clientHeight;
-            const videoAspect = this.video.videoWidth / this.video.videoHeight;
+        this.width = this.canvas.clientWidth;
+        this.height = this.canvas.clientHeight;
 
-            this.width = this.canvas.clientWidth * (videoAspect / clientAspect);
-            this.height = this.canvas.clientHeight * (clientAspect / videoAspect);
-
-            this.renderer.domElement.style.width = this.width;
-            this.renderer.domElement.style.height = this.height;
-            this.renderer.domElement.width = this.width;
-            this.renderer.domElement.height = this.height;
-        } else if (this.bgCanvas)
+        if (this.bgCanvas)
         {
             this.width = this.bgCanvas.clientWidth;
             this.height = this.bgCanvas.clientHeight;
-        } else
-        {
-            this.width = this.canvas.clientWidth;
-            this.height = this.canvas.clientHeight;
         }
 
         if (!this.renderer) return;
@@ -389,10 +372,10 @@ export default class RenderManager
         this.camera.aspect = this.width / this.height;
         this.camera.updateProjectionMatrix();
 
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-
         this.finalComposer.setSize(this.width, this.height);
+
         this.finalComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     }
 
     reset()
@@ -405,6 +388,7 @@ export default class RenderManager
     setupEffectComposer()
     {
         const renderScene = new RenderPass(this.scene, this.camera);
+
         // A pass that copies the texture on the bufferCanvas to the main canvas
         // todo: can we stream the video directly to the main canvas?
         this.copyPass = new ShaderPass({
@@ -434,6 +418,49 @@ export default class RenderManager
                 }`
         });
 
+
+        // flip screen pass and add small video texture in bottom right corner like the copy pass
+        this.cornerCameraPass = new ShaderPass({
+            uniforms: {
+                tDiffuse: { value: null },
+                tImage: { value: this.videoTexture },
+                uFlip: { value: false },
+                uSaturationScalar: { value: this.showBloom ? 0.2 : 1.0 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+                }`,
+            fragmentShader: `
+                
+                uniform sampler2D tDiffuse;
+                uniform sampler2D tImage;
+                uniform bool uFlip;
+                uniform float uSaturationScalar;
+                varying vec2 vUv;
+                void main() {
+                    vec2 uv = vUv;
+
+                    if(uFlip){
+                        uv.x = 1.0 - uv.x;
+                    }
+                    
+                    vec4 texel = texture2D( tDiffuse, uv );
+
+                    // if in the bottom right corner 15 percent of screen height and width, show video scaled down
+                    if (uv.x > 0.85 && uv.y < 0.15) {
+                        vec2 scaledUv = vec2((uv.x - 0.85) / 0.15, uv.y / 0.15);
+                        vec4 texel2 = texture2D(tImage, scaledUv);
+                        texel = mix(texel, texel2, 1.0);
+                        // make texel darker
+                        texel = texel * uSaturationScalar;
+                    }
+
+                    gl_FragColor = texel; // RGBA color
+                }`
+        });
 
         this.heatmapPass = new ShaderPass({
             uniforms: {
@@ -487,24 +514,31 @@ export default class RenderManager
         });
 
         // Add the shader pass to the composer
-
         this.finalComposer = new EffectComposer(this.renderer);
         this.finalComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.finalComposer.setSize(this.width, this.height);
 
-        const newSMAAPass = new SMAAPass(this.width / 2, this.height / 2);
+
 
         this.finalComposer.addPass(renderScene);
+
+        const newSMAAPass = new SMAAPass(this.width / 2, this.height / 2);
+        this.finalComposer.addPass(newSMAAPass);
 
         if (this.videoTexture)
         {
             this.finalComposer.addPass(this.copyPass);
+            this.copyPass.renderToScreen = true;
         }
 
+        if (this.showCameraInCorner)
+        {
+            this.finalComposer.addPass(this.cornerCameraPass);
+        }
 
         if (this.showBloom)
         {
-            const bloomPass = new UnrealBloomPass(new THREE.Vector2(this.width / 2, this.height / 2), this.bloomParams.intesity, this.bloomParams.radius, this.bloomParams.threshold);
+            const bloomPass = new UnrealBloomPass(new THREE.Vector2(this.width, this.height), this.bloomParams.intesity, this.bloomParams.radius, this.bloomParams.threshold);
             this.finalComposer.addPass(bloomPass);
         }
 
@@ -513,7 +547,13 @@ export default class RenderManager
             this.finalComposer.addPass(this.heatmapPass);
         }
 
-        this.finalComposer.addPass(newSMAAPass);
+        if (this.showGammaCorrection)
+        {
+            // adds a gamma correction pass
+            const gammaCorrection = new ShaderPass(GammaCorrectionShader);
+            gammaCorrection.renderToScreen = true;
+            this.finalComposer.addPass(gammaCorrection);
+        }
     }
 
     getVideoTime()
@@ -533,17 +573,18 @@ export default class RenderManager
 
     render()
     {
+        if (!this.isReady) return;
 
         if (this.bgCanvas)
         {
             this.videoTexture = new THREE.CanvasTexture(this.bgCanvas);
+            this.videoTexture.premultiplyAlpha = false;
         }
 
         if (this.videoTexture)
         {
-            this.videoTexture.needsUpdate = true;
             this.copyPass.uniforms.tImage.value = this.videoTexture;
-            this.copyPass.needsUpdate = true;
+            this.cornerCameraPass.uniforms.tImage.value = this.videoTexture;
             this.heatmapPass.uniforms.uIntensity.value = this.heatmapIntensity;
             this.heatmapPass.uniforms.uShowHeatmap.value = this.showHeatmap;
         }

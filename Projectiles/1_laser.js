@@ -2,9 +2,6 @@ import * as THREE from 'https://unpkg.com/three/build/three.module.js';
 import { RGBELoader } from 'https://unpkg.com/three/examples/jsm/loaders/RGBELoader.js';
 import { EXRLoader } from 'https://unpkg.com/three/examples/jsm/loaders/EXRLoader.js';
 
-// import "https://unpkg.com/three-laser-pointer@1.2.3/dist/three-laser-pointer.min.js";
-
-
 const getRandomBrightColor = () =>
 {
     const color = new THREE.Color();
@@ -12,23 +9,79 @@ const getRandomBrightColor = () =>
     return color;
 }
 
+const createRandomNormalMapTexture = (width = 64, height = 64) =>
+{
+    const size = width * height;
+    const data = new Uint8Array(4 * size);
+
+    for (let i = 0; i < size; i++)
+    {
+        const stride = i * 4;
+        const x = (Math.random() * 2 - 1) * 127.5 + 127.5;
+        const y = (Math.random() * 2 - 1) * 127.5 + 127.5;
+        const z = 255.0;
+        const a = 255.0;
+
+        data[ stride ] = x;
+        data[ stride + 1 ] = y;
+        data[ stride + 2 ] = z;
+        data[ stride + 3 ] = a;
+    }
+
+    const texture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
+    texture.needsUpdate = true;
+    return texture;
+}
+
+const createRandomGeometry = (size = 0.1) =>
+{
+    const random = Math.random();
+    if (random < 0.33)
+    {
+        return new THREE.BoxGeometry(size, size, 0.1);
+    } else if (random < 0.66)
+    {
+        return new THREE.SphereGeometry(size, 32, 32);
+    } else
+    {
+        return new THREE.CylinderGeometry(size, size, size, 32);
+    }
+}
+
 const createRandomBoxes = (scene, count) =>
 {
+
     const boxes = [];
 
     for (let i = 0; i < count; i++)
     {
+
         const box = new THREE.Mesh(
-            new THREE.BoxGeometry(0.1, 0.1, 0.1),
-            new THREE.MeshStandardMaterial({ color: getRandomBrightColor(), roughness: .5, metalness: .8 })
+            createRandomGeometry(Math.random() * 0.1 + 0.1),
+            new THREE.MeshStandardMaterial({
+                color: getRandomBrightColor(),
+                normalMap: createRandomNormalMapTexture(),
+                roughness: .1,
+                metalness: .5
+            })
         );
         let x = Math.random() * 2 - 1;
         let y = (Math.random() * 2 - 1);
-        let z = (Math.random() * 2 - 1) - 1;
+        let z = (Math.random() * 2 - 1);
         box.position.set(x, y, z);
-        let scale = 3;
-        box.rotation.set(Math.random(), Math.random(), Math.random());
-        box.scale.set(scale * Math.random(), scale * Math.random(), scale * Math.random());
+        let scale = 1.5;
+
+        box.rotation.set(
+            Math.random(),
+            Math.random(),
+            Math.random()
+        );
+        box.scale.set(
+            scale * Math.random(),
+            scale * Math.random(),
+            scale * Math.random()
+        );
+
         box.castShadow = true;
         box.receiveShadow = true;
 
@@ -36,44 +89,41 @@ const createRandomBoxes = (scene, count) =>
         boxes.push(box);
     }
 
-    const boundsGeometry = new THREE.SphereGeometry(1.5, 16, 16);
-    const boundingMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, side: THREE.BackSide });
+    const boundsGeometry = new THREE.SphereGeometry(2, 16, 16);
+    const boundingMaterial = new THREE.MeshLambertMaterial({
+        color: 0x000000,
+        side: THREE.BackSide
+    });
     const boundinMesh = new THREE.Mesh(boundsGeometry, boundingMaterial);
     boundinMesh.name = "bounds";
+    boundinMesh.receiveShadow = false;
+    boundinMesh.castShadow = false;
     scene.add(boundinMesh);
     boxes.push(boundinMesh);
 
-    return boxes;
+    const bgPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(100, 100),
+        new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide })
+    );
 
+    bgPlane.position.z = 10;
+    bgPlane.rotateZ(Math.PI / 2);
+    scene.add(bgPlane);
+
+    return boxes;
 }
 
 const buildScene = (scene, renderer) =>
 {
-    // add an hdr environment map to the scene
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    pmremGenerator.compileEquirectangularShader();
-    // Create a new EXRLoader instance
-    const exrLoader = new EXRLoader();
-
-    // Load the EXR file
-    exrLoader.load('./imgs/bg.exr', function (texture)
-    {
-
-        texture.minFilter = THREE.NearestFilter;
-        texture.magFilter = THREE.NearestFilter;
-
-        // Set the environment map to the loaded texture
-        scene.environment = pmremGenerator.fromEquirectangular(texture).texture;
-        // scene.background = texture;
-        pmremGenerator.dispose();
-    });
-
+    const ambientLight = new THREE.AmbientLight(0xffffff, .1);
+    scene.add(ambientLight);
 
     let cylinderGeometry = new THREE.CylinderGeometry(.01, .01, 1, 8);
     cylinderGeometry.rotateX(Math.PI / 2);
+
     const cylinderL = new THREE.Mesh(
         cylinderGeometry,
-        new THREE.MeshStandardMaterial({ color: 0x00aaff, emissive: 0x00aaff, emissiveIntensity: 5, transparent: true, roughness: 0.5, opacity: 0.1 })
+        new THREE.MeshPhysicalMaterial({ color: 0x00aaff, emissive: 0x00aaff, emissiveIntensity: 1 })
     );
 
     cylinderGeometry = new THREE.CylinderGeometry(.01, .01, 1, 8);
@@ -81,17 +131,13 @@ const buildScene = (scene, renderer) =>
 
     const cylinderR = new THREE.Mesh(
         cylinderGeometry,
-        new THREE.MeshStandardMaterial({ color: 0x00aaff, emissive: 0x00aaff, emissiveIntensity: 5, transparent: true, roughness: 0.5, opacity: 0.1 })
+        new THREE.MeshPhysicalMaterial({ color: 0x00aaff, emissive: 0x00aaff, emissiveIntensity: 1 })
     );
 
-    const pointLightL = new THREE.PointLight(0x00f0ff, 10, 1);
-
-    pointLightL.position.set(-999, 0, 0);
+    const pointLightL = new THREE.PointLight(0x00f0ff, 1, 2);
     pointLightL.castShadow = true;
 
-    const pointLightR = new THREE.PointLight(0x00f0ff, 10, 1);
-
-    pointLightR.position.set(-999, 0, 0);
+    const pointLightR = new THREE.PointLight(0x00f0ff, 1, 2);
     pointLightR.castShadow = true;
 
     // load the blue_particle.jpg texture and make the black background transparent
@@ -144,17 +190,48 @@ const hideInactiveElements = (lasers, activePeople) =>
     }
 }
 
-export const updateScene = (thirdEyePop) =>
+const setupDebugging = (thirdEyePop, scene, renderer) =>
+{
+
+    // load json file ./test_data/pose_capture_data.json and every 100ms push a frame to thirdEyePop
+    let frames = [];
+    fetch("./test_data/spider_man_capture.json")
+        .then(response => response.json())
+        .then(data => frames = data)
+        .then(() =>
+        {
+            let i = 0;
+            setInterval(() =>
+            {
+                thirdEyePop.pushFrameData(frames[ i++ % frames.length ]);
+            }, 10);
+
+        });
+
+    if (loading)
+    {
+        loading.remove();
+    }
+}
+
+export const updateScene = (thirdEyePop, debug) =>
 {
     const raycaster = new THREE.Raycaster();
     const scene = thirdEyePop.getScene();
     const renderer = thirdEyePop.getRenderer();
 
-    const randomBoxes = createRandomBoxes(scene, 100);
+    if (debug)
+    {
+        setupDebugging(thirdEyePop, scene, renderer);
+    }
+
+    const randomBoxes = createRandomBoxes(scene, 111);
 
     const { cylinderL, cylinderR, pointLightL, pointLightR, particleL, particleR } = buildScene(scene, renderer);
 
     const lasers = [];
+
+    console.log(scene)
 
     thirdEyePop.onUpdate = function ()
     {
@@ -183,6 +260,9 @@ export const updateScene = (thirdEyePop) =>
             let laserData = lasers[ person.traceId ];
             if (!laserData)
             {
+
+                console.log("creating new laser data for " + person.traceId);
+
                 laserData = {
                     cylinderL: cylinderL.clone(),
                     cylinderR: cylinderR.clone(),
@@ -192,6 +272,7 @@ export const updateScene = (thirdEyePop) =>
                     particleR: particleR.clone(),
                     leftPositionTarget: new THREE.Vector3(),
                     rightPositionTarget: new THREE.Vector3(),
+
                 };
 
                 scene.add(laserData.cylinderL);
@@ -201,6 +282,13 @@ export const updateScene = (thirdEyePop) =>
                 scene.add(laserData.particleL);
                 scene.add(laserData.particleR);
 
+                // add pointlight helpers
+                const sphereSize = 0.1;
+                const pointLightHelperL = new THREE.PointLightHelper(laserData.pointLightL, sphereSize);
+                const pointLightHelperR = new THREE.PointLightHelper(laserData.pointLightR, sphereSize);
+
+                scene.add(pointLightHelperL);
+                scene.add(pointLightHelperR);
                 lasers[ person.traceId ] = laserData;
             }
 
@@ -247,6 +335,7 @@ export const updateScene = (thirdEyePop) =>
                     laserData.cylinderL.lookAt(closestIntersect.point);
                     laserData.cylinderL.scale.z = length;
                     laserData.cylinderL.translateZ(length / 2);
+
                 } else
                 {
                     laserData.cylinderR.visible = true;
@@ -256,16 +345,8 @@ export const updateScene = (thirdEyePop) =>
                     laserData.cylinderR.lookAt(closestIntersect.point);
                     laserData.cylinderR.scale.z = length;
                     laserData.cylinderR.translateZ(length / 2);
-                }
 
-                // remove all intersected object from scene and add an explosion animated sprite of the laser beam on impact that fades out
-                for (let i = 0; i < intersects.length; i++)
-                {
-                    const intersect = intersects[ i ];
-                    if (intersect.object.name === "bounds") continue;
-                    scene.remove(intersect.object);
                 }
-
 
             }
 

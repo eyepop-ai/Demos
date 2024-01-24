@@ -2,7 +2,7 @@
 import * as THREE from 'https://unpkg.com/three/build/three.module.js';
 import { PeopleState } from './Constants.js';
 
-// TODO: Move class variables into objects for access
+// TODO: Organize path, bounds, and traceIdText into a single object such as poseData and faceData
 export default class People
 {
 
@@ -31,7 +31,6 @@ export default class People
 
         this.boundsWidth = null;
         this.boundsHeight = null;
-        this.boundingObjects = [];
 
         this.state = PeopleState.TRACKING;
 

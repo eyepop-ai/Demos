@@ -294,20 +294,16 @@ export const updateScene = async (thirdEyePop) =>
             {
                 web.isDone = true;
                 // remove decal
-                const children = web.webMesh.children;
 
                 setTimeout(() =>
                 {
-                    children.forEach(child =>
+                    web.webMesh.children.forEach(child =>
                     {
                         scene.remove(child);
-                        console.log(
-                            child
-                        )
+                        console.log(child)
                     });
+                    scene.remove(web.webMesh);
                 }, 500);
-
-                scene.remove(web.webMesh);
 
             }
 

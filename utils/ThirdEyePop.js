@@ -21,18 +21,20 @@ export default class ThirdEyePop
         canvas = null,
         videoUrl = null,
         frameData = [],
-        maxFrames = 1000,
+        frameBufferSize = 1,
         drawParams: {
             bgCanvas = null,
-            showHeatmap = true,
-            showPoint = true,
-            showPath = true,
-            showBounds = true,
-            showTraceId = true,
-            showPose = true,
-            showFace = true,
-            showHands = true,
-            showBloom = true,
+            showHeatmap = false,
+            showPoint = false,
+            showPath = false,
+            showBounds = false,
+            showTraceId = false,
+            showPose = false,
+            showFace = false,
+            showHands = false,
+            showCameraInCorner = false,
+            showBloom = false,
+            showGammaCorrection = false,
             bloomParams = {
                 strength: 1,
                 radius: .5,
@@ -61,7 +63,7 @@ export default class ThirdEyePop
         // stats for debugging
         let stats = null;
 
-        let isStreamingVideo = videoUrl == "webcam";
+        let isWebcam = videoUrl == "webcam";
         let videoTime = 0;
         let pause = false;
         // ///////////////////// END VARIABLES /////////////////////////////
@@ -88,16 +90,18 @@ export default class ThirdEyePop
             renderManager = new RenderManager(
                 canvas,
                 videoUrl,
-                isStreamingVideo,
+                isWebcam,
                 {
+                    showCameraInCorner: showCameraInCorner,
                     showHeatmap: showHeatmap,
                     bgCanvas: bgCanvas,
                     showBloom,
+                    showGammaCorrection,
                     bloomParams,
                 }
             );
 
-            predictionDataManager = new PredictionDataManager(frameData, maxFrames);
+            predictionDataManager = new PredictionDataManager(frameData, frameBufferSize);
 
             await renderManager.isLoadedPromise();
 
@@ -117,33 +121,23 @@ export default class ThirdEyePop
 
             animationManager = new AnimationManager(renderManager.getScene());
 
-            // loop in interval until renderManager is ready
-            const interval = setInterval(() =>
+            cameraControls = new CameraControls(
+                renderManager.getCamera(),
+                renderManager.renderer.domElement
+            );
+
+            cameraControls.saveState();
+
+            window.addEventListener('keydown', event =>
             {
-                console.log("renderManager.isLoaded(): ", renderManager.isLoaded());
-                if (renderManager.isLoaded())
+                if (event.key == "Escape")
                 {
-                    cameraControls = new CameraControls(
-                        renderManager.getCamera(),
-                        renderManager.renderer.domElement
-                    );
-
-                    cameraControls.saveState();
-
-                    clearInterval(interval);
-                    window.addEventListener('keydown', event =>
-                    {
-                        if (event.key == "Escape")
-                        {
-                            cameraControls.reset(true);
-                        } else if (event.key == "f")
-                        {
-                            renderManager.toggleFullscreen();
-                        }
-                    });
+                    cameraControls.reset(true);
+                } else if (event.key == "f")
+                {
+                    renderManager.toggleFullscreen();
                 }
-            }, 100);
-
+            });
 
         }
 
@@ -216,7 +210,7 @@ export default class ThirdEyePop
             stats.dom.style.display = 'none';
 
 
-            const gui = new GUI({ autoPlace: false, closed: true });
+            const gui = new GUI({ autoPlace: false, closed: false });
             const canvasParent = document.getElementById('canvasParent');
 
             // on hover of the canvas, show the gui and stats panel
@@ -242,7 +236,7 @@ export default class ThirdEyePop
             var playObj = { Play: function () { pause = false; renderManager.playVideo(); renderManager.render(); } };
             var pauseObj = { Pause: function () { pause = true; renderManager.pauseVideo(); renderManager.render(); } };
 
-            if (!isStreamingVideo && videoUrl)
+            if (!isWebcam && videoUrl)
             {
                 gui.add(renderManager.video, 'currentTime', 0, renderManager.video.duration).name('Video Time').listen();
                 gui.add(playObj, 'Play');
@@ -289,7 +283,7 @@ export default class ThirdEyePop
         function bufferVideo()
         {
             if (!videoUrl) return;
-            if (isStreamingVideo) return;
+            if (isWebcam) return;
             // If the latest prediction datais more than 1 seconds away from the current frame
             // or if the last frame videoTime is greater than the video videoTime
             // then we need to pause and wait for more prediction frames
@@ -313,7 +307,6 @@ export default class ThirdEyePop
 
         function resetCanvas()
         {
-
 
             if (!canvasNeedsReset) return;
             if (!renderManager) return;

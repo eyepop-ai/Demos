@@ -83,95 +83,95 @@
                         canvas: renderCanvas,
                         // videoUrl: "webcam",
                         frameData: cached_data,
-                        maxFrames: 1,
-                        DEBUG: true,
-                        drawParams: {
-                            // bgCanvas: canvas,
-                            showHeatmap: false,
-                            showPoint: false,
-                            showPath: false,
+                        : 1,
+                DEBUG: true,
+                    drawParams: {
+                // bgCanvas: canvas,
+                showHeatmap: false,
+                    showPoint: false,
+                        showPath: false,
                             showBounds: false,
-                            showTraceId: false,
-                            showPose: true,
-                            showHands: true,
-                            showFace: true,
-                            showBloom: false,
-                            bloomParams: {
-                                strength: 0.12,
-                                radius: 0.1,
-                                threshold: 1.0
-                            }
-                        }
+                                showTraceId: false,
+                                    showPose: true,
+                                        showHands: true,
+                                            showFace: true,
+                                                showBloom: false,
+                                                    bloomParams: {
+                    strength: 0.12,
+                        radius: 0.1,
+                            threshold: 1.0
+                }
+            }
                     });
 
-                thirdEyePop
-                    .setup()
+            thirdEyePop
+                .setup()
+                .then(() =>
+                {
+                    updateScene(thirdEyePop);
+                });
+
+            config.Draw = [
+                // { "Type": "pose", "Targets": [ "*" ] },
+                // { "Type": "hand", "Targets": [ "*" ] },
+                // { "Type": "face", "Targets": [ "*" ] },
+            ];
+
+            config.Input = { "name": "webcam_on_page" };
+
+            console.log(config);
+
+            // makes page title config.name
+            document.getElementById("popConfigName").innerHTML = "Pop Name: " + config.name;
+
+            let SAVE_FRAMES = false;
+            let DEBUG_FRAMES = true;
+
+            if (SAVE_FRAMES) { DEBUG_FRAMES = false; }
+
+            if (DEBUG_FRAMES)
+            {
+                // load json file ./test_data/pose_capture_data.json and every 100ms push a frame to thirdEyePop
+                let frames = [];
+                fetch("./test_data/ball.json")
+                    .then(response => response.json())
+                    .then(data => frames = data)
                     .then(() =>
                     {
-                        updateScene(thirdEyePop);
+                        let i = 0;
+                        setInterval(() =>
+                        {
+                            thirdEyePop.pushFrameData(frames[ i++ % frames.length ]);
+                        }, 1);
+
                     });
 
-                config.Draw = [
-                    // { "Type": "pose", "Targets": [ "*" ] },
-                    // { "Type": "hand", "Targets": [ "*" ] },
-                    // { "Type": "face", "Targets": [ "*" ] },
-                ];
+                return;
+            }
 
-                config.Input = { "name": "webcam_on_page" };
+            const ep = EyePopSDK.EyePopSDK.init(config);
 
-                console.log(config);
+            const SAVE_FRAMES_INTERVAL = 1000;
 
-                // makes page title config.name
-                document.getElementById("popConfigName").innerHTML = "Pop Name: " + config.name;
 
-                let SAVE_FRAMES = false;
-                let DEBUG_FRAMES = true;
+            EyePopSDK.EyePopAPI.instance.OnDrawFrameEnd = function (prediction)
+            {
+                thirdEyePop.pushFrameData(prediction);
 
-                if (SAVE_FRAMES) { DEBUG_FRAMES = false; }
-
-                if (DEBUG_FRAMES)
+                if (SAVE_FRAMES)
                 {
-                    // load json file ./test_data/pose_capture_data.json and every 100ms push a frame to thirdEyePop
-                    let frames = [];
-                    fetch("./test_data/ball.json")
-                        .then(response => response.json())
-                        .then(data => frames = data)
-                        .then(() =>
-                        {
-                            let i = 0;
-                            setInterval(() =>
-                            {
-                                thirdEyePop.pushFrameData(frames[ i++ % frames.length ]);
-                            }, 1);
 
-                        });
-
-                    return;
-                }
-
-                const ep = EyePopSDK.EyePopSDK.init(config);
-
-                const SAVE_FRAMES_INTERVAL = 1000;
-
-
-                EyePopSDK.EyePopAPI.instance.OnDrawFrameEnd = function (prediction)
-                {
-                    thirdEyePop.pushFrameData(prediction);
-
-                    if (SAVE_FRAMES)
+                    if (prediction)
                     {
+                        cached_data.push(prediction);
+                    }
 
-                        if (prediction)
-                        {
-                            cached_data.push(prediction);
-                        }
-
-                        if (cached_data.length % SAVE_FRAMES_INTERVAL == 0)
-                        {
-                            save();
-                        }
+                    if (cached_data.length % SAVE_FRAMES_INTERVAL == 0)
+                    {
+                        save();
                     }
                 }
+            }
 
             }
 

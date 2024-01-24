@@ -327,6 +327,8 @@ export default class PeopleManager
 
         if (poseIndex)
         {
+            // if (("keyPoints" in person.objects[ poseIndex ])) return;
+
             keyPoints = person.objects[ poseIndex ].keyPoints[ 0 ].points;
         } else
         {
@@ -336,9 +338,9 @@ export default class PeopleManager
         keyPoints.forEach((point) =>
         {
             const tempPoint = new THREE.Vector3(point.x, point.y, point.z);
-            const normalizedPoint = this.normalizePosition(tempPoint, person.source_width, person.source_height, 10000);
+            const normalizedPoint = this.normalizePosition(tempPoint, person.source_width, person.source_height, 5000);
 
-            trackedPerson.poseData.points[ point.classLabel ] = new THREE.Vector3(normalizedPoint.x, normalizedPoint.y, normalizedPoint.z);
+            trackedPerson.poseData.points[ point.classLabel ] = new THREE.Vector3(normalizedPoint.x, normalizedPoint.y, normalizedPoint.z * 2);
         });
 
         // next we create a 2d array of the connection points based on the poseDataConnections array

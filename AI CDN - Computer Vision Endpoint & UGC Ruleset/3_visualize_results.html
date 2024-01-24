@@ -60,25 +60,28 @@
     <script src="config.js"></script>
     <script src="js/main.js"></script>
     <script src="js/excerptFromSDK.min.js"></script>
-    
+
     <script>
-    
+
         FetchPopConfig(pop_endpoint, token)
             .then(response => config = response)
-            .then(() => {
+            .then(() =>
+            {
                 document.getElementById("title").innerHTML = config.name;
             });
 
-        document.getElementById('file-upload').addEventListener('change', function (event) {
+        document.getElementById('file-upload').addEventListener('change', function (event)
+        {
 
             DisplayPreviewImageCanvas(event);
 
-            GetJSONFromEyePop_file(event.target.files[0])
+            GetJSONFromEyePop_file(event.target.files[ 0 ])
 
         });
 
 
-        function GetJSONFromEyePop_file(file) {
+        function GetJSONFromEyePop_file(file)
+        {
             let formData = new FormData()
             formData.append('file', file)
 
@@ -89,29 +92,34 @@
                 method: 'POST',
                 headers: {
                     'accept': 'application/json',
-                    'authorization': 'Bearer '+token
+                    'authorization': 'Bearer ' + token
                 },
                 body: formData
             })
                 .then(response => response.json())
-                .then(data => {
+                .then(data =>
+                {
                     document.getElementById("timing").innerHTML = Math.floor(performance.now() - startTime) + "ms";
 
                     console.log(data)
+                    document.getElementById('txt_json').innerHTML = JSON.stringify(data, " ", 2);
+                    return;
 
-                    if (!data || !data[0])
+                    if (!data || !data[ 0 ])
                         return;
 
-                    if (data[0].objects) {
-                        data[0].objects.forEach(element => {
-                            element.source_height = data[0].source_height;
-                            element.source_width = data[0].source_width;
+                    if (data[ 0 ].objects)
+                    {
+                        data[ 0 ].objects.forEach(element =>
+                        {
+                            element.source_height = data[ 0 ].source_height;
+                            element.source_width = data[ 0 ].source_width;
                             console.log(element);
-                            DrawEyePopReticle(element);                            
+                            DrawEyePopReticle(element);
                         });
                     }
 
-                    const classyLabels = data[0].objects.map(obj => obj.classLabel);
+                    const classyLabels = data[ 0 ].objects.map(obj => obj.classLabel);
                     sortedObjects = sortAndCount(classyLabels);
                     document.getElementById('txt_json').innerHTML = sortAndCountHTML(sortedObjects);
 
