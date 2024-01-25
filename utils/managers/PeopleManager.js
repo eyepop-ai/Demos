@@ -336,13 +336,14 @@ export default class PeopleManager
 
         if (poseIndex)
         {
-            // if (("keyPoints" in person.objects[ poseIndex ])) return;
-
             keyPoints = person.objects[ poseIndex ].keyPoints[ 0 ].points;
-        } else
+        }
+        else
         {
             keyPoints = person.keyPoints[ 0 ].points;
         }
+
+        trackedPerson.poseData.points = {};
 
         keyPoints.forEach((point) =>
         {
@@ -358,8 +359,8 @@ export default class PeopleManager
             return [ trackedPerson.poseData.points[ connection[ 0 ] ], trackedPerson.poseData.points[ connection[ 1 ] ] ];
         });
 
-        // create multiple line segments based on the edges and merge them all into one mesh then add that to the poseData.mesh object
         let poseGeometry = [];
+
         trackedPerson.poseData.edges.forEach((edgePoints) =>
         {
             // skip if any edgePoints are null
