@@ -342,15 +342,14 @@ export default class ThirdEyePop
             // This is where we handle the rendering, including video playback
             renderManager.render();
 
-            // This is where we draw and manage meshes
-            sceneManager.update(predictionDataManager.getCurrentFrame());
-
-
             if (!predictionDataManager.setCurrentFrame(videoTime))
             {
                 autoRender && requestAnimationFrame(render);
                 return;
             }
+
+            // This is where we draw and manage meshes
+            sceneManager.update(predictionDataManager.getCurrentFrame());
 
             // Now we update the heatmap with the new path points
             showHeatmap && renderManager.updateHeatmapPoints(sceneManager.getAllPathPoints());

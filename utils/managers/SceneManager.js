@@ -128,6 +128,9 @@ export default class SceneManager
         const previousActivePeople = [ ...this.activePeople ];
         this.activePeople = [];
 
+        if (!predictionData) return;
+        if (!predictionData.objects) return;
+
         for (let i = 0; i < predictionData.objects.length && this.activePeople.length < this.maxPersons; i++)
         {
             let objects = predictionData.objects[ i ];
