@@ -36,7 +36,7 @@ export default class SceneManager
         this.scene = scene;
         this.camera = camera;
         this.dimensions = dimensions;
-        this.peopleManager = new PeopleManager(dimensions);
+        this.peopleManager = new PeopleManager(dimensions, drawParams.showPath);
         this.activePeople = [];
 
         this.showPoint = drawParams.showPoint;
@@ -128,7 +128,6 @@ export default class SceneManager
         const previousActivePeople = [ ...this.activePeople ];
         this.activePeople = [];
 
-        if (!predictionData) return;
         if (!predictionData.objects) return;
 
         for (let i = 0; i < predictionData.objects.length && this.activePeople.length < this.maxPersons; i++)
@@ -156,12 +155,12 @@ export default class SceneManager
 
     }
 
-    hideInactivePeople(previousActivePeople)
+    hideInactivePeople(people)
     {
         // hide people that are no longer in the scene
-        for (let i = 0; i < previousActivePeople.length; i++)
+        for (let i = 0; i < people.length; i++)
         {
-            const person = previousActivePeople[ i ];
+            const person = people[ i ];
             const personOnScreen = this.activePeople.includes(person);
 
             this.showPath && person.pathLine && (person.pathLine.visible = personOnScreen);

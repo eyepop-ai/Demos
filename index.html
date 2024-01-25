@@ -64,8 +64,8 @@
                         <input type="number" class="form-control" placeholder="Frames to skip"
                             aria-label="Frames to skip" aria-describedby="basic-addon2" id="framesToSkip">
 
-                        <input type="text" class="form-control" placeholder="Videos to play (1,2,3,5,8)"
-                            aria-label="Videos to play (1,2,3,5,8)" aria-describedby="basic-addon2" id="videosToPlay">
+                        <input type="text" class="form-control" placeholder="Indices to play (1,2,3,5,8)"
+                            aria-label="Indices to play (1,2,3,5,8)" aria-describedby="basic-addon2" id="videosToPlay">
 
                         <button id="togglePlay" class="btn btn-primary" type="button">Pause</button>
                         <button id="saveButton" class="btn btn-primary" type="button">Save</button>
@@ -89,8 +89,8 @@
         <video id="videoCapture" class="position-absolute z-n1" style="width: 1px; height: 1px;"></video>
 
         <div class="d-flex justify-content-center">
-            <textarea id="jsonDisplay" class="align-self-center"
-                style="width: 100%; height: 40rem; overflow: auto;"></textarea>
+            <json-viewer id="jsonDisplay" class="align-self-center"
+                style="width: 100%; height: 40rem; overflow: auto;"></json-viewer>
         </div>
 
     </div>
@@ -104,6 +104,8 @@
             }
         }
     </script>
+
+    <script src="https://unpkg.com/@alenaksu/json-viewer/dist/json-viewer.bundle.js"></script>
 
 
     <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk"></script>
@@ -150,8 +152,12 @@
 
         EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token).then(response => config = response).then(() =>
         {
-            loading.remove();
             document.getElementById("popConfigName").innerHTML = config.name;
+            if (config.name)
+            {
+                loading.remove();
+            }
+
         });
 
         saveButton.addEventListener('click', function (event)
@@ -165,14 +171,14 @@
                 canvas: renderCanvas,
                 // videoUrl: "webcam",
                 frameBufferSize: 1,
-                DEBUG: false,
+                DEBUG: true,
                 drawParams: {
                     bgCanvas: mobilecanvas,
                     showHeatmap: false,
                     showFace: true,
                     showHands: true,
                     showPoint: true,
-                    showPath: true,
+                    showPath: false,
                     showBounds: true,
                     showTraceId: true,
                     showPose: true,
@@ -321,7 +327,12 @@
             if (!EyePopSDK.EyePopAPI.instance) return;
             if (!EyePopSDK.EyePopAPI.instance.lastmsg) return;
 
-            jsonText.value = JSON.stringify(EyePopSDK.EyePopAPI.instance.lastmsg, null, 2);
+            // only create a new json viewer if the lastmsg content is different, doing a deep comparison
+            if (JSON.stringify(EyePopSDK.EyePopAPI.instance.lastmsg) != JSON.stringify(thirdEyePop.getPredictionData()))
+            {
+                jsonText.data = EyePopSDK.EyePopAPI.instance.lastmsg;
+            }
+
             thirdEyePop.pushPredictionData(EyePopSDK.EyePopAPI.instance.lastmsg);
 
         }, 100);
@@ -403,6 +414,7 @@
             for (let i = 0; i < event.target.files.length; i++)
             {
                 let file = event.target.files[ i ];
+                // thirdEyePop.reset();
 
                 // wait until isPlaying is true
                 await paused();

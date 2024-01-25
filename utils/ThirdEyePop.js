@@ -342,14 +342,11 @@ export default class ThirdEyePop
             // This is where we handle the rendering, including video playback
             renderManager.render();
 
-            if (!predictionDataManager.setCurrentFrame(videoTime))
-            {
-                autoRender && requestAnimationFrame(render);
-                return;
-            }
+            predictionDataManager.setCurrentFrame(videoTime);
 
             // This is where we draw and manage meshes
-            sceneManager.update(predictionDataManager.getCurrentFrame());
+            const currentPredictionData = predictionDataManager.getCurrentFrame();
+            sceneManager.update(currentPredictionData);
 
             // Now we update the heatmap with the new path points
             showHeatmap && renderManager.updateHeatmapPoints(sceneManager.getAllPathPoints());
@@ -405,6 +402,12 @@ export default class ThirdEyePop
             return sceneManager.activePeople;
         }
 
+        function resetScene()
+        {
+            const scene = getScene();
+            scene.remove(...scene.children);
+        }
+
         // //////////////////// end BODY /////////////////////////////
 
 
@@ -422,7 +425,7 @@ export default class ThirdEyePop
         scope.getCamera = getCamera;
         scope.getRenderer = getRenderer;
         scope.getActivePeople = getActivePeople;
-
+        scope.reset = resetScene;
 
         // //////////////////// end API /////////////////////////////
 

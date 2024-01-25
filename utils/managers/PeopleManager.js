@@ -10,11 +10,12 @@ import People from "../data/People.js";
 
 export default class PeopleManager
 {
-    constructor(dimensions)
+    constructor(dimensions, showPath = false)
     {
         this.peopleMap = new Map();
         this.hotSpotMap = new Map();
         this.dimensions = dimensions;
+        this.showPath = showPath;
 
         this.maxPeoplePositions = 50000;
         this.allPeoplePositions = [];
@@ -100,7 +101,7 @@ export default class PeopleManager
         this.updateBounds(person, trackedPerson, normalizedTopLeft);
 
         // PATH
-        this.updatePath(person, trackedPerson, normalizedTopLeft);
+        this.updatePath(trackedPerson, normalizedTopLeft);
 
         // POSE
         this.updatePoseGeometry(person, trackedPerson);
@@ -146,8 +147,10 @@ export default class PeopleManager
     }
 
 
-    updatePath(person, trackedPerson, normalizedBottomRight)
+    updatePath(trackedPerson, normalizedBottomRight)
     {
+        if (!this.showPath) return;
+
         let yOffset = 0;
         // Capturing the path of the person
         if (window.DEBUG_thirdEyePop.showFootTraffic)
@@ -391,7 +394,7 @@ export default class PeopleManager
 
         if (!returnPerson)
         {
-            returnPerson = new People();
+            returnPerson = new People(this.showPath);
         }
 
         return returnPerson;
