@@ -82,18 +82,24 @@ export default class PeopleManager
 
     addPerson(person)
     {
-        let trackedPerson = this.getPerson(person.traceId);
+        let trackedPerson = null;
+        let id = person.traceId;
+        if (!id)
+        {
+            id = person.id;
+        }
 
+        trackedPerson = this.getPerson(id);
         // Sanity check for valid frame data
         if (!person.source_width || !person.source_height)
         {
             return trackedPerson;
         }
 
-        this.peopleMap.set(person.traceId, trackedPerson);
+        this.peopleMap.set(id, trackedPerson);
 
         trackedPerson.children = person.objects;
-        trackedPerson.traceId = person.traceId;
+        trackedPerson.traceId = id;
 
         let normalizedTopLeft = this.normalizePosition(person, person.source_width, person.source_height);
 

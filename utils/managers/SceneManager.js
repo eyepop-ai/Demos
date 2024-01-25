@@ -128,28 +128,32 @@ export default class SceneManager
         const previousActivePeople = [ ...this.activePeople ];
         this.activePeople = [];
 
-        if (!predictionData.objects) return;
-
-        for (let i = 0; i < predictionData.objects.length && this.activePeople.length < this.maxPersons; i++)
+        if (predictionData.objects)
         {
-            let objects = predictionData.objects[ i ];
-            if (objects.classLabel === "person")
+
+            for (let i = 0; i < predictionData.objects.length && this.activePeople.length < this.maxPersons; i++)
             {
-                const person = this.peopleManager.addPerson(objects);
+                let objects = predictionData.objects[ i ];
+                if (objects.classLabel === "person")
+                {
+                    const person = this.peopleManager.addPerson(objects);
 
-                if (person.state === PeopleState.LOST) continue;
+                    if (person.state === PeopleState.LOST) continue;
 
-                person.index = this.activePeople.length;
-                this.activePeople.push(person);
+                    person.index = this.activePeople.length;
+                    this.activePeople.push(person);
 
-                this.showTraceId && this.drawTraceIdText(person);
-                this.showPath && this.drawPath(person);
-                this.showBounds && this.drawBoundingBox(person);
-                this.showPose && this.drawPose(person);
-                this.showFace && this.drawFace(person);
-                this.showHands && this.drawHands(person);
+                    this.showTraceId && this.drawTraceIdText(person);
+                    this.showPath && this.drawPath(person);
+                    this.showBounds && this.drawBoundingBox(person);
+                    this.showPose && this.drawPose(person);
+                    this.showFace && this.drawFace(person);
+                    this.showHands && this.drawHands(person);
+                }
             }
+
         }
+
 
         this.hideInactivePeople(previousActivePeople);
 

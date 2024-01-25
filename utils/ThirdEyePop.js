@@ -125,6 +125,7 @@ export default class ThirdEyePop
                 renderManager.getCamera(),
                 renderManager.renderer.domElement
             );
+            cameraControls.dollyToCursor = true;
 
             cameraControls.saveState();
 
@@ -283,6 +284,7 @@ export default class ThirdEyePop
         {
             if (!videoUrl) return;
             if (isWebcam) return;
+
             // If the latest prediction datais more than 1 seconds away from the current frame
             // or if the last frame videoTime is greater than the video videoTime
             // then we need to pause and wait for more prediction frames
@@ -292,11 +294,11 @@ export default class ThirdEyePop
             const needsMoreFrames = predictionDataManager.getLastFrameTime() < videoTime;
             const videoPlaying = renderManager.video.duration <= videoTime - 1;
 
-
             if (videoPlaying && needsMoreFrames || onlyHaveOldFrames)
             {
                 renderManager.pauseVideo();
-            } else
+            }
+            else
             {
                 renderManager.playVideo();
             }

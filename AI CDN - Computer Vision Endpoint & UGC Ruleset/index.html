@@ -12,7 +12,7 @@
 
     <!-- A spinning loading animation -->
     <div id="loading" class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center bg-black"
-        style="z-index: 1000;">
+        style="z-index: 1000; scale: 1.3;">
         <div class="spinner-border text-light align-self-center" role="status">
 
             <span class="visually-hidden">Loading...</span>
@@ -53,19 +53,14 @@
                             accept="application/octet-stream">
                     </form>
 
-                    <form class="d-flex">
-                        <input type="text" class="form-control" placeholder="MP4 URL" aria-label="MP4 URL"
-                            aria-describedby="basic-addon2" id="txtUrl">
-                        <button class="btn bg-black text-white" type="button" id="btnPost">Post</button>
-                    </form>
-
                     <form class="col-12">
 
-                        <input type="number" class="form-control" placeholder="Frames to skip"
-                            aria-label="Frames to skip" aria-describedby="basic-addon2" id="framesToSkip">
+                        <input type="number" class="form-control"
+                            placeholder="Video Sample Interval (seconds, deftault 5)" aria-describedby="basic-addon2"
+                            id="framesToSkip">
 
-                        <input type="text" class="form-control" placeholder="Indices to play (1,2,3,5,8)"
-                            aria-label="Indices to play (1,2,3,5,8)" aria-describedby="basic-addon2" id="videosToPlay">
+                        <input type="text" class="form-control" placeholder="Media Indices to play (1,2,3,5,8)"
+                            id="videosToPlay">
 
                         <button id="togglePlay" class="btn btn-primary" type="button">Pause</button>
                         <button id="saveButton" class="btn btn-primary" type="button">Save</button>
@@ -76,7 +71,7 @@
             </div>
         </div>
 
-        <div class="d-flex gap-1 overflow-auto">
+        <div class="d-flex gap-1" style="height: 10rem;">
             <h3 class="text-info">name: </h3>
             <h3 id="mediaName" class="text-white">Video</h3>
             <h3 class="text-info">index: </h3>
@@ -85,8 +80,17 @@
             <h3 id="mediaTime" class="text-white">0</h3>
         </div>
 
-        <video id="myLocalVideo" playsinline controls muted style="width:1px;height:1px;"></video>
-        <video id="videoCapture" class="position-absolute z-n1" style="width: 1px; height: 1px;"></video>
+        <video id="myLocalVideo" playsinline controls muted class="position-absolute"
+            style="width:1px;height:1px;"></video>
+        <video id="videoCapture" class="position-absolute z-n1" class="position-absolute"
+            style="width: 1px; height: 1px;"></video>
+
+        <div class="d-flex">
+            <input type="text" class="form-control" placeholder="filter" aria-label="filter"
+                aria-describedby="basic-addon2" id="jsonFilter">
+            <input type="text" class="form-control" placeholder="search" aria-label="search"
+                aria-describedby="basic-addon2" id="jsonSearch">
+        </div>
 
         <div class="d-flex justify-content-center">
             <json-viewer id="jsonDisplay" class="align-self-center"
@@ -143,6 +147,48 @@
 
         const jsonText = document.getElementById("jsonDisplay");
 
+        const jsonFilter = document.getElementById("jsonFilter");
+        const jsonSearch = document.getElementById("jsonSearch");
+
+        // Get the json-viewer element
+        var viewer = document.querySelector('json-viewer');
+
+        // Add an event listener to the jsonFilter input
+        jsonFilter.addEventListener('change', function (e)
+        {
+            var filterTerm = e.target.value;
+
+            // If the filter term is empty, reset the filter
+            if (!filterTerm)
+            {
+                viewer.resetFilter();
+            } else
+            {
+                // Otherwise, filter the JSON data based on the filter term
+                viewer.filter(filterTerm);
+            }
+        });
+
+        // Add an event listener to the jsonSearch input
+        jsonSearch.addEventListener('change', function (e)
+        {
+            var searchTerm = e.target.value;
+
+            if (!searchTerm) return;
+            if (searchTerm.length < 2) return;
+
+            // Use the search method of json-viewer
+            var searchIterator = viewer.search(searchTerm);
+
+            // Iterate through the search results
+            for (var result of searchIterator)
+            {
+                // Log the result to the console
+                console.log(result);
+            }
+
+        });
+
         var isPlaying = true;
 
         let captureStream = null;
@@ -162,7 +208,7 @@
 
         saveButton.addEventListener('click', function (event)
         {
-            capture();
+            capture(mediaName.innerText + "_" + mediaIndex.innerText + "_" + mediaTime.innerText + ".png");
         });
 
 
@@ -215,12 +261,6 @@
                     togglePlay.innerHTML = "Play";
                     isPlaying = false;
                 }
-            }
-
-            // if s is pressed, fire the capture function
-            if (event.code == "KeyS")
-            {
-                capture();
             }
         });
 
@@ -290,7 +330,7 @@
                 document.body.appendChild(a);
                 a.style = "display: none";
                 a.href = frame;
-                a.download = fileName + ".png";
+                a.download = fileName;
                 a.click();
                 document.body.removeChild(a);
 
@@ -356,49 +396,40 @@
             });
         };
 
-        postButton.addEventListener('click', function (event)
-        {
-            let url = document.getElementById("txtUrl").value;
-
-            console.log("Posted URL: ", url);
-
-            const popConfigFetch = EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token);
-
-            config.Draw = [
-                { "Type": "box", "Targets": [ "*" ] },
-                { "Type": "pose", "Targets": [ "*" ] },
-                { "Type": "hand", "Targets": [ "*" ] },
-                { "Type": "face", "Targets": [ "*" ] },
-            ]
-
-            if (!url)
-            { return; }
-
-            popConfigFetch.then((response) =>
-            {
-                config = response;
-                config.Input = {
-                    "name": "url",
-                    "url": url
-                };
-
-                console.log("EyePopSDK config: ", config);
-
-                EyePopSDK.EyePopSDK.init(config);
-
-                EyePopSDK.EyePopAPI.instance.OnDrawFrame = function (data)
-                {
-                    console.log("EyePopSDK data: ", data);
-                }
-
-            });
-
-        });
+        // postButton.addEventListener('click', function (event)
+        // {
+        //     let url = document.getElementById("txtUrl").value;
+        //     console.log("Posted URL: ", url);
+        //     const popConfigFetch = EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token);
+        //     config.Draw = [
+        //         { "Type": "box", "Targets": [ "*" ] },
+        //         { "Type": "pose", "Targets": [ "*" ] },
+        //         { "Type": "hand", "Targets": [ "*" ] },
+        //         { "Type": "face", "Targets": [ "*" ] },
+        //     ]
+        //     if (!url)
+        //     { return; }
+        //     popConfigFetch.then((response) =>
+        //     {
+        //         config = response;
+        //         config.Input = {
+        //             "name": "url",
+        //             "url": url
+        //         };
+        //         console.log("EyePopSDK config: ", config);
+        //         EyePopSDK.EyePopSDK.init(config);
+        //         EyePopSDK.EyePopAPI.instance.OnDrawFrame = function (data)
+        //         {
+        //             console.log("EyePopSDK data: ", data);
+        //         }
+        //     });
+        // });
 
 
         fileInput.addEventListener('change', async function (event)
         {
             let framesToSkipArray = null;
+            isPlaying = true;
 
             // get the video indexes to play
             if (framesToSkip.value != '')
@@ -414,7 +445,7 @@
             for (let i = 0; i < event.target.files.length; i++)
             {
                 let file = event.target.files[ i ];
-                // thirdEyePop.reset();
+                thirdEyePop.reset();
 
                 // wait until isPlaying is true
                 await paused();
@@ -440,21 +471,30 @@
                     await new Promise(resolve => video.onloadedmetadata = resolve);
 
                     // Calculate the number of frames to extract
-                    let frameInterval = 5;
+                    let skip = 5; // Number of frames to skip
 
                     if (framesToSkip.value != '')
                     {
-                        frameInterval = framesToSkip.value; // Change this to your desired frame interval
+                        skip = framesToSkip.value;
                     }
 
-                    let frameCount = Math.floor(video.duration / frameInterval);
+                    let frameRate = 30; // Assuming a default frame rate of 30 fps
 
-                    for (let j = 0; j < frameCount; j++)
+                    let frameCount = Math.floor(video.duration);
+
+
+                    for (let j = 1; j < frameCount; j += skip)
                     {
 
+                        console.log(j, skip, frameCount);
+
+                        if (framesToSkip.value != '')
+                        {
+                            skip = framesToSkip.value;
+                        }
 
                         // Seek to the time of the next frame
-                        video.currentTime = j * frameInterval;
+                        video.currentTime = j;
                         mediaTime.innerHTML = video.currentTime;
 
                         // Wait for the video to seek to the desired time
@@ -465,11 +505,9 @@
                             // Add a timeout to the promise
                             setTimeout(() =>
                             {
-                                console.warn('Seek operation took too long, continuing anyway');
                                 resolve();
-                            }, 250);
+                            }, 1500);
                         });
-
 
                         // Draw the current video frame to a canvas
                         let canvas = document.createElement('canvas');
@@ -485,7 +523,6 @@
                         await processFile(frameBlob);
 
                         video.remove();
-
                     }
                 } else
                 {
