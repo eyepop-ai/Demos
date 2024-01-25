@@ -498,6 +498,7 @@
 
                         // Seek to the time of the next frame
                         video.currentTime = j;
+                        mediaTime.innerHTML = video.currentTime;
 
                         // Wait for the video to seek to the desired time
                         await new Promise((resolve, reject) =>
@@ -511,7 +512,6 @@
                             }, 1500);
                         });
 
-                        mediaTime.innerHTML = video.currentTime;
 
                         // Draw the current video frame to a canvas
                         let canvas = document.createElement('canvas');
