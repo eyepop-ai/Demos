@@ -55,9 +55,8 @@
 
                     <form class="col-12">
 
-                        <input type="number" class="form-control"
-                            placeholder="Video Sample Interval (seconds, deftault 5)" aria-describedby="basic-addon2"
-                            id="framesToSkip">
+                        <input type="number" class="form-control" placeholder="Video Skip Seconds"
+                            aria-describedby="basic-addon2" id="framesToSkip">
 
                         <input type="text" class="form-control" placeholder="Media Indices to play (1,2,3,5,8)"
                             id="videosToPlay">
@@ -83,7 +82,7 @@
         <video id="myLocalVideo" playsinline controls muted class="position-absolute"
             style="width:1px;height:1px;"></video>
         <video id="videoCapture" class="position-absolute z-n1" class="position-absolute"
-            style="width: 1px; height: 1px;"></video>
+            style="width: 1px; height: 1px; left:0"></video>
 
         <div class="d-flex">
             <input type="text" class="form-control" placeholder="filter" aria-label="filter"
@@ -316,6 +315,13 @@
                 {
                     captureStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
                     captureVideo.srcObject = captureStream;
+                    await new Promise((resolve) =>
+                    {
+                        captureVideo.onloadedmetadata = () =>
+                        {
+                            setTimeout(() => resolve(), 1000);
+                        };
+                    });
                     captureVideo.play();
                 }
 
@@ -327,18 +333,16 @@
 
                 // save frame to a png file named fileName
                 const a = document.createElement("a");
-                document.body.appendChild(a);
-                a.style = "display: none";
                 a.href = frame;
                 a.download = fileName;
                 a.click();
-                document.body.removeChild(a);
 
             } catch (err)
             {
                 console.error("Error capturing screen: " + err);
             }
         };
+
 
         async function GetJSONFromEyePop_file(file)
         {
@@ -475,10 +479,8 @@
 
                     if (framesToSkip.value != '')
                     {
-                        skip = framesToSkip.value;
+                        skip = Math.floor(framesToSkip.value);
                     }
-
-                    let frameRate = 30; // Assuming a default frame rate of 30 fps
 
                     let frameCount = Math.floor(video.duration);
 
@@ -490,12 +492,12 @@
 
                         if (framesToSkip.value != '')
                         {
-                            skip = framesToSkip.value;
+                            skip = Math.floor(framesToSkip.value);
                         }
+
 
                         // Seek to the time of the next frame
                         video.currentTime = j;
-                        mediaTime.innerHTML = video.currentTime;
 
                         // Wait for the video to seek to the desired time
                         await new Promise((resolve, reject) =>
@@ -508,6 +510,8 @@
                                 resolve();
                             }, 1500);
                         });
+
+                        mediaTime.innerHTML = video.currentTime;
 
                         // Draw the current video frame to a canvas
                         let canvas = document.createElement('canvas');
