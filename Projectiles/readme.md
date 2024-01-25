@@ -57,9 +57,9 @@ This is the main utility class, it handles rendering the scene, moving meshes to
 - `setup()`: Initializes the renderer and mesh managers
 - `getPercentAnalyzed()`: Returns a 0-100 integer percentage of the prediction data loaded.
 - `render()`: Runs the render loop manually, automatically renders otherwise
-- `pushFrameData(frameData)`: Takes prediction data and stores it to an internal stack.
-- `popFrameData()`: Pops one frame off the stack with `frameData.shift()`.
-- `getFrameData()`: Gets all the prediction frame data.
+- `pushPredictionData(predictionData)`: Takes prediction data and stores it to an internal stack.
+- `popPredictionData()`: Pops one frame off the stack with `predictionData.shift()`.
+- `getPredictionData()`: Gets all the prediction frame data.
 
 ---
 

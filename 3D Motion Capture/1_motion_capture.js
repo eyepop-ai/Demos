@@ -294,7 +294,7 @@ const setupDebugging = (thirdEyePop, scene, avatars) =>
                 // const frame = frames[ frames.length - 100 ];
                 if (frame)
                 {
-                    thirdEyePop.pushFrameData(frame);
+                    thirdEyePop.pushPredictionData(frame);
                 }
 
             }, 1);

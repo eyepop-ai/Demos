@@ -123,14 +123,14 @@ export default class SceneManager
         return this.peopleManager.getAllPathPoints();
     }
 
-    update(frameData)
+    update(predictionData)
     {
         const previousActivePeople = [ ...this.activePeople ];
         this.activePeople = [];
 
-        for (let i = 0; i < frameData.objects.length && this.activePeople.length < this.maxPersons; i++)
+        for (let i = 0; i < predictionData.objects.length && this.activePeople.length < this.maxPersons; i++)
         {
-            let objects = frameData.objects[ i ];
+            let objects = predictionData.objects[ i ];
             if (objects.classLabel === "person")
             {
                 const person = this.peopleManager.addPerson(objects);

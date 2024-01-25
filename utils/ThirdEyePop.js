@@ -20,7 +20,7 @@ export default class ThirdEyePop
         DEBUG = true,
         canvas = null,
         videoUrl = null,
-        frameData = [],
+        predictionData = [],
         frameBufferSize = 1,
         drawParams: {
             bgCanvas = null,
@@ -101,7 +101,7 @@ export default class ThirdEyePop
                 }
             );
 
-            predictionDataManager = new PredictionDataManager(frameData, frameBufferSize);
+            predictionDataManager = new PredictionDataManager(predictionData, frameBufferSize);
 
             await renderManager.isLoadedPromise();
 
@@ -180,7 +180,6 @@ export default class ThirdEyePop
                     resizeTimeout = setTimeout(() =>
                     {
                         canvasNeedsReset = true;
-                        renderManager.reset();
                     }, 100)
                 },
                 true
@@ -328,7 +327,7 @@ export default class ThirdEyePop
         // Main loop
         function render()
         {
-            if (pause || !predictionDataManager.hasFrameData())
+            if (pause || !predictionDataManager.hasPredictionData())
             {
                 renderManager.render();
                 autoRender && requestAnimationFrame(render);
@@ -343,21 +342,18 @@ export default class ThirdEyePop
             // This is where we handle the rendering, including video playback
             renderManager.render();
 
+            // This is where we draw and manage meshes
+            sceneManager.update(predictionDataManager.getCurrentFrame());
+
+
             if (!predictionDataManager.setCurrentFrame(videoTime))
             {
                 autoRender && requestAnimationFrame(render);
                 return;
             }
 
-            // This is where we draw and manage meshes
-            sceneManager.update(
-                predictionDataManager.getCurrentFrame()
-            );
-
             // Now we update the heatmap with the new path points
-            renderManager.updateHeatmapPoints(
-                sceneManager.getAllPathPoints()
-            );
+            showHeatmap && renderManager.updateHeatmapPoints(sceneManager.getAllPathPoints());
 
             cameraControls && cameraControls.update(.01);
 
@@ -367,27 +363,26 @@ export default class ThirdEyePop
             // We also reset the canvas when window size changes
             resetCanvas();
 
+
             scope.onUpdate && scope.onUpdate();
-
             DEBUG && stats.end();
-
             autoRender && requestAnimationFrame(render);
 
         }
 
-        function pushFrameData(frameData)
+        function pushPredictionData(predictionData)
         {
-            predictionDataManager.pushFrameData(frameData);
+            predictionDataManager.pushPredictionData(predictionData);
         }
 
-        function popFrameData()
+        function popPredictionData()
         {
-            predictionDataManager.popFrameData();
+            predictionDataManager.popPredictionData();
         }
 
-        function getFrameData()
+        function getPredictionData()
         {
-            return predictionDataManager.getFrameData();
+            return predictionDataManager.getPredictionData();
         }
 
         function getScene()
@@ -419,9 +414,9 @@ export default class ThirdEyePop
         scope.setup = setup;
         scope.render = render;
         scope.getPercentAnalyzed = getPercentAnalyzed;
-        scope.pushFrameData = pushFrameData;
-        scope.popFrameData = popFrameData;
-        scope.getFrameData = getFrameData;
+        scope.pushPredictionData = pushPredictionData;
+        scope.popPredictionData = popPredictionData;
+        scope.getPredictionData = getPredictionData;
         scope.onUpdate = null;
         scope.getControls = () => cameraControls;
         scope.getScene = getScene;

@@ -384,10 +384,8 @@ export default class RenderManager
         this.setupEffectComposer();
     }
 
-    // TODO: modularize post effects and split this into multiple functions
-    setupEffectComposer()
+    createPasses()
     {
-        const renderScene = new RenderPass(this.scene, this.camera);
 
         // A pass that copies the texture on the bufferCanvas to the main canvas
         // todo: can we stream the video directly to the main canvas?
@@ -513,11 +511,18 @@ export default class RenderManager
             `
         });
 
+    }
+
+    // TODO: modularize post effects and split this into multiple functions
+    setupEffectComposer()
+    {
+        const renderScene = new RenderPass(this.scene, this.camera);
+        this.createPasses();
+
         // Add the shader pass to the composer
         this.finalComposer = new EffectComposer(this.renderer);
         this.finalComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.finalComposer.setSize(this.width, this.height);
-
 
 
         this.finalComposer.addPass(renderScene);

@@ -7,7 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
-<body class="overflow-hidden d-flex align-content-center bg-black" style="width: 100vw; height: 100vh;">
+<body class="overflow-hidden d-flex bg-black flex-column justify-content-center" style="width: 100vw; height: 100vh;">
 
     <!-- A spinning loading animation -->
     <div id="loading" class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center bg-black"
@@ -19,204 +19,491 @@
         </div>
     </div>
 
-    <header
+    <header id="canvasParent"
         class="d-flex align-self-center justify-content-center align-content-center mt-4 position-absolute w-100 top-0 mx-auto z-3">
         <div class="container-fluid d-flex align-items-center justify-content-between text-center">
             <a href="1_upload_image.html"><img src="css/images/eyepop-logo.svg" alt="EyePop.ai Logo" class="p-2"
                     style="height: 70px;"></a>
-            <h1 class="p-2 text-center text-white">Image / Video Tester</h1>
+            <h1 class="p-2 text-center text-white">Batch Image / Video Tester</h1>
             <h6 id="popConfigName" class="text-center text-white">test</h6>
         </div>
     </header>
+
+    <div class="d-flex align-self-center justify-content-center w-100">
+
+        <div>
+            <canvas id="rendercanvas" class="bg-success object-fit-contain" width="640px" height="480px"></canvas>
+        </div>
+
+        <div>
+            <canvas id="mobilecanvas" class="bg-info object-fit-contain" width="640px" height="480px"></canvas>
+        </div>
+
+    </div>
+
+    <div class="d-flex align-self-center justify-content-center w-100 gap-3">
+        <h3 class="text-white">name: </h3>
+        <h3 id="mediaName" class="text-white">Video</h3>
+        <h3 class="text-white">index: </h3>
+        <h3 id="mediaIndex" class="text-white">0</h3>
+        <h3 class="text-white">time: </h3>
+        <h3 id="mediaTime" class="text-white">0</h3>
+
+        <video id="myLocalVideo" playsinline controls muted style="width:1px;height:1px;"></video>
+
+    </div>
+    <video id="videoCapture" class="position-absolute z-n1" style="width: 1px; height: 1px;"></video>
+
     <!-- FORM UPLOAD ELEMENT: Centered, Full Width Row -->
-    <div class="container-fluid mt-4 position-absolute mx-auto" style="right: 0; top: 5rem;">
-        <div class="row justify-content-center container p-5">
+    <div class="container-fluid position-absolute z-3 bg-black rounded-2" style="left: 0; top: 5rem; width: 320px;">
+        <div class="row justify-content-center">
             <div id="drop-area" class="col-12">
 
                 <form>
-                    <input type="file" class="form-control" id="file_upload" webkitdirectory>
+                    <input type="file" class="form-control" id="file_upload" webkitdirectory
+                        accept="application/octet-stream">
+                </form>
+
+                <form class="d-flex">
+                    <input type="text" class="form-control" placeholder="MP4 URL" aria-label="MP4 URL"
+                        aria-describedby="basic-addon2" id="txtUrl">
+                    <button class="btn bg-black text-white" type="button" id="btnPost">Post</button>
                 </form>
 
                 <form class="col-12">
-                    <input type="text" class="form-control" placeholder="MP4 URL" aria-label="MP4 URL"
-                        aria-describedby="basic-addon2" id="txtUrl">
-                    <button class="btn btn-outline-secondary" type="button" id="btnPost">Post</button>
+
+                    <input type="number" class="form-control" placeholder="Frames to skip" aria-label="Frames to skip"
+                        aria-describedby="basic-addon2" id="framesToSkip">
+
+                    <input type="text" class="form-control" placeholder="Videos to play (1,2,3,5,8)"
+                        aria-label="Videos to play (1,2,3,5,8)" aria-describedby="basic-addon2" id="videosToPlay">
+
+                    <button id="togglePlay" class="btn btn-primary" type="button">Pause</button>
+                    <button id="togglePlay" class="btn btn-primary" type="button">Save</button>
+
                 </form>
+
+
+
             </div>
         </div>
     </div>
     </div>
 
-    <div class="d-flex align-self-center justify-content-center">
-
-
-        <!-- The rendering canvas which three.js is writing to object-fit-contain -->
-        <div id="canvasParent" class="d-flex w-100 h-100 align-self-center justify-content-end align-content-center">
-            <canvas id="rendercanvas" class="w-100 h-100 object-fit-scale z-2"></canvas>
-        </div>
-
-        <div class="container position-absolute" style="margin-top: -5rem;">
-
-            <!-- The video placeholder for -->
-            <video id="myLocalVideo" autoplay playsinline controls muted style="width:1px;height:1px;"></video>
-
-
-            <!-- A hidden canvas element only used for sending video frames to the EyePop endpoint -->
-            <div class="d-flex w-100 justify-content-center"
-                style="width:640px;height:480px;margin:auto auto; position: absolute; left: -9999px;">
-                <canvas id="mobilecanvas" class="bg-transparent w-100 z-3 opacity-100"
-                    style="background-color: transparent; opacity: 1; margin:auto auto;z-index:1000;" width="100%"
-                    height="100%"></canvas>
-            </div>
-        </div>
-
-        <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk"></script>
-
-        <script type="module">
-            const pop_endpoint = 'https://staging-api.eyepop.ai/api/v1/user/pops/513/config';
-            const token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InZUdzF6bi02cjFPcXg0NmNxRl9PMiJ9.eyJlbWFpbCI6ImVkbXVuZGRhb0BnbWFpbC5jb20iLCJodHRwczovL2NsYWltcy5leWVwb3AuYWkvZ3JhbnRzIjpbeyJwZXJtaXNzaW9uIjoiYWNjZXNzOmluZmVyZW5jZS1hcGkiLCJ0YXJnZXQiOiJ1c2VyOmF1dGgwfDY1YWVhYmExNTBkMzk1YTNjODA2OGVlZSJ9XSwiaXNzIjoiaHR0cHM6Ly9kZXYtZXllcG9wLnVzLmF1dGgwLmNvbS8iLCJzdWIiOiJhdXRoMHw2NWFlYWJhMTUwZDM5NWEzYzgwNjhlZWUiLCJhdWQiOlsiaHR0cHM6Ly9kZXYtYXBwLmV5ZXBvcC5haSIsImh0dHBzOi8vZGV2LWV5ZXBvcC51cy5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNzA2MDU1MDkwLCJleHAiOjE3MDYxNDE0OTAsImF6cCI6IklVdDBwczJtYVdaVWRFbUVPUFJhUEpLdmtRVHM2WVVFIiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInBlcm1pc3Npb25zIjpbXX0.TMkcM3FWNVrOA7PUdlvJ2oJ-J8Ofq1oPnzkG8VfVQ4JkCUd1P2Jj22UlIChxko13wTdT1UCc22HwqMkd-NsGtlz9Vv35DTJIaMc2fcbOpHjoUdFwoVtfxB6FVSNdL1udx7K4dvigyIVZHKKDBYfQQ6gcTO1gkILlyeN9OmrfZB6ZkRRip86UHe9kwvXLdRtXBymzOoIt7aveGcLO_iWVvo9iuEKF8v0iN3FHjpdrPqSXQbVZTcpYq_AqmF4NQw6cJSxdTuDS0bClyDZKf14Z-hLDeLp68mx51p7jNWAqUM2DSRlFNNmq2KdhqnYDOSVl5NqWUorkMv5JVWTpB1xMSg';
-            var config = {};
-
-            var fileInput = document.getElementById('file_upload');
-            const postButton = document.getElementById('btnPost');
-            const loading = document.getElementById('loading');
-
-            EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token).then(response => config = response).then(() =>
-            {
-                loading.remove();
-                document.getElementById("popConfigName").innerHTML = config.name;
-            });
-
-
-            const save = (fileName, data) =>
-            {
-                return new Promise((resolve, reject) =>
-                {
-                    const a = document.createElement("a");
-                    document.body.appendChild(a);
-                    a.style = "display: none";
-
-                    const json = JSON.stringify(data);
-                    const blob = new Blob([ json ], { type: "octet/stream" });
-                    const url = window.URL.createObjectURL(blob);
-                    a.href = url;
-                    a.download = fileName + ".json";
-                    a.addEventListener("click", () =>
-                    {
-                        setTimeout(() =>
-                        {
-                            document.body.removeChild(a);
-                            window.URL.revokeObjectURL(url);
-                            resolve();
-                        }, 100);
-                    });
-                    a.click();
-                });
-            };
-
-
-            async function GetJSONFromEyePop_file(file)
-            {
-                let formData = new FormData()
-                formData.append('file', file)
-
-                let response = await fetch(config.url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
-                    method: 'POST',
-                    headers: {
-                        'accept': 'application/json',
-                        'authorization': 'Bearer ' + token
-                    },
-                    body: formData
-                }).catch(error => console.error('The party\'s over, there was an error:', error));
-
-                let data = await response.json();
-
-                return data;
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three/examples/jsm/"
             }
+        }
+    </script>
 
-            fileInput.addEventListener('change', async function (event)
+
+    <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk"></script>
+
+    <script type="module">
+
+        import ThirdEyePop from "../utils/ThirdEyePop.js";
+
+        const pop_endpoint = 'https://staging-api.eyepop.ai/api/v1/user/pops/513/config';
+        const token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InZUdzF6bi02cjFPcXg0NmNxRl9PMiJ9.eyJlbWFpbCI6ImVkbXVuZGRhb0BnbWFpbC5jb20iLCJodHRwczovL2NsYWltcy5leWVwb3AuYWkvZ3JhbnRzIjpbeyJwZXJtaXNzaW9uIjoiYWNjZXNzOmluZmVyZW5jZS1hcGkiLCJ0YXJnZXQiOiJ1c2VyOmF1dGgwfDY1YWVhYmExNTBkMzk1YTNjODA2OGVlZSJ9XSwiaXNzIjoiaHR0cHM6Ly9kZXYtZXllcG9wLnVzLmF1dGgwLmNvbS8iLCJzdWIiOiJhdXRoMHw2NWFlYWJhMTUwZDM5NWEzYzgwNjhlZWUiLCJhdWQiOlsiaHR0cHM6Ly9kZXYtYXBwLmV5ZXBvcC5haSIsImh0dHBzOi8vZGV2LWV5ZXBvcC51cy5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNzA2MDU1MDkwLCJleHAiOjE3MDYxNDE0OTAsImF6cCI6IklVdDBwczJtYVdaVWRFbUVPUFJhUEpLdmtRVHM2WVVFIiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInBlcm1pc3Npb25zIjpbXX0.TMkcM3FWNVrOA7PUdlvJ2oJ-J8Ofq1oPnzkG8VfVQ4JkCUd1P2Jj22UlIChxko13wTdT1UCc22HwqMkd-NsGtlz9Vv35DTJIaMc2fcbOpHjoUdFwoVtfxB6FVSNdL1udx7K4dvigyIVZHKKDBYfQQ6gcTO1gkILlyeN9OmrfZB6ZkRRip86UHe9kwvXLdRtXBymzOoIt7aveGcLO_iWVvo9iuEKF8v0iN3FHjpdrPqSXQbVZTcpYq_AqmF4NQw6cJSxdTuDS0bClyDZKf14Z-hLDeLp68mx51p7jNWAqUM2DSRlFNNmq2KdhqnYDOSVl5NqWUorkMv5JVWTpB1xMSg';
+        var config = {};
+
+        var fileInput = document.getElementById('file_upload');
+        const postButton = document.getElementById('btnPost');
+        const loading = document.getElementById('loading');
+
+        const captureCanvas = document.createElement("canvas");
+        const captureContext = captureCanvas.getContext("2d");
+        const captureVideo = document.getElementById("videoCapture");
+
+        const renderCanvas = document.getElementById("rendercanvas");
+        const mobilecanvas = document.getElementById("mobilecanvas");
+        const mobileCanvasContext = mobilecanvas.getContext("2d");
+
+        const framesToSkip = document.getElementById("framesToSkip");
+        const videosToPlay = document.getElementById("videosToPlay");
+        const playPause = document.getElementById("playPause");
+
+        const mediaName = document.getElementById("mediaName");
+        const mediaIndex = document.getElementById("mediaIndex");
+        const mediaTime = document.getElementById("mediaTime");
+
+        const togglePlay = document.getElementById("togglePlay");
+
+        var isPlaying = true;
+
+        const captureStream = await navigator.mediaDevices.getDisplayMedia();
+        captureVideo.srcObject = captureStream;
+        captureVideo.play();
+
+        EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token).then(response => config = response).then(() =>
+        {
+            loading.remove();
+            document.getElementById("popConfigName").innerHTML = config.name;
+        });
+
+        const thirdEyePop = new ThirdEyePop(
             {
-                // if the target is a directory loop over all files and run this one by one
-                for (let i = 0; i < event.target.files.length; i++)
-                {
-                    let file = event.target.files[ i ];
-
-                    console.log("File: ", file.name);
-
-                    const popConfigFetch = EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token);
-
-                    config.Draw = [
-                        { "Type": "box", "Targets": [ "*" ] },
-                        { "Type": "pose", "Targets": [ "*" ] },
-                        { "Type": "hand", "Targets": [ "*" ] },
-                        { "Type": "face", "Targets": [ "*" ] },
-                    ]
-
-                    let result = await popConfigFetch.then((response) =>
-                    {
-                        config = response;
-
-                        config.Input = {
-                            "name": "file_upload",
-                        };
-
-                        console.log("EyePopSDK config: ", config);
-
-                        EyePopSDK.EyePopSDK.init(config);
-
-                        response = GetJSONFromEyePop_file(file);
-                        return response;
-                    });
-
-                    let data = await result;
-
-                    await save(file.name, data);
-
-                    console.log(file.name, data);
+                canvas: renderCanvas,
+                // videoUrl: "webcam",
+                frameBufferSize: 1,
+                DEBUG: false,
+                drawParams: {
+                    bgCanvas: mobilecanvas,
+                    showHeatmap: false,
+                    showFace: true,
+                    showHands: true,
+                    showPoint: true,
+                    showPath: true,
+                    showBounds: true,
+                    showTraceId: true,
+                    showPose: true,
+                    showGammaCorrection: false,
                 }
             });
 
-            postButton.addEventListener('click', function (event)
+        thirdEyePop.setup();
+
+        togglePlay.addEventListener('click', function (event)
+        {
+            if (togglePlay.innerHTML == "Play")
             {
-                let url = document.getElementById("txtUrl").value;
+                togglePlay.innerHTML = "Pause";
+                isPlaying = true;
+            } else
+            {
+                togglePlay.innerHTML = "Play";
+                isPlaying = false;
+            }
+        });
 
-                console.log("Posted URL: ", url);
+        // on space toggle play pause
+        document.addEventListener('keydown', function (event)
+        {
+            if (event.code == "Space")
+            {
+                if (togglePlay.innerHTML == "Play")
+                {
+                    togglePlay.innerHTML = "Pause";
+                    isPlaying = true;
+                } else
+                {
+                    togglePlay.innerHTML = "Play";
+                    isPlaying = false;
+                }
+            }
 
-                const popConfigFetch = EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token);
+            // if s is pressed, fire the capture function
+            if (event.code == "KeyS")
+            {
+                capture();
+            }
+        });
+
+        // a promise to wait indefinitely on when isPlaying is false
+        const paused = async () =>
+        {
+            return new Promise((resolve, reject) =>
+            {
+                // an interval to check if isPlaying is true
+                const interval = setInterval(() =>
+                {
+                    if (isPlaying)
+                    {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, 100);
+
+            });
+        };
+
+        const saveJson = (fileName, jsonData) =>
+        {
+            return new Promise((resolve, reject) =>
+            {
+                const jsonString = JSON.stringify(jsonData);
+                const blob = new Blob([ jsonString ], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                document.body.appendChild(a);
+                a.style = "display: none";
+                a.href = url;
+                a.download = fileName + ".json";
+                a.addEventListener("click", () =>
+                {
+                    setTimeout(() =>
+                    {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        resolve();
+                    }, 100);
+                });
+                a.click();
+            });
+        };
+
+        const capture = async (fileName = "ep_test") =>
+        {
+            try
+            {
+                captureCanvas.width = captureVideo.videoWidth;
+                captureCanvas.height = captureVideo.videoHeight;
+                // captureContext.clearRect(0, 0, captureCanvas.width, captureCanvas.height);
+                captureContext.drawImage(captureVideo, 0, 0, captureCanvas.width, captureCanvas.height);
+
+                const frame = captureCanvas.toDataURL("image/png");
+
+                // save frame to a png file named fileName
+                const a = document.createElement("a");
+                document.body.appendChild(a);
+                a.style = "display: none";
+                a.href = frame;
+                a.download = fileName + ".png";
+                a.click();
+                document.body.removeChild(a);
+
+            } catch (err)
+            {
+                console.error("Error capturing screen: " + err);
+            }
+        };
+
+        async function GetJSONFromEyePop_file(file)
+        {
+            let formData = new FormData()
+            formData.append('file', file)
+
+            let response = await fetch(config.url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'authorization': 'Bearer ' + token
+                },
+                body: formData
+            }).catch(error => console.error('The party\'s over, there was an error:', error));
+
+            let data = await response.json();
+
+            return data;
+        }
+
+
+
+
+        const draw = async (fileData) =>
+        {
+            return new Promise((resolve, reject) =>
+            {
+                const reader = new FileReader();
+                reader.onload = function (event)
+                {
+                    const img = new Image();
+                    img.onload = function ()
+                    {
+                        mobileCanvasContext.drawImage(img, 0, 0, mobilecanvas.width, mobilecanvas.height);
+                        resolve();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(fileData);
+            });
+        };
+
+        postButton.addEventListener('click', function (event)
+        {
+            let url = document.getElementById("txtUrl").value;
+
+            console.log("Posted URL: ", url);
+
+            const popConfigFetch = EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token);
+
+            config.Draw = [
+                { "Type": "box", "Targets": [ "*" ] },
+                { "Type": "pose", "Targets": [ "*" ] },
+                { "Type": "hand", "Targets": [ "*" ] },
+                { "Type": "face", "Targets": [ "*" ] },
+            ]
+
+            if (!url)
+            { return; }
+
+            popConfigFetch.then((response) =>
+            {
+                config = response;
+                config.Input = {
+                    "name": "url",
+                    "url": url
+                };
+
+                console.log("EyePopSDK config: ", config);
+
+                EyePopSDK.EyePopSDK.init(config);
+
+                EyePopSDK.EyePopAPI.instance.OnDrawFrame = function (data)
+                {
+                    console.log("EyePopSDK data: ", data);
+                }
+
+            });
+
+        });
+
+
+        fileInput.addEventListener('change', async function (event)
+        {
+            let framesToSkipArray = null;
+
+            // get the video indexes to play
+            if (framesToSkip.value != '')
+            {
+                // parse the array of integers in frames to skip
+                framesToSkipArray = framesToSkip.value.split(",").map(function (item)
+                {
+                    return parseInt(item, 10);
+                });
+            }
+
+            // if the target is a directory loop over all files and run this one by one
+            for (let i = 0; i < event.target.files.length; i++)
+            {
+                let file = event.target.files[ i ];
+
+
+                // wait until isPlaying is true
+                await paused();
+
+                // only play the videos in the videosToPlay array
+                if (framesToSkipArray && !(i in framesToSkipArray))
+                {
+                    continue;
+                }
+
+                mediaName.innerHTML = file.name;
+                mediaIndex.innerHTML = i;
+                mediaTime.innerHTML = 0;
+
+                // Check if the file is a video
+                if (file.type.startsWith('video/'))
+                {
+                    // Create a video element
+                    let video = document.createElement('video');
+                    video.src = URL.createObjectURL(file);
+
+                    // Wait for the video metadata to load
+                    await new Promise(resolve => video.onloadedmetadata = resolve);
+
+                    // Calculate the number of frames to extract
+                    let frameInterval = 5;
+
+                    if (framesToSkip.value != '')
+                    {
+                        frameInterval = framesToSkip.value; // Change this to your desired frame interval
+                    }
+
+                    let frameCount = Math.floor(video.duration / frameInterval);
+
+                    for (let j = 0; j < frameCount; j++)
+                    {
+
+
+                        // Seek to the time of the next frame
+                        video.currentTime = j * frameInterval;
+                        mediaTime.innerHTML = video.currentTime;
+
+                        // Wait for the video to seek to the desired time
+                        await new Promise((resolve, reject) =>
+                        {
+                            video.onseeked = resolve;
+
+                            // Add a timeout to the promise
+                            setTimeout(() =>
+                            {
+                                console.warn('Seek operation took too long, continuing anyway');
+                                resolve();
+                            }, 250); // Timeout after 5000 milliseconds (5 seconds)
+                        });
+
+
+                        // Draw the current video frame to a canvas
+                        let canvas = document.createElement('canvas');
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        let context = canvas.getContext('2d');
+                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                        // Convert the canvas to a Blob
+                        let frameBlob = await new Promise(resolve => canvas.toBlob(resolve));
+
+                        // Process the frame
+                        await processFile(frameBlob);
+
+                        video.remove();
+
+                        // wait until isPlaying is true
+                        await paused();
+
+                    }
+                } else
+                {
+                    // If the file is not a video, process it as before
+                    await processFile(file);
+                }
+            }
+        });
+
+        async function processFile(file)
+        {
+            const popConfigFetch = EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token);
+
+            let result = await popConfigFetch.then((response) =>
+            {
+                config = response;
+
+                config.Input = {
+                    "name": "file_upload",
+                };
 
                 config.Draw = [
                     { "Type": "box", "Targets": [ "*" ] },
                     { "Type": "pose", "Targets": [ "*" ] },
                     { "Type": "hand", "Targets": [ "*" ] },
                     { "Type": "face", "Targets": [ "*" ] },
-                ]
+                ];
 
-                if (!url)
-                { return; }
+                console.log("EyePopSDK config: ", config);
 
-                popConfigFetch.then((response) =>
+                EyePopSDK.EyePopSDK.init(config);
+
+
+                EyePopSDK.EyePopAPI.instance.OnDrawFrameEnd = function (data)
                 {
-                    config = response;
-                    config.Input = {
-                        "name": "url",
-                        "url": url
-                    };
+                    thirdEyePop.pushPredictionData(data);
+                }
 
-                    console.log("EyePopSDK config: ", config);
+                response = EyePopSDK.EyePopAPI.GetJSONFromEyePop_file(file);
 
-                    EyePopSDK.EyePopSDK.init(config);
-
-                    EyePopSDK.EyePopAPI.instance.OnDrawFrame = function (data)
-                    {
-                        console.log("EyePopSDK data: ", data);
-                    }
-
-                });
-
+                return response;
             });
 
+            // draw the file on the canvas
+            await draw(file);
 
-        </script>
+            let data = await result;
+
+            // await save(file.name, data);
+
+            // wait for 5 seconds
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            console.log(file.name, data);
+        }
+
+
+    </script>
 </body>
 
 </html>

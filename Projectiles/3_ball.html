@@ -82,7 +82,7 @@
                     {
                         canvas: renderCanvas,
                         // videoUrl: "webcam",
-                        frameData: cached_data,
+                        predictionData: cached_data,
                         : 1,
                 DEBUG: true,
                     drawParams: {
@@ -141,7 +141,7 @@
                         let i = 0;
                         setInterval(() =>
                         {
-                            thirdEyePop.pushFrameData(frames[ i++ % frames.length ]);
+                            thirdEyePop.pushPredictionData(frames[ i++ % frames.length ]);
                         }, 1);
 
                     });
@@ -156,7 +156,7 @@
 
             EyePopSDK.EyePopAPI.instance.OnDrawFrameEnd = function (prediction)
             {
-                thirdEyePop.pushFrameData(prediction);
+                thirdEyePop.pushPredictionData(prediction);
 
                 if (SAVE_FRAMES)
                 {

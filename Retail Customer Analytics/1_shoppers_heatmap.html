@@ -138,7 +138,7 @@
                     {
                         canvas: renderCanvas,
                         videoUrl: urlInput.value,
-                        frameData: cached_data,
+                        predictionData: cached_data,
                         frameBufferSize: 1000,
                         DEBUG: true,
                         drawParams: {
@@ -170,7 +170,7 @@
                 EyePopSDK.EyePopAPI.instance.OnPrediction = function (data)
                 {
                     cached_data.push(data);
-                    thirdEyePop.pushFrameData(data);
+                    thirdEyePop.pushPredictionData(data);
 
                     analyzedPercentText.innerHTML = thirdEyePop.getPercentAnalyzed() + "%";
                 };

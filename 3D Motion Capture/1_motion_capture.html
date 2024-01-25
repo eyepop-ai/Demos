@@ -60,7 +60,7 @@
                     "three/addons/": "https://unpkg.com/three/examples/jsm/"
                 }
             }
-        </script>
+    </script>
 
     <script type="module">
         import ThirdEyePop from "../utils/ThirdEyePop.js";
@@ -79,7 +79,7 @@
                 {
                     canvas: renderCanvas,
                     videoUrl: "webcam",
-                    frameData: cached_data,
+                    predictionData: cached_data,
                     frameBufferSize: 1,
                     DEBUG: true,
                     drawParams: {
@@ -123,7 +123,7 @@
 
                     EyePopSDK.EyePopAPI.instance.OnPrediction = function (prediction)
                     {
-                        thirdEyePop.pushFrameData(prediction);
+                        thirdEyePop.pushPredictionData(prediction);
 
                         if (loading)
                         {

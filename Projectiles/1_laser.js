@@ -203,7 +203,7 @@ const setupDebugging = (thirdEyePop, scene, renderer) =>
             let i = 0;
             setInterval(() =>
             {
-                thirdEyePop.pushFrameData(frames[ i++ % frames.length ]);
+                thirdEyePop.pushPredictionData(frames[ i++ % frames.length ]);
             }, 10);
 
         });
