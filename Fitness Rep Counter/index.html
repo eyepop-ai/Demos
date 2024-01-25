@@ -19,7 +19,7 @@
 
   <video id="myLocalVideo" autoplay playsinline controls muted style="width:1px;height:1px;"></video>
   <!-- <canvas id="previewcanvas" style="background-color: transparent; width: 1%; height: auto; display:none;"></canvas> -->
-  <div style="width:640px;height:480px;margin:auto auto;">
+  <div class="w-100 h-100" style="width:640px;height:480px;margin:auto auto;">
     <canvas id="mobilecanvas"
         style="background-color: transparent; opacity: 1; margin:auto auto;display:none;z-index:1000;" width="100%"
         height="100%"></canvas>
@@ -46,7 +46,8 @@
           { "Type": "box", "Targets": [ "*" ] },
           { "Type": "pose", "Targets": [ "*" ] },
           {
-            "Type": "counter", "RulesLowCode": "\n" + "Biggest Person left wrist below Biggest Person left elbow " + "\r\n" +
+            "Type": "counter", "RulesLowCode": "\n" +
+              "Biggest Person left wrist below Biggest Person left elbow " + "\r\n" +
               "Biggest Person right wrist below Biggest Person right elbow  " + "\r\n" +
               "Biggest Person left wrist above Biggest Person left elbow" + "\r\n" +
               "Biggest Person right wrist above Biggest Person right elbow" + "\r\n"

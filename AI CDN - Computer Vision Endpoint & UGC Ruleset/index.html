@@ -118,7 +118,7 @@
         import ThirdEyePop from "../utils/ThirdEyePop.js";
 
         const pop_endpoint = 'https://staging-api.eyepop.ai/api/v1/user/pops/513/config';
-        const token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InZUdzF6bi02cjFPcXg0NmNxRl9PMiJ9.eyJlbWFpbCI6ImVkbXVuZGRhb0BnbWFpbC5jb20iLCJodHRwczovL2NsYWltcy5leWVwb3AuYWkvZ3JhbnRzIjpbeyJwZXJtaXNzaW9uIjoiYWNjZXNzOmluZmVyZW5jZS1hcGkiLCJ0YXJnZXQiOiJ1c2VyOmF1dGgwfDY1YWVhYmExNTBkMzk1YTNjODA2OGVlZSJ9XSwiaXNzIjoiaHR0cHM6Ly9kZXYtZXllcG9wLnVzLmF1dGgwLmNvbS8iLCJzdWIiOiJhdXRoMHw2NWFlYWJhMTUwZDM5NWEzYzgwNjhlZWUiLCJhdWQiOlsiaHR0cHM6Ly9kZXYtYXBwLmV5ZXBvcC5haSIsImh0dHBzOi8vZGV2LWV5ZXBvcC51cy5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNzA2MTQyMDc2LCJleHAiOjE3MDYyMjg0NzYsImF6cCI6IklVdDBwczJtYVdaVWRFbUVPUFJhUEpLdmtRVHM2WVVFIiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInBlcm1pc3Npb25zIjpbXX0.EoOlxPgrv-jthnkGopRB4XAwky5Cx5rAH_jYaDTHdTHjbxx4jPWChS9Eu3S6WvQ96TIXbFEvLyOgdoJCj8nubQHGD9McTPvK1Alht0HF9oKtSMd0UmwzNih7UnrVxWEJ0hM3UY5DJqns5x0cAJXGQJVTJ1qIhHEIRlnNi52_o13bjr3M_xyB0hv3x302tPmQUVBjJlLBTPpr5kCumPhocbZtOpiL4s4Z62qxoHnn5Uu57xJxjjoB1id8L_c9SvgJKjKeAJKb8IXSnSrK5S4FXF2D_GD42Ot8U2GOUNv5b_vST9pWrBOdnxTRykkOOBvi-V0n1hrvv_SsZsRfMHYHzg';
+        const token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InZUdzF6bi02cjFPcXg0NmNxRl9PMiJ9.eyJlbWFpbCI6ImVkbXVuZGRhb0BnbWFpbC5jb20iLCJodHRwczovL2NsYWltcy5leWVwb3AuYWkvZ3JhbnRzIjpbeyJwZXJtaXNzaW9uIjoiYWNjZXNzOmluZmVyZW5jZS1hcGkiLCJ0YXJnZXQiOiJ1c2VyOmF1dGgwfDY1YWVhYmExNTBkMzk1YTNjODA2OGVlZSJ9XSwiaXNzIjoiaHR0cHM6Ly9kZXYtZXllcG9wLnVzLmF1dGgwLmNvbS8iLCJzdWIiOiJhdXRoMHw2NWFlYWJhMTUwZDM5NWEzYzgwNjhlZWUiLCJhdWQiOlsiaHR0cHM6Ly9kZXYtYXBwLmV5ZXBvcC5haSIsImh0dHBzOi8vZGV2LWV5ZXBvcC51cy5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNzA2MTU5ODQ2LCJleHAiOjE3MDYyNDYyNDYsImF6cCI6IklVdDBwczJtYVdaVWRFbUVPUFJhUEpLdmtRVHM2WVVFIiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInBlcm1pc3Npb25zIjpbXX0.ckOm3OawXZdiauqHeHxxVL3wEpioScbjFDS8N_979H8S7mUf5X0wqKEvK-zX72wj_PUoFFgMJiM2TNClGNTXKaLc3bYSkBYbN13O0N1RhoDI0m0-7-wpwcz7QoWYEeVtkuLH8BP6JZ-QQwKyku6c9MngIplh7dzd4KzOy4AEBIyY1MklwYbWdKOhUJiqOsrKAcLlqJDlMmJtJZa1egXwVG7mRsFcoFdwHFdPNeZm9kGIvQd03kNEHkGfRZLkQkRV74Z5B-VjuAiEOy5pZG6qOYkadMcYkZ8bRcAqAbVPqKnT2LdV28rsskGfF4bTy_Fkj4fbcpzSiNcwa7lwJWFKEQ';
         var config = {};
 
         var fileInput = document.getElementById('file_upload');
@@ -498,7 +498,7 @@
 
                         // Seek to the time of the next frame
                         video.currentTime = j;
-                        mediaTime.innerHTML = video.currentTime;
+                        mediaTime.innerHTML = j;
 
                         // Wait for the video to seek to the desired time
                         await new Promise((resolve, reject) =>
@@ -528,7 +528,7 @@
 
                         video.remove();
                     }
-                } else
+                } else if (file.type.startsWith('image/'))
                 {
                     // If the file is not a video, process it as before
                     await processFile(file);
