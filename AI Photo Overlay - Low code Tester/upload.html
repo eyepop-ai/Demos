@@ -65,8 +65,8 @@
         EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint,token)
         .then(response => config = response)
         .then(() => {
-            config.Input = {"name":"file_upload"};
-            config.Draw = [
+            config.input = {"name":"file_upload"};
+            config.draw = [
                 // {"Type": "box", "Targets":["*"]},
                 // { "Type": "pose", "Targets": ["person"] },
                 {

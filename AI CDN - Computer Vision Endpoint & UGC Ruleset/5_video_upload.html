@@ -84,7 +84,7 @@
             const startTime = performance.now();
             ClearDisplay();
 
-            fetch(config.url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
+            fetch(config.base_url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
                 method: 'PATCH',
                 headers: {
                     'accept': 'application/json',

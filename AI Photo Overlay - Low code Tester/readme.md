@@ -27,7 +27,7 @@ Start your web server from within this directory and check out the examples: htt
 In this demo we use the EyePopSDK to place a pair of sunglasses ontop of a person inside of an image by using the simple Low Code Language in this following code block. This will follow the moving pose of any people and anchor to the image the positions of the detected elements.
 
 ```
-config.Draw = [
+config.draw = [
     {
         "Type": "posefollow",
         "Targets": ["person"],

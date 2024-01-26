@@ -37,7 +37,7 @@ EyePop makes this incredibly simple by incrementing a counter when **_all_** eve
 To enable drawing and the counter, we add the following:
 
 ```
-config.Draw = [
+config.draw = [
     // This draws a box over all detected objects
     {"Type": "box", "Targets":["*"]},
 
