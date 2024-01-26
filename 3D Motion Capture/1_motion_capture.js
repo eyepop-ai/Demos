@@ -3,7 +3,12 @@ import * as THREE from 'three';
 import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import gsap from "https://cdn.skypack.dev/gsap";
+
+
+// TODO: 
+// 1. smooth out points
+// 2. add ability to import fbx model
+
 
 var jointNodes =
 {
@@ -78,7 +83,7 @@ const getRandomBrightColor = () =>
 }
 
 
-const buildScene = async (scene, renderer) =>
+const buildScene = async (scene, renderer, modelData) =>
 {
     // add an hdr environment map to the scene
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
@@ -153,8 +158,7 @@ const buildScene = async (scene, renderer) =>
             {
                 o.castShadow = false;
                 o.receiveShadow = false;
-                o.material.side = THREE.FrontSide;
-                // o.visible = false;
+                o.material.side = THREE.FrontSide; \
             }
         });
 
@@ -314,9 +318,8 @@ const setupDebugging = (thirdEyePop, scene, avatars) =>
     return;
 }
 
-export const updateScene = async (thirdEyePop, isDebugging) =>
+export const updateScene = async (thirdEyePop, modelData, isDebugging) =>
 {
-
 
     let scene = thirdEyePop.getScene();
     const renderer = thirdEyePop.getRenderer();
@@ -324,7 +327,7 @@ export const updateScene = async (thirdEyePop, isDebugging) =>
     const controls = thirdEyePop.getControls();
     handleCamera(controls);
 
-    let avatars = await buildScene(scene, renderer);
+    let avatars = await buildScene(scene, renderer, modelData);
 
     if (isDebugging)
     {

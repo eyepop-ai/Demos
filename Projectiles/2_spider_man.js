@@ -8,6 +8,11 @@ import { EXRLoader } from 'https://unpkg.com/three/examples/jsm/loaders/EXRLoade
 // const world = new CANNON.World();
 // world.gravity.set(0, 0, 0); // m/s²
 
+
+// TODO:
+//   1. add text to enable or disable spiderman mode
+
+
 var envTexture;
 
 export const updateScene = async (thirdEyePop) =>
@@ -129,7 +134,7 @@ export const updateScene = async (thirdEyePop) =>
     let webProjectiles = [];
     let wasSpiderManCount = 0;
 
-    let spiderWebTexture = new THREE.TextureLoader().load('./imgs/web1.png');
+    let spiderWebTexture = new THREE.TextureLoader().load('./imgs/web2.png');
 
     let helper = new THREE.Object3D();
     let decalMaterial = new THREE.MeshBasicMaterial({ map: spiderWebTexture, depthWrite: false, depthTest: false, transparent: true, polygonOffset: true, polygonOffsetFactor: -4, side: THREE.DoubleSide });
