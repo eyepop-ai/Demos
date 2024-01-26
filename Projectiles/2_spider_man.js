@@ -8,6 +8,7 @@ import { EXRLoader } from 'https://unpkg.com/three/examples/jsm/loaders/EXRLoade
 // const world = new CANNON.World();
 // world.gravity.set(0, 0, 0); // m/s²
 
+var envTexture;
 
 export const updateScene = async (thirdEyePop) =>
 {
@@ -35,9 +36,10 @@ export const updateScene = async (thirdEyePop) =>
             const box = new THREE.Mesh(
                 new THREE.SphereGeometry(0.15, 16, 16),
                 new THREE.MeshStandardMaterial({
-                    color: 0xffffff,
-                    metalness: 1, // Reflectivity of the material
-                    roughness: 0.1, // Smoothness of the material
+                    color: getRandomBrightColor(),
+                    metalness: .8, // Reflectivity of the material
+                    roughness: .1, // Smoothness of the material
+                    envMap: envTexture,
                 })
             );
 
@@ -70,7 +72,7 @@ export const updateScene = async (thirdEyePop) =>
 
     }
 
-    let randomSceneObjects = createRandomSceneObjects(scene, 50);
+    let randomSceneObjects = createRandomSceneObjects(scene, 0);
 
     // remove web rfom scene
     const buildScene = async (scene, renderer) =>
@@ -87,13 +89,19 @@ export const updateScene = async (thirdEyePop) =>
 
             texture.minFilter = THREE.NearestFilter;
             texture.magFilter = THREE.NearestFilter;
+            texture.encoding = THREE.sRGBEncoding;
+            texture.mapping = THREE.EquirectangularReflectionMapping;
 
             // Set the environment map to the loaded texture
             scene.environment = pmremGenerator.fromEquirectangular(texture).texture;
+            envTexture = texture;
             // scene.background = texture;
             pmremGenerator.dispose();
 
         });
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+        scene.add(ambientLight);
 
         // load a web mesh called ./web.glb
         const gltfLoader = new GLTFLoader();
@@ -121,7 +129,7 @@ export const updateScene = async (thirdEyePop) =>
     let webProjectiles = [];
     let wasSpiderManCount = 0;
 
-    let spiderWebTexture = new THREE.TextureLoader().load('./imgs/spiderweb5.png');
+    let spiderWebTexture = new THREE.TextureLoader().load('./imgs/web1.png');
 
     let helper = new THREE.Object3D();
     let decalMaterial = new THREE.MeshBasicMaterial({ map: spiderWebTexture, depthWrite: false, depthTest: false, transparent: true, polygonOffset: true, polygonOffsetFactor: -4, side: THREE.DoubleSide });
@@ -162,6 +170,19 @@ export const updateScene = async (thirdEyePop) =>
             var decal = new THREE.Mesh(decalGeometry, decalMaterial);
             closestHit.object.add(decal);
             decal.position.copy(position);
+
+            //randomize decal rotation to make it look more natural
+            decal.rotation.z = decal.rotation.z + (.01 * Math.random());
+
+            // create timeout to remove decal
+            setTimeout(() =>
+            {
+                closestHit.object.remove(decal);
+                scene.remove(decal);
+                decal = null;
+
+            }, 1000);
+
         }
     }
 

@@ -142,6 +142,8 @@ const buildScene = async (scene, renderer) =>
     {
         gltf.scene.rotation.set(0, Math.PI, 0);
         gltf.scene.scale.multiplyScalar(2);
+
+        gltf.scene.scale.multiplyScalar(.8);
         gltf.scene.scale.y *= 1.8;
         gltf.scene.position.set(-.5, -4.2, 0);
 
@@ -161,50 +163,50 @@ const buildScene = async (scene, renderer) =>
 
     const avatars = [];
 
-    const model1 = new Promise((resolve, reject) =>
-    {
-        // import fbx model
-        const joints = {};
+    // const model1 = new Promise((resolve, reject) =>
+    // {
+    //     // import fbx model
+    //     const joints = {};
 
-        loader.load(
-            './models/girl.glb',
-            function (gltf)
-            {
-                let model, mixer, idle;
+    //     loader.load(
+    //         './models/girl.glb',
+    //         function (gltf)
+    //         {
+    //             let model, mixer, idle;
 
-                model = gltf.scene;
-                let fileAnimations = gltf.animations;
+    //             model = gltf.scene;
+    //             let fileAnimations = gltf.animations;
 
-                model.traverse(o =>
-                {
+    //             model.traverse(o =>
+    //             {
 
-                    if (o.isMesh)
-                    {
-                        o.castShadow = true;
-                        o.receiveShadow = true;
-                        o.visible = true;
-                    }
+    //                 if (o.isMesh)
+    //                 {
+    //                     o.castShadow = true;
+    //                     o.receiveShadow = true;
+    //                     o.visible = true;
+    //                 }
 
-                    if (!o.isBone) return;
+    //                 if (!o.isBone) return;
 
-                    joints[ o.name ] = o;
+    //                 joints[ o.name ] = o;
 
-                });
-                model.scale.set(-2, 2.5, -2);
-                model.position.set(1.5, -4.1, 0);
+    //             });
+    //             model.scale.set(-2, 2.5, -2);
+    //             model.position.set(1.5, -4.1, 0);
 
-                mixer = new THREE.AnimationMixer(model);
-                let idleAnim = THREE.AnimationClip.findByName(fileAnimations, 'idle');
+    //             mixer = new THREE.AnimationMixer(model);
+    //             let idleAnim = THREE.AnimationClip.findByName(fileAnimations, 'idle');
 
-                idle = mixer.clipAction(idleAnim);
-                // idle.play();
-                scene.add(model);
+    //             idle = mixer.clipAction(idleAnim);
+    //             // idle.play();
+    //             scene.add(model);
 
-                avatars.push({ model, joints });
+    //             avatars.push({ model, joints });
 
-                resolve({ model, joints, mixer });
-            });
-    });
+    //             resolve({ model, joints, mixer });
+    //         });
+    // });
 
     const model2 = new Promise((resolve, reject) =>
     {
@@ -212,7 +214,8 @@ const buildScene = async (scene, renderer) =>
         loader.load('./models/boy.glb', (object) =>
         {
             object.scene.scale.set(-2, 2.5, -2);
-            object.scene.position.set(-1.5, -4.1, 0);
+            // object.scene.position.set(-1.5, -4.1, 0);
+            object.scene.position.set(-0.0, -4.1, 0);
             object.scene.traverse(o =>
             {
                 if (o.isMesh)
@@ -235,7 +238,8 @@ const buildScene = async (scene, renderer) =>
 
     });
 
-    await Promise.all([ model1, model2 ]);
+    // await Promise.all([ model1, model2 ]);
+    await Promise.all([ model2 ]);
 
 
     return avatars;
@@ -260,15 +264,16 @@ function averagePoseDataPoints(points, poseData)
 
 const handleCamera = (controls) =>
 {
-    controls.zoomTo(.18, true);
+    controls.zoomTo(.38, true);
+    // controls.zoomTo(.6, true);
     controls.polarAngle = THREE.MathUtils.DEG2RAD * 80;
     controls.azimuthAngle = THREE.MathUtils.DEG2RAD * 180;
 
-    let timeLine = gsap.timeline({ repeat: -1, yoyo: true });
-    timeLine.to(controls, { duration: 10, azimuthAngle: THREE.MathUtils.DEG2RAD * 200, ease: "sine.inOut" });
-    timeLine.to(controls, { duration: 10, azimuthAngle: THREE.MathUtils.DEG2RAD * 160, ease: "sine.inOut" });
-    // use gsap to move the polar angle like a sine wave
-    gsap.to(controls, { duration: 25, polarAngle: THREE.MathUtils.DEG2RAD * 90, ease: "sine.inOut", repeat: -1, yoyo: true });
+    // let timeLine = gsap.timeline({ repeat: -1, yoyo: true });
+    // timeLine.to(controls, { duration: 10, azimuthAngle: THREE.MathUtils.DEG2RAD * 200, ease: "sine.inOut" });
+    // timeLine.to(controls, { duration: 10, azimuthAngle: THREE.MathUtils.DEG2RAD * 160, ease: "sine.inOut" });
+    // // use gsap to move the polar angle like a sine wave
+    // gsap.to(controls, { duration: 25, polarAngle: THREE.MathUtils.DEG2RAD * 90, ease: "sine.inOut", repeat: -1, yoyo: true });
 
 }
 

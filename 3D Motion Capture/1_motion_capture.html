@@ -81,7 +81,7 @@
                     videoUrl: "webcam",
                     predictionData: cached_data,
                     frameBufferSize: 1,
-                    DEBUG: true,
+                    DEBUG: false,
                     drawParams: {
                         // bgCanvas: canvas,
                         showHeatmap: false,
@@ -92,7 +92,7 @@
                         showBounds: false,
                         showTraceId: false,
                         showPose: true,
-                        showCameraInCorner: true,
+                        showCameraInCorner: false,
                         showBloom: false,
                         showGammaCorrection: true,
                         bloomParams: {
@@ -123,6 +123,7 @@
 
                     EyePopSDK.EyePopAPI.instance.OnPrediction = function (prediction)
                     {
+                        console.log("OnPrediction", prediction);
                         thirdEyePop.pushPredictionData(prediction);
 
                         if (loading)

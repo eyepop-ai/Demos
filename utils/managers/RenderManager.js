@@ -318,7 +318,7 @@ export default class RenderManager
     {
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvas,
-            failIfMajorPerformanceCaveat: true,
+            // failIfMajorPerformanceCaveat: true,
             antialias: true,
             alpha: true,
         });
