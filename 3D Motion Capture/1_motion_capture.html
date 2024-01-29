@@ -49,6 +49,7 @@
         </div>
     </div>
 
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk@0.0.25"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk"></script>
     <script src="config.js"></script>
 
@@ -92,7 +93,7 @@
                         showBounds: false,
                         showTraceId: false,
                         showPose: true,
-                        showCameraInCorner: false,
+                        showCameraInCorner: true,
                         showBloom: false,
                         showGammaCorrection: true,
                         bloomParams: {
@@ -123,7 +124,7 @@
 
                     EyePopSDK.EyePopAPI.instance.OnPrediction = function (prediction)
                     {
-                        console.log("OnPrediction", prediction);
+                        // console.log("OnPrediction", prediction);
                         thirdEyePop.pushPredictionData(prediction);
 
                         if (loading)
