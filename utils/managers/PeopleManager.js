@@ -345,13 +345,39 @@ export default class PeopleManager
 
         trackedPerson.poseData.points = {};
 
-        keyPoints.forEach((point) =>
+        // average pose data for smoother results
+        if (!trackedPerson.poseData.smoothedPoints)
         {
+            trackedPerson.poseData.smoothedPoints = {};
+        }
+
+        for (let i = 0; i < keyPoints.length; i++)
+        {
+            const point = keyPoints[ i ];
             const tempPoint = new THREE.Vector3(point.x, point.y, point.z);
             const normalizedPoint = this.normalizePosition(tempPoint, person.source_width, person.source_height, 5000);
 
-            trackedPerson.poseData.points[ point.classLabel ] = new THREE.Vector3(normalizedPoint.x, normalizedPoint.y, normalizedPoint.z * 2);
-        });
+            // if the average points are empty, set them to the current points
+            if (!(i in trackedPerson.poseData.smoothedPoints))
+            {
+                trackedPerson.poseData.smoothedPoints[ i ] = {
+                    points: [],
+                    average: null
+                };
+            }
+
+            // create a rolling average of the keyPoints[i] in the smoothedPoints[i] array
+            trackedPerson.poseData.smoothedPoints[ i ].points.push(normalizedPoint);
+            if (trackedPerson.poseData.smoothedPoints[ i ].points.length > 5)
+            {
+                trackedPerson.poseData.smoothedPoints[ i ].points.shift();
+            }
+
+            trackedPerson.poseData.smoothedPoints[ i ].average = trackedPerson.poseData.smoothedPoints[ i ].points.reduce((accumulator, point) => accumulator.add(point), new THREE.Vector3()).divideScalar(trackedPerson.poseData.smoothedPoints[ i ].points.length);
+
+
+            trackedPerson.poseData.points[ point.classLabel ] = trackedPerson.poseData.smoothedPoints[ i ].average
+        }
 
         // next we create a 2d array of the connection points based on the poseDataConnections array
         trackedPerson.poseData.edges = this.poseConnections33.map((connection) =>

@@ -26,7 +26,7 @@ EyePop makes this incredibly simple by incrementing a counter when **_all_** eve
 
 ```
 {
-    "Type": "counter",
+    "type": "counter",
     "RulesLowCode": "Biggest Person left wrist below Biggest Person left elbow" + "\r\n" +
     "Biggest Person right wrist below Biggest Person right elbow" + "\r\n" +
     "Biggest Person left wrist above Biggest Person left elbow" + "\r\n" +
@@ -39,14 +39,14 @@ To enable drawing and the counter, we add the following:
 ```
 config.Draw = [
     // This draws a box over all detected objects
-    {"Type": "box", "Targets":["*"]},
+    {"type": "box", "targets":["*"]},
 
     // This draws the pose lines for all detected people
-    { "Type": "pose", "Targets": ["person"] },
+    { "type": "pose", "targets": ["person"] },
 
     // This manages incrememnting a counter when the rules are observed
     {
-        "Type": "counter", "RulesLowCode": "Biggest Person left wrist below Biggest Person left elbow" + "\r\n" +
+        "type": "counter", "RulesLowCode": "Biggest Person left wrist below Biggest Person left elbow" + "\r\n" +
         "Biggest Person right wrist below Biggest Person right elbow" + "\r\n" +
         "Biggest Person left wrist above Biggest Person left elbow" + "\r\n" +
         "Biggest Person right wrist above Biggest Person right elbow"

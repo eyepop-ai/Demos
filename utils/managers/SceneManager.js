@@ -306,7 +306,6 @@ export default class SceneManager
     }
 
 
-    // TODO: Draw a sexier bounding box with a sprite or shader
     drawBoundingBox(person)
     {
         const bounds = person.bounds;

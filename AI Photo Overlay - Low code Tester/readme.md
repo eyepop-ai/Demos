@@ -31,8 +31,8 @@ In this demo we use the EyePopSDK to place a pair of sunglasses ontop of a perso
 ```
 config.Draw = [
     {
-        "Type": "posefollow",
-        "Targets": ["person"],
+        "type": "posefollow",
+        "targets": ["person"],
         "Anchors": ["right eye", "left eye"],
         "Image": "./fun/sunglasses3.png?raw=true",
         "Scale": 2.6
