@@ -158,7 +158,7 @@ const buildScene = async (scene, renderer, modelData) =>
             {
                 o.castShadow = false;
                 o.receiveShadow = false;
-                o.material.side = THREE.FrontSide; \
+                o.material.side = THREE.FrontSide;
             }
         });
 
