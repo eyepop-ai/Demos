@@ -401,25 +401,6 @@
         };
 
 
-        async function GetJSONFromEyePop_file(file)
-        {
-            let formData = new FormData()
-            formData.append('file', file)
-
-            let response = await fetch(config.url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
-                method: 'POST',
-                headers: {
-                    'accept': 'application/json',
-                    'authorization': 'Bearer ' + token
-                },
-                body: formData
-            }).catch(error => console.error('The party\'s over, there was an error:', error));
-
-            let data = await response.json();
-
-            return data;
-        }
-
         // create an interval to set the json text area to the json data
         setInterval(() =>
         {
@@ -552,11 +533,11 @@
             {
                 config = response;
 
-                config.Input = {
+                config.input = {
                     "name": "file_upload",
                 };
 
-                config.Draw = [
+                config.draw = [
                     { "type": "box", "targets": [ "*" ] },
                     { "type": "pose", "targets": [ "*" ] },
                     { "type": "hand", "targets": [ "*" ] },

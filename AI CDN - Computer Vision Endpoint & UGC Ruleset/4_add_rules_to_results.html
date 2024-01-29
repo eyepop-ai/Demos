@@ -60,7 +60,7 @@
     <script src="config.js"></script>
     <script src="js/main.js"></script>
     <script src="js/excerptFromSDK.min.js"></script>
-    
+
     <script>
         var rulesState = [];
 
@@ -135,68 +135,77 @@
 
         FetchPopConfig(pop_endpoint, token)
             .then(response => config = response)
-            .then(() => {
+            .then(() =>
+            {
                 document.getElementById("title").innerHTML = config.name;
             });
 
-        document.getElementById('file-upload').addEventListener('change', function (event) {
+        document.getElementById('file-upload').addEventListener('change', function (event)
+        {
 
             DisplayPreviewImageCanvas(event);
 
-            GetJSONFromEyePop_file(event.target.files[0])
+            GetJSONFromEyePop_file(event.target.files[ 0 ])
 
         });
 
 
-        function GetJSONFromEyePop_file(file) {
+        function GetJSONFromEyePop_file(file)
+        {
             let formData = new FormData()
             formData.append('file', file)
 
             const startTime = performance.now();
             ClearDisplay();
 
-            fetch(config.url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
+            console.log('EyePop Config:', config);
+
+            fetch(config.base_url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
                 method: 'POST',
                 headers: {
                     'accept': 'application/json',
-                    'authorization': 'Bearer '+token
+                    'authorization': 'Bearer ' + token
                 },
                 body: formData
             })
                 .then(response => response.json())
-                .then(data => {
+                .then(data =>
+                {
                     document.getElementById("timing").innerHTML = Math.floor(performance.now() - startTime) + "ms";
 
                     console.log(data)
 
-                    if (!data || !data[0])
+                    if (!data || !data[ 0 ])
                         return;
 
-                    if (data[0].objects) {
-                        data[0].objects.forEach(element => {
-                            element.source_height = data[0].source_height;
-                            element.source_width = data[0].source_width;
+                    if (data[ 0 ].objects)
+                    {
+                        data[ 0 ].objects.forEach(element =>
+                        {
+                            element.source_height = data[ 0 ].source_height;
+                            element.source_width = data[ 0 ].source_width;
                             console.log(element);
                             DrawEyePopReticle(element);
                             DrawEyePopPose(element, false);
                         });
                     }
 
-                    var log = Rules.Check(data[0], rules, rulesState);
+                    var log = Rules.Check(data[ 0 ], rules, rulesState);
                     var rulesHtml = "";
 
-                    log.forEach(element => {
-                    
+                    log.forEach(element =>
+                    {
+
                         console.log(element);
-                        
-                        if(element[0])
-                            rulesHtml+="<span style='color: green;'>"+element[1]+"</span><br>";
+
+                        if (element[ 0 ])
+                            rulesHtml += "<span style='color: green;'>" + element[ 1 ] + "</span><br>";
                         else
-                            rulesHtml+="<span style='color: red;'>"+element[1]+"</span><br>";
-                            
+                            rulesHtml += "<span style='color: red;'>" + element[ 1 ] + "</span><br>";
+
                     });
 
-                    document.getElementById("txt_json").innerHTML=rulesHtml;
+                    document.getElementById("txt_json").innerHTML = rulesHtml;
 
                 })
                 .catch(error => console.error('The party\'s over, there was an error:', error));

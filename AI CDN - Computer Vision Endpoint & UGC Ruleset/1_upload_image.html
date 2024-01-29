@@ -54,43 +54,47 @@
             </div>
         </div>
     </div>
-    
+
     <script src="config.js"></script>
     <script src="js/main.js"></script>
     <script>
 
         FetchPopConfig(pop_endpoint, token)
             .then(response => config = response)
-            .then(() => {
+            .then(() =>
+            {
                 document.getElementById("title").innerHTML = config.name;
             });
 
-        document.getElementById('file-upload').addEventListener('change', function (event) {
+        document.getElementById('file-upload').addEventListener('change', function (event)
+        {
 
             DisplayPreviewImage(event);
 
-            GetJSONFromEyePop_file(event.target.files[0])
+            GetJSONFromEyePop_file(event.target.files[ 0 ])
 
         });
 
 
-        function GetJSONFromEyePop_file(file) {
+        function GetJSONFromEyePop_file(file)
+        {
             let formData = new FormData()
             formData.append('file', file)
 
             const startTime = performance.now();
             ClearDisplay();
 
-            fetch(config.url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
+            fetch(config.base_url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
                 method: 'POST',
                 headers: {
                     'accept': 'application/json',
-                    'authorization': 'Bearer '+token
+                    'authorization': 'Bearer ' + token
                 },
                 body: formData
             })
                 .then(response => response.json())
-                .then(data => {
+                .then(data =>
+                {
                     document.getElementById("timing").innerHTML = Math.floor(performance.now() - startTime) + "ms";
                     document.getElementById('txt_json').textContent = JSON.stringify(data, " ", 2)
                     FormatPre();
