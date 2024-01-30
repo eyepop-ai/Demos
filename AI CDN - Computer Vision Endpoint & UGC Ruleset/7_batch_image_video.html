@@ -11,8 +11,10 @@
     style="width: 100vw; height: 100vh; scale: .9;">
 
     <!-- A spinning loading animation -->
-    <div id="loading" class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center bg-black"
+    <div id="loading"
+        class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center bg-black flex-column"
         style="z-index: 1000; scale: 1.3;">
+        <div class="text-white text-start p-5">Loading Pop...</div>
         <div class="spinner-border text-light align-self-center" role="status">
 
             <span class="visually-hidden">Loading...</span>
@@ -131,7 +133,6 @@
         //  - Add duration of video and ability to skim through video
         //  - Add pop model details
         //  - Add media selection area to select which of the files to play
-        //  - Add json saving as well as image saving
 
         import ThirdEyePop from "../utils/ThirdEyePop.js";
 
@@ -183,7 +184,7 @@
 
         // the canvases we draw to for saving to file
         let videoCanvas = document.createElement('canvas');
-        let imgCanvas = document.createElement('canvas');
+        let isVideo = false;
         let image = null;
 
 
@@ -246,21 +247,14 @@
             // save the screen canvas
             screenToPng(positiveNegativePrefix + mediaName.innerText + "_" + mediaIndex.innerText + "_" + mediaTime.innerText + "_screencapture");
 
-            // imageToPng(image, positiveNegativePrefix + mediaName.innerText + "_" + mediaIndex.innerText + "_" + mediaTime.innerText + "_SDK");
-
-            if (videoCanvas)
+            if (isVideo)
             {
                 // save the canvas as a png
                 canvasToPng(videoCanvas, positiveNegativePrefix + mediaName.innerText + "_" + mediaIndex.innerText + "_" + mediaTime.innerText + "_source");
-            } else if (img)
+            } else
             {
-                // Draw the img to a canvas
-                imgCanvas.width = img.width;
-                imgCanvas.height = img.height;
-                let context = imgCanvas.getContext('2d');
-                context.drawImage(img, 0, 0, imgCanvas.width, imgCanvas.height);
-                canvasToPng(imgCanvas, positiveNegativePrefix + mediaName.innerText + "_" + mediaIndex.innerText + "_" + mediaTime.innerText + "_source");
-                imgCanvas.remove();
+                // save the image as a png
+                imageToPng(image, positiveNegativePrefix + mediaName.innerText + "_" + mediaIndex.innerText + "_" + mediaTime.innerText + "_SDK");
             }
 
             // save the json data
@@ -459,6 +453,7 @@
                 // Check if the file is a video
                 if (file.type.startsWith('video/'))
                 {
+                    isVideo = true;
                     // Create a video element
                     const video = document.createElement('video');
                     video.src = URL.createObjectURL(file);
@@ -519,6 +514,7 @@
                     video.remove();
                 } else if (file.type.startsWith('image/'))
                 {
+                    isVideo = false;
                     // If the file is not a video, process it as before
                     await processFile(file);
                 }

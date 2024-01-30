@@ -113,6 +113,8 @@ const buildScene = async (scene, renderer, modelData) =>
     directionalLight1.position.set(20, -10, -10);
     directionalLight1.target.position.set(0, 0, 0);
     directionalLight1.castShadow = true;
+    directionalLight1.shadow.type = THREE.PCFSoftShadowMap;
+    directionalLight1.shadow.bias = - 0.0005;
     directionalLight1.shadow.camera.top = 1;
     directionalLight1.shadow.camera.bottom = - 1;
     directionalLight1.shadow.camera.right = 1;
@@ -125,12 +127,13 @@ const buildScene = async (scene, renderer, modelData) =>
     directionalLight2.position.set(-20, -10, -10);
     directionalLight2.target.position.set(0, 0, 0);
     directionalLight2.castShadow = true;
+    directionalLight2.shadow.bias = - 0.0005;
     directionalLight2.shadow.camera.top = 1;
     directionalLight2.shadow.camera.bottom = - 1;
     directionalLight2.shadow.camera.right = 1;
     directionalLight2.shadow.camera.left = - 1;
     directionalLight2.shadow.mapSize.set(2048, 2048);
-    scene.add(directionalLight2);
+    // scene.add(directionalLight2);
 
 
     // ambient light
@@ -199,7 +202,8 @@ const buildScene = async (scene, renderer, modelData) =>
 
     //             });
     //             model.scale.set(-2, 2.5, -2);
-    //             model.position.set(1.5, -4.1, 0);
+    //             // model.position.set(1.5, -4.1, 0);
+    //             model.position.set(-0.0, -4.1, 0);
 
     //             mixer = new THREE.AnimationMixer(model);
     //             let idleAnim = THREE.AnimationClip.findByName(fileAnimations, 'idle');
@@ -226,6 +230,12 @@ const buildScene = async (scene, renderer, modelData) =>
             {
                 if (o.isMesh)
                 {
+                    if (o.material)
+                    {
+                        o.material.roughness = 1;
+                        o.material.metalness = 0;
+                    }
+
                     o.castShadow = true;
                     o.receiveShadow = true;
                     o.material.side = THREE.FrontSide;
@@ -246,6 +256,7 @@ const buildScene = async (scene, renderer, modelData) =>
 
     // await Promise.all([ model1, model2 ]);
     await Promise.all([ model2 ]);
+    // await Promise.all([ model1 ]);
 
 
     return avatars;
@@ -275,12 +286,11 @@ const handleCamera = (controls) =>
     controls.polarAngle = THREE.MathUtils.DEG2RAD * 80;
     controls.azimuthAngle = THREE.MathUtils.DEG2RAD * 180;
 
-    let timeLine = gsap.timeline({ repeat: -1, yoyo: true });
-    timeLine.to(controls, { duration: 10, azimuthAngle: THREE.MathUtils.DEG2RAD * 190, ease: "sine.inOut" });
-    timeLine.to(controls, { duration: 10, azimuthAngle: THREE.MathUtils.DEG2RAD * 170, ease: "sine.inOut" });
-    // use gsap to move the polar angle like a sine wave
-    gsap.to(controls, { duration: 25, polarAngle: THREE.MathUtils.DEG2RAD * 90, ease: "sine.inOut", repeat: -1, yoyo: true });
-
+    // let timeLine = gsap.timeline({ repeat: -1, yoyo: true });
+    // timeLine.to(controls, { duration: 10, azimuthAngle: THREE.MathUtils.DEG2RAD * 190, ease: "sine.inOut" });
+    // timeLine.to(controls, { duration: 10, azimuthAngle: THREE.MathUtils.DEG2RAD * 170, ease: "sine.inOut" });
+    // // use gsap to move the polar angle like a sine wave
+    // gsap.to(controls, { duration: 25, polarAngle: THREE.MathUtils.DEG2RAD * 90, ease: "sine.inOut", repeat: -1, yoyo: true });
 }
 
 

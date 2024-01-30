@@ -10,8 +10,10 @@
 <body class="overflow-hidden d-flex align-content-center bg-black" style="width: 100vw; height: 100vh;">
 
     <!-- A spinning loading animation -->
-    <div id="loading" class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center bg-black"
-        style="z-index: 1000;">
+    <div id="loading"
+        class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center bg-black flex-column"
+        style="z-index: 1000; scale: 1.3;">
+        <div class="text-white text-start p-5">Loading Pop...</div>
         <div class="spinner-border text-light align-self-center" role="status">
 
             <span class="visually-hidden">Loading...</span>
@@ -49,7 +51,6 @@
         </div>
     </div>
 
-    <!-- <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk@0.0.25"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk"></script>
     <script src="config.js"></script>
 
