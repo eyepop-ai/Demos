@@ -18,6 +18,17 @@
             <h6 id="popConfigName" class="text-center">test</h6>
         </div>
     </header>
+    <!-- A spinning loading animation -->
+    <div id="loading"
+        class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center bg-black flex-column"
+        style="z-index: 1000; scale: 1.3;">
+        <div class="text-white text-start p-5">Loading Pop...</div>
+        <div class="spinner-border text-light align-self-center" role="status">
+
+            <span class="visually-hidden">Loading...</span>
+
+        </div>
+    </div>
 
     <!-- The rendering canvas which three.js is writing to object-fit-contain -->
     <div id="canvasParent" class="d-flex w-100 h-100 align-self-center justify-content-end align-content-center">
@@ -60,6 +71,8 @@
         const video = document.getElementById("myLocalVideo");
         const canvas = document.getElementById("mobilecanvas");
         const renderCanvas = document.getElementById("rendercanvas");
+
+        const loading = document.getElementById("loading");
 
         const save = () =>
         {
@@ -121,53 +134,17 @@
             // makes page title config.name
             document.getElementById("popConfigName").innerHTML = "Pop Name: " + config.name;
 
-            let SAVE_FRAMES = false;
-            let DEBUG_FRAMES = false;
-
-            if (SAVE_FRAMES) { DEBUG_FRAMES = false; }
-
-            if (DEBUG_FRAMES)
-            {
-                // load json file ./test_data/pose_capture_data.json and every 100ms push a frame to thirdEyePop
-                let frames = [];
-                fetch("./test_data/spider_man_capture.json")
-                    .then(response => response.json())
-                    .then(data => frames = data)
-                    .then(() =>
-                    {
-                        let i = 0;
-                        setInterval(() =>
-                        {
-                            thirdEyePop.pushPredictionData(frames[ i++ % frames.length ]);
-                        }, 10);
-
-                    });
-
-                return;
-            }
-
             const ep = EyePopSDK.EyePopSDK.init(config);
-
-            const SAVE_FRAMES_INTERVAL = 1000;
-
 
             EyePopSDK.EyePopAPI.instance.OnDrawFrameEnd = function (prediction)
             {
                 thirdEyePop.pushPredictionData(prediction);
 
-                if (SAVE_FRAMES)
+                if (loading)
                 {
-
-                    if (prediction)
-                    {
-                        cached_data.push(prediction);
-                    }
-
-                    if (cached_data.length % SAVE_FRAMES_INTERVAL == 0)
-                    {
-                        save();
-                    }
+                    loading.remove();
                 }
+
             }
 
         }
