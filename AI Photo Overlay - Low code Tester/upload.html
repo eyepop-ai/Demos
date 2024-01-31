@@ -68,8 +68,8 @@
             .then(response => config = response)
             .then(() =>
             {
-                config.Input = { "name": "file_upload" };
-                config.Draw = [
+                config.input = { "name": "file_upload" };
+                config.draw = [
                     // {"type": "box", "targets":["*"]},
                     // { "type": "pose", "targets": ["person"] },
                     {
@@ -83,7 +83,7 @@
 
                 document.getElementById("title").innerHTML = config.name;
 
-                document.getElementById("txt_json").value = JSON.stringify(config.Draw, null, 4);
+                document.getElementById("txt_json").value = JSON.stringify(config.draw, null, 4);
 
                 console.log(JSON.stringify(config));
                 videoPlayer = EyePopSDK.EyePopSDK.init(config)

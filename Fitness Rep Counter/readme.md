@@ -1,6 +1,6 @@
 ## 🏋️ Fitness Rep Counter 🏋️
 
-<img src="./css/images/reps.gif" width="100%" />
+<img src="./css/images/reps.gif" width="50%" />
 
 ### Getting Start
 
@@ -25,19 +25,16 @@ This demo uses a simple Low Code Language to perform fitness rep counting of a l
 EyePop makes this incredibly simple by incrementing a counter when **_all_** event sequences specified below (seperated by a "\r\n") are detected.
 
 ```
-{
-    "type": "counter",
-    "RulesLowCode": "Biggest Person left wrist below Biggest Person left elbow" + "\r\n" +
-    "Biggest Person right wrist below Biggest Person right elbow" + "\r\n" +
-    "Biggest Person left wrist above Biggest Person left elbow" + "\r\n" +
-    "Biggest Person right wrist above Biggest Person right elbow"
-}
+Biggest Person left wrist below Biggest Person left elbow
+Biggest Person right wrist below Biggest Person right elbow
+Biggest Person left wrist above Biggest Person left elbow
+Biggest Person right wrist above Biggest Person right elbow
 ```
 
 To enable drawing and the counter, we add the following:
 
 ```
-config.Draw = [
+config.draw = [
     // This draws a box over all detected objects
     {"type": "box", "targets":["*"]},
 

@@ -21,7 +21,7 @@
   <!-- <canvas id="previewcanvas" style="background-color: transparent; width: 1%; height: auto; display:none;"></canvas> -->
   <div class="w-100 h-100" style="width:640px;height:480px;margin:auto auto;">
     <canvas id="mobilecanvas"
-        style="background-color: transparent; opacity: 1; margin:auto auto;display:none;z-index:1000;" width="100%"
+        style="background-color: transparent; opacity: 1; margin:auto auto;display:none;z-index:1000;" width="50%"
         height="100%"></canvas>
   </div>
 
@@ -42,7 +42,7 @@
 
         document.getElementById("title").innerHTML = "Count the Curls 💪";
 
-        config.Draw = [
+        config.draw = [
           { "type": "box", "targets": [ "*" ] },
           { "type": "pose", "targets": [ "*" ] },
           {

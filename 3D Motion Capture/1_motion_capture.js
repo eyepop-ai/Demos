@@ -302,7 +302,7 @@ const setupDebugging = (thirdEyePop, scene, avatars) =>
     }
     // load json file ./test_data/pose_capture_data.json and every 100ms push a frame to thirdEyePop
     let frames = [];
-    fetch("./test_data/spider_man_capture.json")
+    fetch("./test_data/spider_capture.json")
         .then(response => response.json())
         .then(data => frames = data)
         .then(() =>
