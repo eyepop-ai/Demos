@@ -67,11 +67,13 @@
 
         FetchPopConfig(pop_endpoint, token)
             .then(response => config = response)
-            .then(() => {
+            .then(() =>
+            {
                 document.getElementById("title").innerHTML = config.name;
             });
 
-        document.getElementById('btnPost').addEventListener('click', function (event) {
+        document.getElementById('btnPost').addEventListener('click', function (event)
+        {
             let v_url = document.getElementById("txtUrl").value;
 
             document.getElementById("myLocalVideo").src = v_url;
@@ -79,16 +81,17 @@
             GetJSONFromEyePop(v_url);
         });
 
-        function GetJSONFromEyePop(url) {
+        function GetJSONFromEyePop(url)
+        {
 
             const startTime = performance.now();
             ClearDisplay();
 
-            fetch(config.url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
+            fetch(config.base_url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
                 method: 'PATCH',
                 headers: {
                     'accept': 'application/json',
-                    'authorization': 'Bearer '+token
+                    'authorization': 'Bearer ' + token
                 },
                 body: JSON.stringify({
                     "sourceType": "URL",
@@ -96,7 +99,8 @@
                 })
             })
                 .then(response => response.json())
-                .then(data => {
+                .then(data =>
+                {
                     document.getElementById("timing").innerHTML = Math.floor(performance.now() - startTime) + "ms";
 
                     cached_data = data;
@@ -106,20 +110,23 @@
                 .catch(error => console.error('The party\'s over, there was an error:', error));
         }
 
-        video.addEventListener('timeupdate', function () {
+        video.addEventListener('timeupdate', function ()
+        {
             console.log("video: " + video.currentTime)
 
             if (!cached_data)
                 return;
 
-            let closestFrameData = cached_data.reduce((prev, curr) => {
+            let closestPredictionData = cached_data.reduce((prev, curr) =>
+            {
                 return (Math.abs(curr.seconds - video.currentTime) < Math.abs(prev.seconds - video.currentTime) ? curr : prev);
             });
 
-            if (closestFrameData) {
-                console.log(closestFrameData);
+            if (closestPredictionData)
+            {
+                console.log(closestPredictionData);
 
-                document.getElementById("txt_json").innerHTML = JSON.stringify(closestFrameData, null, 2);
+                document.getElementById("txt_json").innerHTML = JSON.stringify(closestPredictionData, null, 2);
             }
         });
     </script>

@@ -2,11 +2,13 @@
 
 ---
 
+<img src="./css/images/brave_IOR7hRMEgL.png" width="50%" height="100%" />
+
 ### Getting started
 
 - Log into your EyePop account at https://dashboard.eyepop.ai/sign-in
-- Create your own **API Pop** and select _Live - People and Common Object_ from the object library
-- Check out the **API Info** section of your Pop and copy'n paste the `endpoint` and `Auth Token` into `config.js` of your local copy of this repo.
+- Create an **API Pop**
+- After creating your pop, create or copy your API Key into the config.js file, as well as the Pop's UUID. If token is left empty, you will be navigated to an authentication workflow.
 
 ### Need a Web Server locally to test?
 
@@ -27,10 +29,10 @@ Start your web server from within this directory and check out the examples: htt
 In this demo we use the EyePopSDK to place a pair of sunglasses ontop of a person inside of an image by using the simple Low Code Language in this following code block. This will follow the moving pose of any people and anchor to the image the positions of the detected elements.
 
 ```
-config.Draw = [
+config.draw = [
     {
-        "Type": "posefollow",
-        "Targets": ["person"],
+        "type": "posefollow",
+        "targets": ["person"],
         "Anchors": ["right eye", "left eye"],
         "Image": "./fun/sunglasses3.png?raw=true",
         "Scale": 2.6

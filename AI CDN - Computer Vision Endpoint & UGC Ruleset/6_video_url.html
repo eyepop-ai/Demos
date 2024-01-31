@@ -52,7 +52,7 @@
                     <div style="height: 600px;width:600px;">
                         <canvas id="mobilecanvas"
                             style="background-color: transparent; opacity: 1; margin:auto auto;display:none;z-index:1000;"
-                            width="100%" height="100%"></canvas>
+                            width="50%" height="100%"></canvas>
                     </div>
                 </div>
                 <div class="col-md-6 d-flex">
@@ -78,16 +78,16 @@
             if (!url)
                 return;
 
-            config.Input = {
+            config.input = {
                 "name": "url",
                 "url": url
             };
 
-            config.Draw = [
-                
-                { "Type": "pose", "Targets": ["*"] },
-                { "Type": "box", "Targets": ["*"] },
-                //{ "Type": "clip", "Targets": ["person"], "rows": 1 } 
+            config.draw = [
+
+                { "type": "pose", "targets": [ "person" ] },
+                { "type": "box", "targets": [ "*" ] },
+
             ];
 
             const ep = EyePopSDK.EyePopSDK.init(config);

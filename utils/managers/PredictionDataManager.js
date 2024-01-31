@@ -2,35 +2,41 @@
 
 export default class PredictionDataManager
 {
-    constructor(frameData = [])
+    constructor(predictionData = [], maxFrames = 1000)
     {
-        this.frameData = frameData;
+        this.predictionData = predictionData;
+        this.maxFrames = maxFrames;
         this.currentFrame = null;
     }
 
-    setFrameData(frameData)
+    setPredictionData(predictionData)
     {
-        this.frameData = frameData;
+        this.predictionData = predictionData;
     }
 
-    pushFrameData(frameData)
+    pushPredictionData(predictionData)
     {
-        this.frameData.push(frameData);
+        if (this.predictionData.length > this.maxFrames)
+        {
+            this.predictionData.shift();
+        }
+
+        this.predictionData.push(predictionData);
     }
 
-    popFrameData()
+    popPredictionData()
     {
-        return this.frameData.shift();
+        return this.predictionData.shift();
     }
 
-    getFrameData()
+    getPredictionData()
     {
-        return this.frameData;
+        return this.predictionData;
     }
 
-    hasFrameData()
+    hasPredictionData()
     {
-        return this.frameData.length > 0;
+        return this.predictionData.length > 0;
     }
 
     getCurrentFrame()
@@ -40,7 +46,7 @@ export default class PredictionDataManager
 
     getLastFrameTime()
     {
-        return this.frameData[ this.frameData.length - 1 ].seconds;
+        return this.predictionData[ this.predictionData.length - 1 ].seconds;
     }
 
     getCurrentFrameTime()
@@ -53,12 +59,15 @@ export default class PredictionDataManager
         return this.currentFrame.seconds;
     }
 
+    // TODO: 
+    //  - make this more efficient
     setCurrentFrame(time)
     {
         let closestFrame = null;
         let closestTime = null;
-        this.frameData.forEach((frame) =>
+        this.predictionData.forEach((frame) =>
         {
+            if (!frame) return;
             let frameTime = frame.seconds;
             if (closestTime === null || Math.abs(frameTime - time) < Math.abs(closestTime - time))
             {

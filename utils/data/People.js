@@ -2,12 +2,13 @@
 import * as THREE from 'https://unpkg.com/three/build/three.module.js';
 import { PeopleState } from './Constants.js';
 
-// TODO: Move class variables into objects for access
+// TODO: Organize path, bounds, and traceIdText into a single object such as poseData and faceData
 export default class People
 {
 
-    constructor()
+    constructor(track = false)
     {
+        this.track = track;
         this.traceId = null;
 
         this.position = new THREE.Vector3();
@@ -15,6 +16,8 @@ export default class People
         this.bottomRightPoint = new THREE.Vector3();
 
         this.poseData = { points: {}, edges: [], mesh: null, geometry: null }
+        this.faceData = { points: [], mesh: null, geometry: null };
+        this.handData = { leftHandPoints: [], rightHandPoints: [], points: [], mesh: null, geometry: null };
 
         this.path = [];
         this.pathLine = null;
@@ -29,7 +32,6 @@ export default class People
 
         this.boundsWidth = null;
         this.boundsHeight = null;
-        this.boundingObjects = [];
 
         this.state = PeopleState.TRACKING;
 
@@ -39,7 +41,7 @@ export default class People
     {
         this.state = PeopleState.TRACKING;
         // If there is a large jump in the path, reset it
-        if (this.path.length > 0)
+        if (this.path.length > 0 && this.track)
         {
             const lastPoint = this.path[ this.path.length - 1 ];
             const distance = lastPoint.distanceTo(point);

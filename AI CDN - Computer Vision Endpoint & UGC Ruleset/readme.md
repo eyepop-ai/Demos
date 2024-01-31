@@ -5,8 +5,8 @@
 ### Getting started
 
 - Log into your EyePop account at https://dashboard.eyepop.ai/sign-in
-- Create your own **API Pop** and select _Live - People and Common Object_ from the object library
-- Check out the **API Info** section of your Pop and copy'n paste the endpoint`and`Auth Token`into`config.js` of your local copy of this repo.
+- Create your own **API Pop** and select a model with 3D pose data from the object library
+- After creating your pop, create or copy your API Key into the config.js file, as well as the Pop's UUID. If token is left empty, you will be navigated to an authentication workflow.
 
 ### Need a Web Server locally to test?
 
@@ -24,7 +24,7 @@ Start your web server from within this directory and check out the examples: htt
 
 File: [1_upload_image.html](./1_upload_image.html)
 
-<img src="./example_images/1.png" width="100%" />
+<img src="./example_images/1.png" width="50%" />
 
 **_Description:_**
 This is a basic example of how to use the EyePopSDK to upload an image to the EyePop API. It handles the process of selecting an image file, sending it to the API, and receiving the response.
@@ -33,7 +33,7 @@ This is a basic example of how to use the EyePopSDK to upload an image to the Ey
 
 File: [2_parse_results.html](./2_parse_results.html)
 
-<img src="./example_images/2.png" width="100%" />
+<img src="./example_images/2.png" width="50%" />
 
 **_Description:_**
 This demo takes the response from the EyePop API (from the image upload) and parses the results. It demonstrates how to navigate the response object and extract useful information.
@@ -42,7 +42,7 @@ This demo takes the response from the EyePop API (from the image upload) and par
 
 File: [3_visualize_results.html](./3_visualize_results.html)
 
-<img src="./example_images/3.png" width="100%" />
+<img src="./example_images/3.png" width="50%" />
 
 **_Description:_**
 This demo visualizes the results from the EyePop API. It uses the parsed results from 2_parse_results.html and creates a visual representation of the data.
@@ -51,7 +51,7 @@ This demo visualizes the results from the EyePop API. It uses the parsed results
 
 File: [4_add_rules_to_results.html](./4_add_rules_to_results.html)
 
-<img src="./example_images/4.png" width="100%" />
+<img src="./example_images/4.png" width="50%" />
 
 **_Description:_**
 This demo adds rules to the results from the EyePop API. It demonstrates how to use the EyePopSDK to add rules to the parsed results, which can be used to further analyze or filter the prediction data.
@@ -60,7 +60,7 @@ This demo adds rules to the results from the EyePop API. It demonstrates how to 
 
 File: [5_video_upload.html](./5_video_upload.html)
 
-<img src="./example_images/5.gif" width="100%" />
+<img src="./example_images/5.gif" width="50%" />
 
 **_Description:_**
 This demo demonstrates how to use the EyePopSDK to upload a video to the EyePop API. It handles the process of selecting a video file, sending it to the API, and receiving the response.
@@ -69,7 +69,7 @@ This demo demonstrates how to use the EyePopSDK to upload a video to the EyePop 
 
 File: [6_video_url.html](./6_video_url.html)
 
-<img src="./example_images/6.gif" width="100%" />
+<img src="./example_images/6.gif" width="50%" />
 
 **_Description:_**
 This demo shows how to handle video URLs with the EyePop API. It demonstrates how to send a video URL to the API and receive the response. It also showcases how to use the EyePopSDK to draw people's poses and bounding boxes around them.

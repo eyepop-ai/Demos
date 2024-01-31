@@ -26,7 +26,7 @@ What if your CDN gave you intelligence on what is in the media you post?
 
 Next level meme building powered by AI
 
-<img src="./AI Photo Overlay - Low code Tester/imgs/1.png" width="50%" />
+<img src="./AI Photo Overlay - Low code Tester/css/images/brave_IOR7hRMEgL.png" width="50%" />
 
 [Demo](./AI%20Photo%20Overlay%20-%20Low%20code%20Tester/)
 

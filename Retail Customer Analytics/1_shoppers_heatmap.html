@@ -14,7 +14,7 @@
             <div class="container-fluid d-flex align-items-center justify-content-between">
                 <a href="1_upload_image.html"><img src="css/images/eyepop-logo.svg" alt="EyePop.ai Logo" class="p-2"
                         style="height: 70px;"></a>
-                <h1 class="p-2">CDN Workshop Step 1 - Shoppers Heatmap</h1>
+                <h1 class="p-2 text-black">Retail Analytics</h1>
             </div>
         </header>
 
@@ -56,8 +56,8 @@
                 <video id="myLocalVideo" playsinline controls muted style="width:1px;height:1px;"></video>
 
                 <!-- The rendering canvas which three.js is writing to -->
-                <div id="canvasParent" class="d-flex w-100 justify-content-center">
-                    <canvas id="rendercanvas" class="bg-transparent w-100 object-fit-contain z-2 opacity-100"></canvas>
+                <div id="canvasParent" class="d-flex w-100 h-100 justify-content-center">
+                    <canvas id="rendercanvas" class="bg-transparent w-100 object-fit-contain opacity-100"></canvas>
                 </div>
 
                 <!-- A hidden canvas element only used for sending video frames to the EyePop endpoint -->
@@ -99,14 +99,12 @@
                 fileReader.onload = function (fileLoadedEvent)
                 {
                     var textFromFileLoaded = fileLoadedEvent.target.result;
-                    var data = JSON.parse(textFromFileLoaded);
+                    var data = JSON.parse(textFromFileLoaded, null, 2);
                     cached_data = data.body;
                     urlInput.value = data.url;
-                    const jsonData = JSON.parse(fileReader.result);
-                    urlInput.value = jsonData.url;
                     run();
                 };
-                fileReader.readAsText(fileToLoad, "UTF-8");
+                fileReader.readAsText(fileToLoad);
             }
 
             function save()
@@ -125,13 +123,33 @@
                 };
             }
 
-            const run = () =>
+            const run = async () =>
             {
+
+                await EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token)
+                    .then(response => config = response)
+                    .then(() => { document.getElementById("title").innerHTML = config.name; });
+
                 var url = urlInput.value;
                 if (!url) return;
                 let percentBuffered = 0;
 
-                const thirdEyePop = new ThirdEyePop({ canvas: renderCanvas, videoUrl: urlInput.value, frameData: cached_data, DEBUG: true });
+                const thirdEyePop = new ThirdEyePop(
+                    {
+                        canvas: renderCanvas,
+                        videoUrl: urlInput.value,
+                        predictionData: cached_data,
+                        frameBufferSize: 1000,
+                        DEBUG: true,
+                        drawParams: {
+                            showHeatmap: true,
+                            showPoint: true,
+                            showPath: true,
+                            showBounds: true,
+                            showTraceId: true,
+                            showPose: true,
+                        }
+                    });
 
                 thirdEyePop.setup();
 
@@ -140,19 +158,19 @@
                     return;
                 }
 
-                config.Input = {
+                config.input = {
                     "name": "url",
                     "url": url
                 };
 
-                config.Draw = [];
+                config.draw = [];
 
                 const ep = EyePopSDK.EyePopSDK.init(config);
 
                 EyePopSDK.EyePopAPI.instance.OnPrediction = function (data)
                 {
                     cached_data.push(data);
-                    thirdEyePop.pushFrameData(data);
+                    thirdEyePop.pushPredictionData(data);
 
                     analyzedPercentText.innerHTML = thirdEyePop.getPercentAnalyzed() + "%";
                 };
@@ -176,3 +194,6 @@
 </body>
 
 </html>
+
+
+<!-- https://raw.githubusercontent.com/64blit/files/main/videos/store_cctv.mp4 -->
