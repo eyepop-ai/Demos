@@ -7,8 +7,8 @@
 ### Getting started
 
 - Log into your EyePop account at https://dashboard.eyepop.ai/sign-in
-- Create your own **API Pop** and select a model with 3D body points from the object library
-- Create an API Key or copy your prviously made API key into the config file, along with the UUID of your Pop.
+- Create an **API Pop**
+- After creating your pop, create or copy your API Key into the config.js file, as well as the Pop's UUID. If token is left empty, you will be navigated to an authentication workflow.
 
 ### Need a Web Server locally to test?
 
