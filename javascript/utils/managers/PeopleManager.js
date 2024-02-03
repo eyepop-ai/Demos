@@ -168,7 +168,7 @@ export default class PeopleManager
             const pathPoint = { ...normalizedBottomRight };
             // clamp path point to -1 and 1
             pathPoint.x = trackedPerson.position.x;
-            pathPoint.y = Math.min(Math.max(pathPoint.y, -1), 1);
+            pathPoint.y = Math.min(Math.max(pathPoint.y - trackedPerson.boundsHeight, -1), 1);
 
             this.trackNewPosition(pathPoint);
 

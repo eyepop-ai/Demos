@@ -42,7 +42,7 @@ export default class RenderManager
         this.showCameraInCorner = drawParams.showCameraInCorner;
         this.showGammaCorrection = drawParams.showGammaCorrection;
 
-        this.heatmapIntensity = 0.1;
+        this.heatmapIntensity = 0.5;
 
         console.log("RenderManager constructor");
 
@@ -180,6 +180,8 @@ export default class RenderManager
             maxHeat = Math.max(maxHeat, heatGrid[ gridX + gridY * this.gridSpacesX ]);
         }
 
+        maxHeat = Math.max(maxHeat, 1);
+
         // normalize the heatGrid
         for (let i = 0; i < heatGrid.length; i++)
         {
@@ -221,6 +223,7 @@ export default class RenderManager
         this.video.volume = 1;
         this.video.src = videoUrl;
         this.video.load();
+        this.video.play();
 
         const scope = this;
 
@@ -551,7 +554,7 @@ export default class RenderManager
             this.finalComposer.addPass(gammaCorrection);
         }
     }
-
+    // https://raw.githubusercontent.com/64blit/files/main/videos/remux_store_cctv.mp4.mp4
     getVideoTime()
     {
         return this.time;

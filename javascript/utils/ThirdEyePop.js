@@ -294,7 +294,7 @@ export default class ThirdEyePop
             // then we need to pause and wait for more prediction frames
 
             const currentFrameTime = predictionDataManager.getCurrentFrameTime();
-            const onlyHaveOldFrames = Math.abs(currentFrameTime - videoTime) > 5;
+            const onlyHaveOldFrames = (videoTime - currentFrameTime) > 5;
             const needsMoreFrames = predictionDataManager.getLastFrameTime() < videoTime;
             const videoPlaying = renderManager.video.duration <= videoTime - 1;
 
