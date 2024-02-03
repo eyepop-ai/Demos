@@ -1,0 +1,4 @@
+matplotlib~=3.8.2
+Pillow~=10.1.0
+requests~=2.31.0
+pyqt5

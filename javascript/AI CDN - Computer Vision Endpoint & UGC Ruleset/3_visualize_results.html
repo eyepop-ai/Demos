@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>3 Visualize EyePop.ai Results</title>
+    <!-- <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
+  <script src="main.js"></script> -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container" style="max-width: 1200px;">
+        <!-- HEADER: Full width, Logo Image -->
+        <header class="mt-4">
+            <div class="container-fluid d-flex align-items-center">
+
+                <a href="1_upload_image.html"><img src="css/images/eyepop-logo.svg" alt="EyePop.ai Logo" class="p-2"
+                        style="height: 70px;"></a>
+                <h1 class="p-2">CDN Workshop Step 3</h1>
+                <a href="4_add_rules_to_results.html" class="btn btn-primary ms-auto">NEXT</a>
+
+            </div>
+        </header>
+
+        <!-- FORM UPLOAD ELEMENT: Centered, Full Width Row -->
+        <div class="container-fluid mt-4">
+            <div class="row justify-content-center">
+                <div id="drop-area" class="col-12">
+                    <form>
+                        <input type="file" class="form-control" id="file-upload">
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- IMAGE PREVIEW AND TEXT AREA: Half and Half -->
+        <div class="container-fluid mt-4">
+            <div class="row">
+                <div class="col-md-6 d-flex">
+                    Preview image:<h3 id="title" class="ms-auto"></h3>
+                </div>
+                <div class="col-md-6 d-flex">
+                    EyePop.ai Results: <h3 id="timing" class="ms-auto">0ms</h3>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 d-flex">
+                    <canvas id="maincanvas" src="css/images/empty.png" alt="Image Preview"
+                        style="width: 100%;border: #eee solid 1px; height: 25rem;"></canvas>
+                </div>
+                <div class="col-md-6 d-flex">
+                    <json-viewer id="txt_json" class="align-self-center"
+                        style="width: 100%; height: 40rem; overflow: auto;"></json-viewer>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer/dist/json-viewer.bundle.js"></script> -->
+    <script src="config.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/excerptFromSDK.min.js"></script>
+
+    <script>
+
+        FetchPopConfig(pop_endpoint, token)
+            .then(response => config = response)
+            .then(() =>
+            {
+                document.getElementById("title").innerHTML = config.name;
+            });
+
+        document.getElementById('file-upload').addEventListener('change', function (event)
+        {
+
+            DisplayPreviewImageCanvas(event);
+
+            GetJSONFromEyePop_file(event.target.files[ 0 ])
+
+        });
+
+
+        function GetJSONFromEyePop_file(file)
+        {
+            let formData = new FormData()
+            formData.append('file', file)
+
+            const startTime = performance.now();
+            ClearDisplay();
+            const jsonText = document.getElementById('txt_json');
+
+            fetch(config.base_url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'authorization': 'Bearer ' + token
+                },
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data =>
+                {
+                    document.getElementById("timing").innerHTML = Math.floor(performance.now() - startTime) + "ms";
+
+                    console.log(data)
+                    // jsonText.data = data;
+
+                    if (!data || !data[ 0 ])
+                        return;
+
+                    if (data[ 0 ].objects)
+                    {
+                        data[ 0 ].objects.forEach(element =>
+                        {
+                            element.source_height = data[ 0 ].source_height;
+                            element.source_width = data[ 0 ].source_width;
+                            console.log(element);
+                            DrawEyePopReticle(element);
+                        });
+                    }
+
+                    const classyLabels = data[ 0 ].objects.map(obj => obj.classLabel);
+                    sortedObjects = sortAndCount(classyLabels);
+                    jsonText.innerHTML = sortAndCountHTML(sortedObjects);
+
+                });
+        }
+    </script>
+</body>
+
+</html>
