@@ -13,17 +13,25 @@ POP_API_KEY = """YOUR POP API KEY"""
 
 
 def upload_and_plot():
+    
     file_path = filedialog.askopenfilename()
+    
     if file_path:
+
         with EyePopSdk.endpoint(pop_id=POP_UUID, secret_key=POP_API_KEY) as endpoint:
-            result = endpoint.upload(file_path)
+            result = endpoint.upload(file_path).predict()
 
-        with Image.open(file_path) as image:
-            plt.imshow(image)
 
-        plot = EyePopSdk.plot(plt.gca())
-        plot.prediction(result)
-        plt.show()
+            if result is None:
+                print("No results found for this image.")
+
+
+            with Image.open(file_path) as image:
+                plt.imshow(image)
+
+            plot = EyePopSdk.plot(plt.gca())
+            plot.prediction(result)
+            plt.show()
 
 
 import ctypes

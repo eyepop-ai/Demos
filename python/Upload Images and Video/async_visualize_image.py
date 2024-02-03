@@ -9,8 +9,10 @@ import ctypes
 from tkinter import ttk
 
 
+
 POP_UUID = """YOUR POP UUID"""
 POP_API_KEY = """YOUR POP API KEY"""
+
 
 
 def upload_and_plot():
@@ -36,6 +38,9 @@ async def async_upload_photo(file_path):
 
     async def on_ready(job: Job):
         result = await job.predict()
+
+        if result is None:
+            print("No results found for this image.")
         
         with Image.open(file_path) as image:
             plt.imshow(image)
