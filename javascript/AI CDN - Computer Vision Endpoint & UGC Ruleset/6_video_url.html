@@ -61,7 +61,7 @@
 
                         <div id="videoControls"
                             class="visually-hidden d-flex flex-column justify-content-center text-center align-self-center">
-                            <button id="btnPlay" class="btn btn-primary">Play</button>
+                            <button id="btnPlay" class="btn btn-primary">Pause</button>
                             <br>
                             <span>Left and Right arrow keys skip.</span>
                         </div>
@@ -139,20 +139,22 @@
 
                 // We override the last message which will be drawn to the canvas to the current frame
                 EyePopSDK.EyePopAPI.instance.lastmsg = currentFrame;
+                jsonPreviewBox.data = EyePopSDK.EyePopAPI.instance.lastmsg;
 
                 var { closestIndex, closestDiff } = findClosestIndex(cached_data, video.currentTime);
 
                 if (!closestIndex || closestIndex == -1)
                     return
 
-                if (closestDiff > 0.1)
+                currentFrame = cached_data[ closestIndex ];
+
+
+                // pause video to buffer if the closest prediction is too far behind our video
+                if (closestDiff > 0.1 && video.currentTime > cached_data[ closestIndex ].seconds)
                 {
                     playButton.innerText = "Play";
                     video.pause();
                 }
-
-                currentFrame = cached_data[ closestIndex ];
-                jsonPreviewBox.data = currentFrame;
 
             }
 
@@ -178,13 +180,6 @@
             };
 
         }
-
-        EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token)
-            .then(response => config = response)
-            .then(() => { document.getElementById("title").innerHTML = config.name; })
-            .then(() => { run(); });
-
-        document.getElementById("btnPost").addEventListener("click", run);
 
         // A simple helper function to find the closest index in an array of buffered times
         function findClosestIndex(bufferedTimes, currentTime)
@@ -245,6 +240,13 @@
             }
         });
 
+
+        EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token)
+            .then(response => config = response)
+            .then(() => { document.getElementById("title").innerHTML = config.name; })
+            .then(() => { run(); });
+
+        document.getElementById("btnPost").addEventListener("click", run);
 
     </script>
 </body>

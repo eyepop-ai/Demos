@@ -14,7 +14,7 @@
         <div class="container-fluid d-flex align-items-center justify-content-between text-center">
             <a href="1_upload_image.html"><img src="css/images/eyepop-logo.svg" alt="EyePop.ai Logo" class="p-2"
                     style="height: 70px;"></a>
-            <h1 class="p-2 text-center text-white">Spider</h1>
+            <h1 class="p-2 text-center text-white">Octo Ink</h1>
             <h6 id="popConfigName" class="text-center">test</h6>
         </div>
     </header>
@@ -65,7 +65,11 @@
 
     <script type="module">
         import ThirdEyePop from "../utils/ThirdEyePop.js";
+<<<<<<<< HEAD:javascript/Gesture Detection/2_spider.html
         import { updateScene } from "./js/2_spider.js";
+========
+        import { updateScene } from "./js/2_ink.js";
+>>>>>>>> pull-fixes:javascript/Gesture Detection/2_ink.html
 
         var cached_data = [];
         const video = document.getElementById("myLocalVideo");
@@ -98,7 +102,7 @@
                     videoUrl: "webcam",
                     predictionData: cached_data,
                     frameBufferSize: 1,
-                    DEBUG: true,
+                    DEBUG: false,
                     drawParams: {
                         // bgCanvas: canvas,
                         showHeatmap: false,

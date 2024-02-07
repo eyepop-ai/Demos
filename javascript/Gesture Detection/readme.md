@@ -27,7 +27,7 @@ Start your web server from within the **_parent_** directory and open an HTML fi
 Gesture Detection here is done by measuring distances between the 3D points provided by the EyePop SDK. We loop over all prediction data, find any hand points, then organize and compare the labeled joints to detect if a gesture is active.
 It's important to note that smoothing of these points will provide a much better user experience and help filter out false positives.
 
-### Spider Demo
+### Octo Ink Demo
 
 This example detects the distance of the index, middle, ring, and pinky fingers to the wrist point. Then, when both middle and ring fingers are closer to the wrist than both index and pinky, the "rock on spider" ( ;-) ) gesture is detected.
 

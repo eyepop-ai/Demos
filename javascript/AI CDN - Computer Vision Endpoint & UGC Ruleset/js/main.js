@@ -8,6 +8,29 @@ function DisplayPreviewImage(event)
         preview.style.display = 'block';
     };
     reader.readAsDataURL(event.target.files[ 0 ]);
+<<<<<<<< HEAD:javascript/Fitness Rep Counter/js/main.js
+========
+}
+
+async function FetchTemporaryToken(apiKey)
+{
+    // Request a temporary token from EyePop's API post authentication endpoint
+    const authUrl = 'https://api.eyepop.ai/authentication/token';
+    const body = JSON.stringify({
+        'secret_key': apiKey
+    });
+
+    const response = await fetch(authUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: body
+    });
+
+    const data = await response.json();
+    return data.access_token;
+>>>>>>>> pull-fixes:javascript/AI CDN - Computer Vision Endpoint & UGC Ruleset/js/main.js
 }
 
 async function FetchPopConfig(pop_endpoint, token)
@@ -15,14 +38,35 @@ async function FetchPopConfig(pop_endpoint, token)
     //const server = "https://api.eyepop.ai";
     //const server = "http://localhost:8000";
 
-    return fetch(pop_endpoint, {
+    if (!pop_endpoint)
+    {
+        console.log("No active Pop found! Please ensure your Pop is enabled on the dashboard.");
+        return false;
+    }
+
+    if (!token)
+    {
+        token = await FetchTemporaryToken(api_key);
+    }
+
+    console.log("Fetching pop config", pop_endpoint, token);
+
+    let configData = await fetch(pop_endpoint, {
         method: 'GET',
         headers: {
             'Accept': 'application/json',
             'Authorization': 'Bearer ' + token
         }
+<<<<<<<< HEAD:javascript/Fitness Rep Counter/js/main.js
     })
         .then(response => response.json())
+========
+    });
+
+    configData = await configData.json();
+    configData.token = token;
+    return configData;
+>>>>>>>> pull-fixes:javascript/AI CDN - Computer Vision Endpoint & UGC Ruleset/js/main.js
 }
 
 function sortAndCount(arr)
@@ -159,7 +203,11 @@ function jazzUpClassLabels(obj)
         }
         if (key === "classLabel")
         {
+<<<<<<<< HEAD:javascript/Fitness Rep Counter/js/main.js
             obj[ key ] = `<span class="strong">${obj[ key ]}</span>`;
+========
+            obj[ key ] = `strong bg-info ${obj[ key ]}`;
+>>>>>>>> pull-fixes:javascript/AI CDN - Computer Vision Endpoint & UGC Ruleset/js/main.js
         }
     }
 }
@@ -178,7 +226,15 @@ function FormatPre()
     // Convert the jazzed-up object back to a string
     let newPreContent = JSON.stringify(parsedJson, null, 2);
 
+<<<<<<<< HEAD:javascript/Fitness Rep Counter/js/main.js
     // Put the newly minted, jazzed-up JSON back into the <pre> element, complete with sassy bold classLabels!
     document.getElementById('txt_json').innerHTML = newPreContent.replace(/&quot/g, '"') //.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"(<span class=\\"bold\\">.*?<\/span>)"/g, '$1');
 }
+========
+    // Replace the old <pre> content with the new jazzed-up content
+    newPreContent = newPreContent.replace(/"strong bg-info ([^"]*)"/g, '<span class="strong bg-info">$1</span>');
+>>>>>>>> pull-fixes:javascript/AI CDN - Computer Vision Endpoint & UGC Ruleset/js/main.js
 
+    document.getElementById('txt_json').innerHTML = newPreContent;
+
+}

@@ -127,13 +127,29 @@ export const updateScene = async (thirdEyePop) =>
 
     // person tracked webs
     let webProjectiles = [];
-    let wasSpiderCount = 0;
+    let wasOctoInkCount = 0;
 
-    let spiderWebTexture = new THREE.TextureLoader().load('./imgs/web2.png');
+    let octoInkWebTexture1 = new THREE.TextureLoader().load('./imgs/ink.png');
+    let octoInkWebTexture2 = new THREE.TextureLoader().load('./imgs/ink.png');
 
     let helper = new THREE.Object3D();
+<<<<<<<< HEAD:javascript/Gesture Detection/js/2_spider.js
     let decalMaterial = new THREE.MeshBasicMaterial({
         map: spiderWebTexture,
+========
+    let decalMaterial1 = new THREE.MeshBasicMaterial({
+        map: octoInkWebTexture1,
+        depthWrite: false,
+        depthTest: false,
+        transparent: true,
+        polygonOffset: true,
+        polygonOffsetFactor: -4,
+        side: THREE.DoubleSide
+    });
+
+    let decalMaterial2 = new THREE.MeshBasicMaterial({
+        map: octoInkWebTexture2,
+>>>>>>>> pull-fixes:javascript/Gesture Detection/js/2_ink.js
         depthWrite: false,
         depthTest: false,
         transparent: true,
@@ -175,12 +191,14 @@ export const updateScene = async (thirdEyePop) =>
 
             var decalGeometry = new DecalGeometry(closestHit.object, position, helper.rotation, size);
 
+            var decalMaterial = Math.random() < 0.5 ? decalMaterial1 : decalMaterial2;
             var decal = new THREE.Mesh(decalGeometry, decalMaterial);
+
             closestHit.object.add(decal);
             decal.position.copy(position);
 
             //randomize decal rotation to make it look more natural
-            decal.rotation.z = decal.rotation.z + (.01 * Math.random());
+            decal.rotation.z = decal.rotation.z + (.1 * Math.random());
 
             // create timeout to remove decal
             setTimeout(() =>
@@ -219,7 +237,7 @@ export const updateScene = async (thirdEyePop) =>
 
     }
 
-    const isHandInSpiderPosition = (person) =>
+    const isHandInOctoInkPosition = (person) =>
     {
 
         const handData = person.handData;
@@ -227,7 +245,7 @@ export const updateScene = async (thirdEyePop) =>
         let wristPosition = new THREE.Vector3();
         let indexPosition = new THREE.Vector3();
         let direction = new THREE.Vector3();
-        let isSpider = false;
+        let isOctoInk = false;
 
         for (let i = 0; i < 2; i++)
         {
@@ -257,11 +275,11 @@ export const updateScene = async (thirdEyePop) =>
             const ringFingerDistance = ringFingerTip.distanceTo(wristPosition) < indexFingerDistance || ringFingerTip.distanceTo(wristPosition) < pinkyFingerDistance;
             const middleFingerDistance = middleFingerTip.distanceTo(wristPosition) < indexFingerDistance || middleFingerTip.distanceTo(wristPosition) < pinkyFingerDistance;
 
-            isSpider = middleFingerDistance && ringFingerDistance;
+            isOctoInk = middleFingerDistance && ringFingerDistance;
 
-            if (isSpider)
+            if (isOctoInk)
             {
-                wasSpiderCount++;
+                wasOctoInkCount++;
 
                 // get the web direction
                 direction = new THREE.Vector3(); // The direction of the raycaster
@@ -277,28 +295,28 @@ export const updateScene = async (thirdEyePop) =>
 
                 direction = indexPosition.clone().sub(wristPosition).normalize();
 
-                return { isSpider, wristPosition, direction };
+                return { isOctoInk, wristPosition, direction };
 
                 break;
             } else
             {
-                wasSpiderCount = 0;
+                wasOctoInkCount = 0;
             }
         }
 
-        isSpider = isSpider && wasSpiderCount == 2;
+        isOctoInk = isOctoInk && wasOctoInkCount == 2;
 
-        return { isSpider, wristPosition, direction };
+        return { isOctoInk, wristPosition, direction };
     }
 
-    const handleSpider = (person) =>
+    const handleOctoInk = (person) =>
     {
         if (!person.handData) return;
         if (!(person.handData.geometry)) return;
 
-        const { isSpider, wristPosition, direction } = isHandInSpiderPosition(person);
+        const { isOctoInk, wristPosition, direction } = isHandInOctoInkPosition(person);
 
-        if (!isSpider) return;
+        if (!isOctoInk) return;
 
         let newWeb = createWeb(scene, person, web);
         shootWeb(newWeb, wristPosition, direction);
@@ -329,7 +347,6 @@ export const updateScene = async (thirdEyePop) =>
                     web.webMesh.children.forEach(child =>
                     {
                         scene.remove(child);
-                        console.log(child)
                     });
                     scene.remove(web.webMesh);
                 }, 500);
@@ -355,7 +372,7 @@ export const updateScene = async (thirdEyePop) =>
         for (const person of activePeople)
         {
             // shoots webs of people
-            handleSpider(person);
+            handleOctoInk(person);
         }
 
         // moves webs

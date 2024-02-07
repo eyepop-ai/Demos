@@ -4,8 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <title>3 Visualize EyePop.ai Results</title>
-    <!-- <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
-  <script src="main.js"></script> -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
@@ -45,88 +43,108 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-6 d-flex">
-                    <canvas id="maincanvas" src="css/images/empty.png" alt="Image Preview"
-                        style="width: 100%;border: #eee solid 1px; height: 25rem;"></canvas>
+                <div class="col-md-6">
+                    <canvas id="maincanvas" class="object-contain mw-100 w-100" src="css/images/empty.png"
+                        alt="Image Preview" style="border: #eee solid 1px;"></canvas>
                 </div>
                 <div class="col-md-6 d-flex">
-                    <json-viewer id="txt_json" class="align-self-center"
-                        style="width: 100%; height: 40rem; overflow: auto;"></json-viewer>
+                    <pre id="txt_json" class="align-self-center"
+                        style="width: 100%; height: 40rem; overflow: auto;"></pre>
                 </div>
             </div>
         </div>
     </div>
 
 
-    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer/dist/json-viewer.bundle.js"></script> -->
     <script src="config.js"></script>
     <script src="js/main.js"></script>
     <script src="js/excerptFromSDK.min.js"></script>
 
     <script>
 
-        FetchPopConfig(pop_endpoint, token)
-            .then(response => config = response)
-            .then(() =>
+        const jsonViewer = document.getElementById('txt_json');
+        const timingDisplay = document.getElementById('timing');
+        const fileUpload = document.getElementById('file-upload');
+        const titleText = document.getElementById('title');
+
+        async function run()
+        {
+
+            jsonViewer.innerHTML = "Loading...";
+
+            config = await FetchPopConfig(pop_endpoint, token);
+            titleText.innerHTML = config.name;
+
+            jsonViewer.innerHTML = JSON.stringify({
+                "status": "Ready!",
+                "Pop Config": config
+            }, null, 2);
+
+
+            async function GetJSONFromEyePop_file(file)
             {
-                document.getElementById("title").innerHTML = config.name;
-            });
+                let formData = new FormData()
+                formData.append('file', file)
 
-        document.getElementById('file-upload').addEventListener('change', function (event)
-        {
+                const startTime = performance.now();
+                ClearDisplay();
 
-            DisplayPreviewImageCanvas(event);
+                console.log("Fetching EyePop.ai results...", config);
 
-            GetJSONFromEyePop_file(event.target.files[ 0 ])
-
-        });
-
-
-        function GetJSONFromEyePop_file(file)
-        {
-            let formData = new FormData()
-            formData.append('file', file)
-
-            const startTime = performance.now();
-            ClearDisplay();
-            const jsonText = document.getElementById('txt_json');
-
-            fetch(config.base_url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
-                method: 'POST',
-                headers: {
-                    'accept': 'application/json',
-                    'authorization': 'Bearer ' + token
-                },
-                body: formData
-            })
-                .then(response => response.json())
-                .then(data =>
-                {
-                    document.getElementById("timing").innerHTML = Math.floor(performance.now() - startTime) + "ms";
-
-                    console.log(data)
-                    // jsonText.data = data;
-
-                    if (!data || !data[ 0 ])
-                        return;
-
-                    if (data[ 0 ].objects)
-                    {
-                        data[ 0 ].objects.forEach(element =>
-                        {
-                            element.source_height = data[ 0 ].source_height;
-                            element.source_width = data[ 0 ].source_width;
-                            console.log(element);
-                            DrawEyePopReticle(element);
-                        });
-                    }
-
-                    const classyLabels = data[ 0 ].objects.map(obj => obj.classLabel);
-                    sortedObjects = sortAndCount(classyLabels);
-                    jsonText.innerHTML = sortAndCountHTML(sortedObjects);
-
+                let result = await fetch(config.base_url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
+                    method: 'POST',
+                    headers: {
+                        'accept': 'application/json',
+                        'authorization': 'Bearer ' + config.token
+                    },
+                    body: formData
                 });
+
+
+                console.log("Parsing EyePop.ai response...");
+
+                const data = await result.json();
+
+                timingDisplay.innerHTML = Math.floor(performance.now() - startTime) + "ms";
+
+                console.log("Resulting EyePop data is:", data);
+
+                if (!data || !data[ 0 ])
+                    return;
+
+                if (data[ 0 ].objects)
+                {
+                    data[ 0 ].objects.forEach(element =>
+                    {
+                        element.source_height = data[ 0 ].source_height;
+                        element.source_width = data[ 0 ].source_width;
+                        console.log(element);
+                        DrawEyePopReticle(element);
+                    });
+                }
+
+                if (!("objects" in data[ 0 ]))
+                {
+                    return;
+                }
+
+                const classyLabels = data[ 0 ].objects.map(obj => obj.classLabel);
+                let sortedObjects = sortAndCount(classyLabels);
+                jsonViewer.innerHTML = sortAndCountHTML(sortedObjects);
+
+            }
+
+            fileUpload.addEventListener('change', function (event)
+            {
+
+                DisplayPreviewImageCanvas(event);
+
+                GetJSONFromEyePop_file(event.target.files[ 0 ])
+
+            });
         }
+
+        run();
     </script>
 </body>
 

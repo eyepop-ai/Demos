@@ -42,67 +42,95 @@
                     EyePop.ai Results: <h3 id="timing" class="ms-auto">0ms</h3>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-6">
+
+            <div class="d-flex" style="height: 40rem;">
+
+                <div class="w-50">
                     <img id="image-preview" src="css/images/empty.png" alt="Image Preview"
                         style="width: 100%;border: #eee solid 1px;">
                 </div>
-                <div class="col-md-6 d-flex">
-                    <json-viewer id="txt_json" class="align-self-center"
-                        style="width: 100%; height: 40rem; overflow: auto;"></json-viewer>
+
+                <div class="w-50">
+                    <pre id="txt_json" class="w-100 h-100 shadow-md"></pre>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://unpkg.com/@alenaksu/json-viewer/dist/json-viewer.bundle.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk"></script> -->
     <script src="config.js"></script>
     <script src="js/main.js"></script>
-    <script>
 
-        FetchPopConfig(pop_endpoint, token)
-            .then(response => config = response)
-            .then(() =>
+    <script>
+        const jsonViewer = document.getElementById('txt_json');
+        const timingDisplay = document.getElementById('timing');
+        const fileUpload = document.getElementById('file-upload');
+        const titleText = document.getElementById('title');
+
+        fileUpload.classList.add('visually-hidden');
+
+        async function run()
+        {
+
+            jsonViewer.innerHTML = JSON.stringify({ "status": "Loading..." }, null, 2);
+
+            config = await FetchPopConfig(pop_endpoint, token);
+
+            titleText.innerHTML = config.name;
+
+            jsonViewer.innerHTML = JSON.stringify({
+                "status": "Ready!",
+                "Pop Config": config
+            }, null, 2);
+
+
+            fileUpload.classList.remove('visually-hidden');
+
+            fileUpload.addEventListener('change', function (event)
             {
-                document.getElementById("title").innerHTML = config.name;
+
+                DisplayPreviewImage(event);
+
+                GetJSONFromEyePop_file(event.target.files[ 0 ])
+
             });
 
-        document.getElementById('file-upload').addEventListener('change', function (event)
-        {
 
-            DisplayPreviewImage(event);
+            function GetJSONFromEyePop_file(file)
+            {
 
-            GetJSONFromEyePop_file(event.target.files[ 0 ])
+                jsonViewer.innerText = "Loading...";
 
-        });
+                let formData = new FormData()
+                formData.append('file', file)
 
+                const startTime = performance.now();
+                ClearDisplay();
 
-        function GetJSONFromEyePop_file(file)
-        {
-            let formData = new FormData()
-            formData.append('file', file)
-
-            const startTime = performance.now();
-            ClearDisplay();
-
-            fetch(config.base_url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
-                method: 'POST',
-                headers: {
-                    'accept': 'application/json',
-                    'authorization': 'Bearer ' + token
-                },
-                body: formData
-            })
-                .then(response => response.json())
-                .then(data =>
-                {
-                    document.getElementById("timing").innerHTML = Math.floor(performance.now() - startTime) + "ms";
-                    document.getElementById('txt_json').data = data;
-                    FormatPre();
-
+                fetch(config.base_url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
+                    method: 'POST',
+                    headers: {
+                        'accept': 'application/json',
+                        'authorization': 'Bearer ' + config.token
+                    },
+                    body: formData
                 })
-                .catch(error => console.error('The party\'s over, there was an error:', error));
+                    .then(response => response.json())
+                    .then(data =>
+                    {
+                        timingDisplay.innerHTML = Math.floor(performance.now() - startTime) + "ms";
+
+                        jsonViewer.innerHTML = JSON.stringify(data, null, 2);
+
+                        FormatPre();
+
+                    })
+                    .catch(error => console.error('The party\'s over, there was an error:', error));
+            }
         }
+
+        run();
     </script>
 </body>
 
