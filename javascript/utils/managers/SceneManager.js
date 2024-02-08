@@ -62,13 +62,8 @@ export default class SceneManager
         this.pointMaterial = new THREE.MeshBasicMaterial({ color: 0x1d47b3 });
         this.pathMaterial = new THREE.LineBasicMaterial({ vertexColors: true, linewidth: 100, });
         this.poseMaterial = new THREE.LineBasicMaterial({ vertexColors: true, linewidth: 100, });
-<<<<<<< HEAD
-        this.faceMaterial = new THREE.PointsMaterial({ vertexColors: true, size: 3 });
-        this.handMaterial = new THREE.PointsMaterial({ vertexColors: true, size: 2 });
-=======
         this.faceMaterial = new THREE.PointsMaterial({ vertexColors: true, size: 5 });
         this.handMaterial = new THREE.PointsMaterial({ vertexColors: true, size: 5 });
->>>>>>> pull-fixes
 
         this.boxQueue = [];
 

@@ -56,7 +56,7 @@ Have AI track and draw a foot traffic heatmap!
 
 [Demo](./javascript/Retail%20Customer%20Analytics/)
 
-## Python Demos
+# Python Demos
 
 ### Python Screen Capture and Analysis Demo with CV2
 

@@ -133,10 +133,6 @@ export const updateScene = async (thirdEyePop) =>
     let octoInkWebTexture2 = new THREE.TextureLoader().load('./imgs/ink.png');
 
     let helper = new THREE.Object3D();
-<<<<<<<< HEAD:javascript/Gesture Detection/js/2_spider.js
-    let decalMaterial = new THREE.MeshBasicMaterial({
-        map: spiderWebTexture,
-========
     let decalMaterial1 = new THREE.MeshBasicMaterial({
         map: octoInkWebTexture1,
         depthWrite: false,
@@ -149,7 +145,6 @@ export const updateScene = async (thirdEyePop) =>
 
     let decalMaterial2 = new THREE.MeshBasicMaterial({
         map: octoInkWebTexture2,
->>>>>>>> pull-fixes:javascript/Gesture Detection/js/2_ink.js
         depthWrite: false,
         depthTest: false,
         transparent: true,

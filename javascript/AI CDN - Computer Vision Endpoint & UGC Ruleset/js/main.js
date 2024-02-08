@@ -8,8 +8,6 @@ function DisplayPreviewImage(event)
         preview.style.display = 'block';
     };
     reader.readAsDataURL(event.target.files[ 0 ]);
-<<<<<<<< HEAD:javascript/Fitness Rep Counter/js/main.js
-========
 }
 
 async function FetchTemporaryToken(apiKey)
@@ -30,7 +28,6 @@ async function FetchTemporaryToken(apiKey)
 
     const data = await response.json();
     return data.access_token;
->>>>>>>> pull-fixes:javascript/AI CDN - Computer Vision Endpoint & UGC Ruleset/js/main.js
 }
 
 async function FetchPopConfig(pop_endpoint, token)
@@ -57,16 +54,11 @@ async function FetchPopConfig(pop_endpoint, token)
             'Accept': 'application/json',
             'Authorization': 'Bearer ' + token
         }
-<<<<<<<< HEAD:javascript/Fitness Rep Counter/js/main.js
-    })
-        .then(response => response.json())
-========
     });
 
     configData = await configData.json();
     configData.token = token;
     return configData;
->>>>>>>> pull-fixes:javascript/AI CDN - Computer Vision Endpoint & UGC Ruleset/js/main.js
 }
 
 function sortAndCount(arr)
@@ -203,11 +195,7 @@ function jazzUpClassLabels(obj)
         }
         if (key === "classLabel")
         {
-<<<<<<<< HEAD:javascript/Fitness Rep Counter/js/main.js
-            obj[ key ] = `<span class="strong">${obj[ key ]}</span>`;
-========
             obj[ key ] = `strong bg-info ${obj[ key ]}`;
->>>>>>>> pull-fixes:javascript/AI CDN - Computer Vision Endpoint & UGC Ruleset/js/main.js
         }
     }
 }
@@ -226,14 +214,8 @@ function FormatPre()
     // Convert the jazzed-up object back to a string
     let newPreContent = JSON.stringify(parsedJson, null, 2);
 
-<<<<<<<< HEAD:javascript/Fitness Rep Counter/js/main.js
-    // Put the newly minted, jazzed-up JSON back into the <pre> element, complete with sassy bold classLabels!
-    document.getElementById('txt_json').innerHTML = newPreContent.replace(/&quot/g, '"') //.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"(<span class=\\"bold\\">.*?<\/span>)"/g, '$1');
-}
-========
     // Replace the old <pre> content with the new jazzed-up content
     newPreContent = newPreContent.replace(/"strong bg-info ([^"]*)"/g, '<span class="strong bg-info">$1</span>');
->>>>>>>> pull-fixes:javascript/AI CDN - Computer Vision Endpoint & UGC Ruleset/js/main.js
 
     document.getElementById('txt_json').innerHTML = newPreContent;
 

@@ -36,9 +36,6 @@ async def async_upload_photo(file_path):
 
     async def on_ready(job: Job):
         result = await job.predict()
-
-        if result is None:
-            print("No results found for this image.")
         
         with Image.open(file_path) as image:
             plt.imshow(image)
