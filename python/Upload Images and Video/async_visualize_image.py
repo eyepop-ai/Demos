@@ -9,8 +9,9 @@ import ctypes
 from tkinter import ttk
 
 
-POP_UUID = """YOUR POP UUID"""
-POP_API_KEY = """YOUR POP API KEY"""
+
+POP_UUID = ''
+POP_API_KEY = ''
 
 
 def upload_and_plot():

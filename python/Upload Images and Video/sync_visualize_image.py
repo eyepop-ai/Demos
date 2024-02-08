@@ -8,13 +8,21 @@ from tkinter import ttk
 
 
 
-POP_UUID = """YOUR POP UUID"""
-POP_API_KEY = """YOUR POP API KEY"""
+POP_UUID = ''
+POP_API_KEY = ''
 
 
 def upload_and_plot():
+    """
+    Uploads a photo and plots it asynchronously.
+    """
+    
     file_path = filedialog.askopenfilename()
+
     if file_path:
+        
+        result = None
+
         with EyePopSdk.endpoint(pop_id=POP_UUID, secret_key=POP_API_KEY) as endpoint:
             result = endpoint.upload(file_path).predict()
 
@@ -26,8 +34,6 @@ def upload_and_plot():
         plt.show()
 
 
-import ctypes
-import tkinter as tk
 
 def main():
     """
