@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>1 Upload an Image To Get Raw EyePop.ai Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container h-100" style="max-width: 1200px;">
+        <!-- HEADER: Full width, Logo Image -->
+        <header class="mt-4">
+            <div class="container-fluid d-flex align-items-center">
+
+                <a href="1_upload_image.html"><img src="css/images/eyepop-logo.svg" alt="EyePop.ai Logo" class="p-2"
+                        style="height: 70px;"></a>
+                <h1 class="p-2">CDN Workshop Step 1</h1>
+                <a href="2_parse_results.html" class="btn btn-primary ms-auto">NEXT</a>
+
+            </div>
+        </header>
+
+        <!-- FORM UPLOAD ELEMENT: Centered, Full Width Row -->
+        <div class="container-fluid mt-4">
+            <div class="row justify-content-center">
+                <div id="drop-area" class="col-12">
+                    <form>
+                        <input type="file" class="form-control" id="file-upload">
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- IMAGE PREVIEW AND TEXT AREA: Half and Half -->
+        <div class="container-fluid mt-4 ">
+            <div class="row">
+                <div class="col-md-6 d-flex">
+                    Preview image:<h3 id="title" class="ms-auto"></h3>
+                </div>
+                <div class="col-md-6 d-flex">
+                    EyePop.ai Results: <h3 id="timing" class="ms-auto">0ms</h3>
+                </div>
+            </div>
+
+            <div class="d-flex" style="height: 40rem;">
+
+                <div class="w-50">
+                    <img id="image-preview" src="css/images/empty.png" alt="Image Preview"
+                        style="width: 100%;border: #eee solid 1px;">
+                </div>
+
+                <div class="w-50">
+                    <pre id="txt_json" class="w-100 h-100 shadow-md"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@alenaksu/json-viewer/dist/json-viewer.bundle.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk"></script> -->
+    <script src="config.js"></script>
+    <script src="js/main.js"></script>
+
+    <script>
+        const jsonViewer = document.getElementById('txt_json');
+        const timingDisplay = document.getElementById('timing');
+        const fileUpload = document.getElementById('file-upload');
+        const titleText = document.getElementById('title');
+
+        fileUpload.classList.add('visually-hidden');
+
+        async function run()
+        {
+
+            jsonViewer.innerHTML = JSON.stringify({ "status": "Loading..." }, null, 2);
+
+            config = await FetchPopConfig(pop_endpoint, token);
+
+            titleText.innerHTML = config.name;
+
+            jsonViewer.innerHTML = JSON.stringify({
+                "status": "Ready!",
+                "Pop Config": config
+            }, null, 2);
+
+
+            fileUpload.classList.remove('visually-hidden');
+
+            fileUpload.addEventListener('change', function (event)
+            {
+
+                DisplayPreviewImage(event);
+
+                GetJSONFromEyePop_file(event.target.files[ 0 ])
+
+            });
+
+
+            function GetJSONFromEyePop_file(file)
+            {
+
+                jsonViewer.innerText = "Loading...";
+
+                let formData = new FormData()
+                formData.append('file', file)
+
+                const startTime = performance.now();
+                ClearDisplay();
+
+                fetch(config.base_url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
+                    method: 'POST',
+                    headers: {
+                        'accept': 'application/json',
+                        'authorization': 'Bearer ' + config.token
+                    },
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data =>
+                    {
+                        timingDisplay.innerHTML = Math.floor(performance.now() - startTime) + "ms";
+
+                        jsonViewer.innerHTML = JSON.stringify(data, null, 2);
+
+                        FormatPre();
+
+                    })
+                    .catch(error => console.error('The party\'s over, there was an error:', error));
+            }
+        }
+
+        run();
+    </script>
+</body>
+
+</html>

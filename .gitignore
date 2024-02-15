@@ -1,4 +1,5 @@
-AI CDN - Computer Vision Endpoint & UGC Ruleset/js/excerptFromSDK.js
-
 .*
 venv/
+env/
+__pycache__/
+node_modules/

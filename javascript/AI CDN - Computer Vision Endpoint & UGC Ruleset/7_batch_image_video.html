@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Batch Video and Images</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="overflow-hidden d-flex bg-white flex-row justify-content-center gap-5"
+    style="width: 100vw; height: 100vh; scale: .8;">
+
+    <!-- A spinning loading animation -->
+    <div id="loading"
+        class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center bg-black flex-column"
+        style="z-index: 1000; scale: 1.3;">
+        <div id="loadingText" class="text-white text-start p-5">Loading Pop...</div>
+        <div class="spinner-border text-light align-self-center" role="status">
+
+            <span class="visually-hidden">Loading...</span>
+
+        </div>
+    </div>
+
+    <header id="canvasParent" class="position-absolute vw-100 mx-auto z-3" style="top: -3rem; width: 100vw;">
+        <div class="d-flex align-items-center justify-content-between text-center">
+            <a href="1_upload_image.html">
+                <img src="css/images/eyepop-logo.svg" alt="EyePop.ai Logo" class="" style="height: 70px;">
+            </a>
+            <h1 class="p-2 text-center text-blac">Batch Image / Video Tester</h1>
+            <h6 id="popConfigName" class="text-center text-blac"></h6>
+        </div>
+    </header>
+
+
+    <div class="d-flex align-self-center flex-column justify-content-start" style="margin-top: 15rem;">
+        <div class="d-flex flex-column text-center bg-black">
+            <span class="text-white">Canvas 1: 3D Overlay Rendering - Click and drag to rotate, press escape to
+                reset.</span>
+            <canvas id="rendercanvas" class="bg-gradient object-fit-contain" width="640px" height="480px"></canvas>
+        </div>
+
+
+        <div class="d-flex flex-column text-center bg-black">
+            <span class="text-white">Canvas 2: HTML Canvas with Context2d Drawing</span>
+            <canvas id="mobilecanvas" class="bg-gradient object-fit-contain" width="640px" height="480px"></canvas>
+        </div>
+
+    </div>
+
+    <div class="d-flex flex-column justify-content-center gap-3 w-50 ">
+        <!-- FORM UPLOAD ELEMENT: Centered, Full Width Row -->
+        <div class="row justify-content-center">
+
+            <h4 class="text-black border-2 border-dark p-2"> 1. Select a folder:</h4>
+
+            <form>
+                <input type="file" class="form-control" id="file_upload" webkitdirectory
+                    accept="application/octet-stream">
+            </form>
+
+            <h4 class="text-black border-2 border-dark p-2"> 2. Click Play. </h4>
+            <form class="d-flex">
+
+                <button id="togglePlay" class="btn btn-primary" type="button">Pause</button>
+
+                <input type="number" class="form-control w-50" placeholder="Seconds to skip"
+                    aria-describedby="basic-addon2" id="framesToSkip">
+
+                <button id="saveButton" class="btn btn-info" type="button">save result</button>
+
+                <div class="form-check d-flex justify-content-center align-content-center  text-blac">
+                    <div class="form-check d-flex justify-content-center align-self-center">
+                        <input class="form-check-input" type="radio" name="positiveNegativeRadio" id="positiveRadio"
+                            value="positive">
+                        <label class="form-check-label" for="positiveRadio">
+                            fp
+                        </label>
+                    </div>
+
+                    <div class="form-check d-flex justify-content-center  align-self-center">
+                        <input class="form-check-input" type="radio" name="positiveNegativeRadio" id="negativeRadio"
+                            value="negative">
+                        <label class="form-check-label" for="negativeRadio">
+                            fn
+                        </label>
+                    </div>
+
+                    <div class="form-check d-flex justify-content-center  align-self-center">
+                        <input class="form-check-input" type="radio" name="positiveNegativeRadio"
+                            id="positiveNegativeRadio" value="negative">
+                        <label class="form-check-label" for="positiveNegativeRadio">
+                            fpn
+                        </label>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="gap-1 w-100">
+            <span class="text-info">name: </span>
+            <span id="mediaName" class="text-blac">Video</span>
+            <span class="text-info">( file #: </span>
+            <span id="mediaIndex" class="text-blac">0</span>
+            <span class=""> / </span>
+            <span id="totalFiles" class="text-blac">0</span>
+            <span class="text-info"> ) </span>
+            <span class="text-info">frame #: </span>
+            <span id="mediaTime" class="text-blac">0</span>
+        </div>
+
+        <video id="myLocalVideo" playsinline controls muted class="position-absolute"
+            style="width:1px;height:1px;"></video>
+        <video id="videoCapture" class="position-absolute z-n1" class="position-absolute"
+            style="width: 1px; height: 1px; left:0"></video>
+
+        <div class="d-flex">
+            <input type="text" class="form-control" placeholder="filter" aria-label="filter"
+                aria-describedby="basic-addon2" id="jsonFilter">
+            <input type="text" class="form-control" placeholder="search" aria-label="search"
+                aria-describedby="basic-addon2" id="jsonSearch">
+        </div>
+
+        <div class="d-flex justify-content-center">
+            <json-viewer id="jsonDisplay" class="align-self-center"
+                style="width: 100%; height: 40rem; overflow: auto;"></json-viewer>
+        </div>
+
+    </div>
+
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script src="https://unpkg.com/@alenaksu/json-viewer/dist/json-viewer.bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk@0.0.31"></script>
+    <script src="./config.js"></script>
+
+    <script type="module">
+
+        // TODOS
+        //  - Add duration of video and ability to skim through video
+        //  - Add pop model details
+        //  - Add media selection area to select which of the files to play
+
+        import ThirdEyePop from "../utils/ThirdEyePop.js";
+
+        var fileInput = document.getElementById('file_upload');
+        const postButton = document.getElementById('btnPost');
+        const loading = document.getElementById('loading');
+        const loadingText = document.getElementById('loadingText');
+
+        const captureCanvas = document.createElement("canvas");
+        const captureContext = captureCanvas.getContext("2d");
+        const captureVideo = document.getElementById("videoCapture");
+
+        const renderCanvas = document.getElementById("rendercanvas");
+        const mobilecanvas = document.getElementById("mobilecanvas");
+        const mobileCanvasContext = mobilecanvas.getContext("2d");
+
+        const framesToSkip = document.getElementById("framesToSkip");
+        const positiveRadio = document.getElementById("positiveRadio");
+        const negativeRadio = document.getElementById("negativeRadio");
+        const positiveNegativeRadio = document.getElementById("positiveNegativeRadio");
+        const playPause = document.getElementById("playPause");
+
+        const mediaName = document.getElementById("mediaName");
+        const mediaIndex = document.getElementById("mediaIndex");
+        const totalFiles = document.getElementById("totalFiles");
+        const mediaTime = document.getElementById("mediaTime");
+
+        const togglePlay = document.getElementById("togglePlay");
+        const saveButton = document.getElementById("saveButton");
+
+        const jsonText = document.getElementById("jsonDisplay");
+
+        const jsonFilter = document.getElementById("jsonFilter");
+        const jsonSearch = document.getElementById("jsonSearch");
+
+        // Get the json-viewer element
+        var viewer = document.querySelector('json-viewer');
+
+        var positiveNegativePrefix = "fpn_";
+
+        positiveRadio.addEventListener('change', function (e)
+        {
+            positiveNegativePrefix = "fp_";
+        });
+
+        negativeRadio.addEventListener('change', function (e)
+        {
+            positiveNegativePrefix = "fn_";
+        });
+
+        positiveNegativeRadio.addEventListener('change', function (e)
+        {
+            positiveNegativePrefix = "fpn_";
+        });
+
+
+        // the canvases we draw to for saving to file
+        let videoCanvas = document.createElement('canvas');
+        let isVideo = false;
+        let image = null;
+
+
+        // Add an event listener to the jsonFilter input
+        jsonFilter.addEventListener('change', function (e)
+        {
+            var filterTerm = e.target.value;
+
+            // If the filter term is empty, reset the filter
+            if (!filterTerm)
+            {
+                viewer.resetFilter();
+            } else
+            {
+                // Otherwise, filter the JSON data based on the filter term
+                viewer.filter(filterTerm);
+            }
+        });
+
+        // Add an event listener to the jsonSearch input
+        jsonSearch.addEventListener('change', function (e)
+        {
+            var searchTerm = e.target.value;
+
+            if (!searchTerm) return;
+            if (searchTerm.length < 2) return;
+
+            // Use the search method of json-viewer
+            var searchIterator = viewer.search(searchTerm);
+
+            // Iterate through the search results
+            for (var result of searchIterator)
+            {
+                // Log the result to the console
+                console.log(result);
+            }
+
+        });
+
+        var isPlaying = true;
+
+        let captureStream = null;
+
+        let lastTimestamp = -1;
+
+
+        EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token).then(response => config = response).then(() =>
+        {
+            document.getElementById("popConfigName").innerHTML = config.name;
+            if (config.name)
+            {
+                loading.classList.add("visually-hidden");
+            }
+
+        });
+
+        saveButton.addEventListener('click', function (event)
+        {
+
+            // save the screen canvas
+            screenToPng(positiveNegativePrefix + "_demo");
+
+            if (isVideo)
+            {
+                // save the canvas as a png
+                canvasToPng(videoCanvas, positiveNegativePrefix + "_img");
+            } else
+            {
+                // save the image as a png
+                imageToPng(image, positiveNegativePrefix + "_img");
+            }
+
+            // save the json data
+            predictionToJSON(positiveNegativePrefix + "_result", thirdEyePop.getPredictionData());
+
+        });
+
+
+        const thirdEyePop = new ThirdEyePop(
+            {
+                canvas: renderCanvas,
+                // videoUrl: "webcam",
+                frameBufferSize: 1,
+                DEBUG: true,
+                drawParams: {
+                    bgCanvas: mobilecanvas,
+                    showHeatmap: false,
+                    showFace: true,
+                    showHands: true,
+                    showPoint: true,
+                    showPath: false,
+                    showBounds: true,
+                    showTraceId: true,
+                    showPose: true,
+                    showGammaCorrection: false,
+                }
+            });
+
+        thirdEyePop.setup();
+
+        togglePlay.addEventListener('click', function (event)
+        {
+            if (togglePlay.innerHTML == "Play")
+            {
+                togglePlay.innerHTML = "Pause";
+                isPlaying = true;
+            } else
+            {
+                togglePlay.innerHTML = "Play";
+                isPlaying = false;
+            }
+        });
+
+        // a promise to wait indefinitely on when isPlaying is false
+        const paused = async () =>
+        {
+            return new Promise((resolve, reject) =>
+            {
+                // an interval to check if isPlaying is true
+                const interval = setInterval(() =>
+                {
+                    if (isPlaying)
+                    {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, 100);
+
+            });
+        };
+
+        const predictionToJSON = (fileName, jsonData) =>
+        {
+            return new Promise((resolve, reject) =>
+            {
+                const jsonString = JSON.stringify(jsonData, null, 2);
+                const blob = new Blob([ jsonString ], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                document.body.appendChild(a);
+                a.style = "display: none";
+                a.href = url;
+                a.download = fileName + ".json";
+                a.addEventListener("click", () =>
+                {
+                    setTimeout(() =>
+                    {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        resolve();
+                    }, 100);
+                });
+                a.click();
+            });
+        };
+
+        const canvasToPng = async (canvas, fileName) =>
+        {
+            const frame = canvas.toDataURL("image/png");
+            // save frame to a png file named fileName
+            const a = document.createElement("a");
+            a.href = frame;
+            a.download = fileName + ".png";
+            a.click();
+            a.remove();
+        }
+
+        const imageToPng = async (imageObj, fileName) =>
+        {
+            const frame = imageObj.src;
+            // save frame to a png file named fileName
+            const a = document.createElement("a");
+            a.href = frame;
+            a.download = fileName + ".png";
+            a.click();
+            a.remove();
+        }
+
+        const screenToPng = async (fileName = "ep_test") =>
+        {
+            try
+            {
+                if (!captureStream)
+                {
+                    captureStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                    captureVideo.srcObject = captureStream;
+                    await new Promise((resolve) =>
+                    {
+                        captureVideo.onloadedmetadata = () =>
+                        {
+                            setTimeout(() => resolve(), 1000);
+                        };
+                    });
+                    captureVideo.play();
+                }
+
+                captureCanvas.width = captureVideo.videoWidth;
+                captureCanvas.height = captureVideo.videoHeight;
+                captureContext.drawImage(captureVideo, 0, 0, captureCanvas.width, captureCanvas.height);
+
+                await canvasToPng(captureCanvas, fileName);
+
+            } catch (err)
+            {
+                console.error("Error capturing screen: " + err);
+            }
+        };
+
+
+        // create an interval to set the json text area to the json data
+        setInterval(() =>
+        {
+
+            if (!EyePopSDK.EyePopAPI.instance) return;
+            if (!EyePopSDK.EyePopAPI.instance.lastmsg) return;
+
+            // only create a new json viewer if the lastmsg content is different, doing a deep comparison
+            if (JSON.stringify(EyePopSDK.EyePopAPI.instance.lastmsg) != JSON.stringify(thirdEyePop.getPredictionData()))
+            {
+                loading.classList.add("visually-hidden");
+                jsonText.data = EyePopSDK.EyePopAPI.instance.lastmsg;
+            }
+
+            thirdEyePop.pushPredictionData(EyePopSDK.EyePopAPI.instance.lastmsg);
+
+        }, 100);
+
+        const draw = async (fileData) =>
+        {
+            return new Promise((resolve, reject) =>
+            {
+                const reader = new FileReader();
+                reader.onload = function (event)
+                {
+                    image = new Image();
+                    image.onload = function ()
+                    {
+                        mobileCanvasContext.drawImage(image, 0, 0, mobilecanvas.width, mobilecanvas.height);
+                        resolve();
+                    };
+                    image.src = event.target.result;
+                };
+                reader.readAsDataURL(fileData);
+            });
+        };
+
+        fileInput.addEventListener('change', async function (event)
+        {
+            isPlaying = true;
+
+            totalFiles.innerHTML = event.target.files.length;
+
+            // if the target is a directory loop over all files and run this one by one
+            for (let i = 0; i < event.target.files.length; i++)
+            {
+                let file = event.target.files[ i ];
+                thirdEyePop.reset();
+
+                // wait until isPlaying is true
+                await paused();
+
+                mediaName.innerHTML = file.name;
+                mediaIndex.innerHTML = i;
+                mediaTime.innerHTML = 0;
+
+                // Check if the file is a video
+                if (file.type.startsWith('video/'))
+                {
+                    isVideo = true;
+                    // Create a video element
+                    const video = document.createElement('video');
+                    video.src = URL.createObjectURL(file);
+
+                    // Wait for the video metadata to load
+                    await new Promise(resolve => video.onloadedmetadata = resolve);
+
+                    // Calculate the number of frames to extract
+                    let skip = 5; // Number of frames to skip
+
+                    if (framesToSkip.value != '')
+                    {
+                        skip = Math.floor(framesToSkip.value);
+                    }
+
+                    let frameCount = Math.floor(video.duration);
+
+
+                    for (let j = 1; j < frameCount; j += skip)
+                    {
+
+                        // Seek to the time of the next frame
+                        video.currentTime = j;
+                        mediaTime.innerHTML = j;
+
+                        // Wait for the video to seek to the desired time
+                        await new Promise((resolve, reject) =>
+                        {
+                            video.onseeked = resolve;
+
+                            // Add a timeout to the promise
+                            setTimeout(() =>
+                            {
+                                resolve();
+                            }, 1500);
+                        });
+
+                        // Draw the current video frame to a canvas
+                        videoCanvas.width = video.videoWidth;
+                        videoCanvas.height = video.videoHeight;
+                        let context = videoCanvas.getContext('2d');
+                        context.drawImage(video, 0, 0, videoCanvas.width, videoCanvas.height);
+
+                        // Convert the canvas to a Blob
+                        const currentVideoFrame = await new Promise(resolve => videoCanvas.toBlob(resolve));
+
+                        // Process the frame
+                        await processFile(currentVideoFrame);
+
+                        console.log(j, skip, frameCount);
+
+                        if (framesToSkip.value != '')
+                        {
+                            skip = Math.floor(framesToSkip.value);
+                        }
+                    }
+
+                    video.remove();
+                } else if (file.type.startsWith('image/'))
+                {
+                    isVideo = false;
+                    // If the file is not a video, process it as before
+                    await processFile(file);
+                }
+            }
+        });
+
+        async function processFile(file)
+        {
+            const popConfigFetch = EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token);
+
+            loadingText.innerText = "Processing...";
+            loading.classList.remove("visually-hidden");
+
+            let result = await popConfigFetch.then((response) =>
+            {
+                config = response;
+
+                config.input = {
+                    "name": "file_upload",
+                };
+
+                config.draw = [
+                    { "type": "box", "targets": [ "*" ] },
+                    { "type": "pose", "targets": [ "*" ] },
+                    { "type": "hand", "targets": [ "*" ] },
+                    { "type": "face", "targets": [ "*" ] },
+                ];
+
+                console.log("EyePopSDK config: ", config);
+
+                EyePopSDK.EyePopSDK.init(config);
+
+                EyePopSDK.EyePopAPI.GetJSONFromEyePop_file(file);
+            });
+
+            // draw the file on the canvas
+            await draw(file);
+
+            togglePlay.click();
+
+            await paused();
+
+        }
+
+    </script>
+</body>
+
+</html>
