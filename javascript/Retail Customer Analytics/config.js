@@ -1,4 +1,4 @@
-const pop_uuid = '';
+const pop_uuid = 'aee2bc9258df4addad007c25d00f75a1';
 const pop_endpoint = "https://api.eyepop.ai/pops/" + pop_uuid + "/config?auto_start=true";
 
 // Do not expose your API key in production! You can leave this blank in development.

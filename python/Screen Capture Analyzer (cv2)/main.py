@@ -7,8 +7,7 @@ from mss import mss
 import os
 
 SCREEN_NUMBER = 1
-POP_UUID = ""
-POP_API_SECRET = ""
+POP_UUID, POP_API_SECRET = "", ""
 
 def get_config_data():
     """
