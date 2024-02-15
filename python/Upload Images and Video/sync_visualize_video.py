@@ -13,8 +13,21 @@ import threading
 from tkinter import filedialog
 import time
 
-POP_UUID = ''
-POP_API_KEY = ''
+POP_UUID, POP_API_SECRET = '', ''
+
+def get_config_data():
+    """
+    Reads and returns the configuration data from the config file which has the following format:
+    POP_UUID=
+    POP_API_SECRET=
+    """
+    with open("../config") as file:
+        data = file.readlines()
+        uuid = data[0].strip().split("=")[1]
+        secret = data[1].strip().split("=")[1]
+        return uuid, secret
+
+
 
 def upload_and_plot():
     """
@@ -68,7 +81,7 @@ def upload_video(file_path):
     """
     predictions = []
     frames = []
-    with EyePopSdk.endpoint(pop_id=POP_UUID, secret_key=POP_API_KEY) as endpoint:
+    with EyePopSdk.endpoint(pop_id=POP_UUID, secret_key=POP_API_SECRET) as endpoint:
         print("End point started ", file_path)
         job = endpoint.upload(file_path)
         
@@ -114,7 +127,8 @@ def main():
     """
     This function initializes the GUI window, sets the DPI scaling, and creates a button for selecting an image file.
     It also calculates the window size based on the screen resolution and displays the window.
-    """
+    """    
+    POP_UUID, POP_API_SECRET = get_config_data()
     ctypes.windll.shcore.SetProcessDpiAwareness(1)
 
     root = tk.Tk()

@@ -6,11 +6,23 @@ import cv2
 from mss import mss
 import os
 
-POP_UUID = ""
-
-POP_API_KEY = """"""
-
 SCREEN_NUMBER = 1
+POP_UUID = ""
+POP_API_SECRET = ""
+
+def get_config_data():
+    """
+    Reads and returns the configuration data from the config file which has the following format:
+    POP_UUID=
+    POP_API_SECRET=
+    """
+    with open("../config") as file:
+        data = file.readlines()
+        uuid = data[0].strip().split("=")[1]
+        secret = data[1].strip().split("=")[1]
+        return uuid, secret
+
+
 
 class ScreenCaptureAnalyzer:
 
@@ -113,7 +125,7 @@ class ScreenCaptureAnalyzer:
         Runs the screen capture and analysis loop.
         """
 
-        with EyePopSdk.endpoint(pop_id=POP_UUID, secret_key=POP_API_KEY) as endpoint:
+        with EyePopSdk.endpoint(pop_id=POP_UUID, secret_key=POP_API_SECRET) as endpoint:
 
             cv2.namedWindow("screencap", cv2.WINDOW_NORMAL) 
 
@@ -150,6 +162,7 @@ class ScreenCaptureAnalyzer:
             os.remove(self.temp_file)
 
 
+POP_UUID, POP_API_SECRET = get_config_data()
 screen_capture_analyzer = ScreenCaptureAnalyzer(SCREEN_NUMBER)
 
 try:

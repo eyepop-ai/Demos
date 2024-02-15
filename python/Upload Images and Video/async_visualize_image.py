@@ -10,8 +10,20 @@ from tkinter import ttk
 
 
 
-POP_UUID = ''
-POP_API_KEY = ''
+POP_UUID, POP_API_SECRET = '', ''
+
+
+def get_config_data():
+    """
+    Reads and returns the configuration data from the config file which has the following format:
+    POP_UUID=
+    POP_API_SECRET=
+    """
+    with open("../config") as file:
+        data = file.readlines()
+        uuid = data[0].strip().split("=")[1]
+        secret = data[1].strip().split("=")[1]
+        return uuid, secret
 
 
 def upload_and_plot():
@@ -45,7 +57,7 @@ async def async_upload_photo(file_path):
         plot.prediction(result)
         plt.show()
 
-    async with EyePopSdk.endpoint(pop_id=POP_UUID, secret_key=POP_API_KEY, is_async=True) as endpoint:
+    async with EyePopSdk.endpoint(pop_id=POP_UUID, secret_key=POP_API_SECRET, is_async=True) as endpoint:
         await endpoint.upload(file_path, on_ready)
 
 
@@ -54,6 +66,9 @@ def main():
     This function initializes the GUI window, sets the DPI scaling, and creates a button for selecting an image file.
     It also calculates the window size based on the screen resolution and displays the window.
     """
+    
+    POP_UUID, POP_API_SECRET = get_config_data()
+
     # Set DPI scaling
     ctypes.windll.shcore.SetProcessDpiAwareness(1)
 
