@@ -42,7 +42,7 @@ export default class RenderManager
         this.showCameraInCorner = drawParams.showCameraInCorner;
         this.showGammaCorrection = drawParams.showGammaCorrection;
 
-        this.heatmapIntensity = 0.1;
+        this.heatmapIntensity = 0.25;
 
         console.log("RenderManager constructor");
 
