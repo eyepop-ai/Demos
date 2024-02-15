@@ -20,10 +20,10 @@
   <video id="myLocalVideo" autoplay playsinline controls muted style="width:1px;height:1px;"></video>
   <!-- <canvas id="previewcanvas" style="background-color: transparent; width: 1%; height: auto; display:none;"></canvas> -->
 
-  <div class="w-100 h-100" style="width:100%;height:100%;margin:auto auto;">
+  <div style="width:640px;height:480px;margin:auto auto;">
     <canvas id="mobilecanvas"
-        style="background-color: transparent; opacity: 1; margin:auto auto;display:none;z-index:1000;" width="100%"
-        height="100%"></canvas>
+      style="background-color: transparent; opacity: 1; margin:auto auto;z-index:1000;"
+      width="100%" height="100%"></canvas>
   </div>
 
   <div
@@ -43,12 +43,14 @@
 
         document.getElementById("title").innerHTML = "Count the Curls 💪";
 
+        config.input.name = "webcam_on_page"
+
         config.draw = [
           { "type": "box", "targets": [ "*" ] },
           { "type": "pose", "targets": [ "*" ] },
           {
             "type": "counter",
-            "RulesLowCode": "\n" +
+            "rules_low_code": "\n" +
               "Biggest Person left wrist below Biggest Person left elbow " + "\r\n" +
               "Biggest Person right wrist below Biggest Person right elbow  " + "\r\n" +
               "Biggest Person left wrist above Biggest Person left elbow" + "\r\n" +

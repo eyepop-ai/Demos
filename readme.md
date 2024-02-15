@@ -6,7 +6,7 @@
 
 ## Sign up for EyePop.ai
 
-[Sign up](https://app.eyepop.ai/sign-up)
+[Sign up](https://dashboard.eyepop.ai/auth/sign-up)
 
 ## Documentation
 
@@ -65,3 +65,5 @@ Have AI analyze your screen contents with simple python!
 <div style="text-align: center;">
     <img src="./python/Screen Capture Analyzer (cv2)/images/ep_py_screencap.gif" width="50%" />
 </div>
+[Demo](./python/Screen Capture Analyzer (cv2))
+
