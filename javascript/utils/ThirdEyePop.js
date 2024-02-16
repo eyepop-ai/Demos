@@ -6,6 +6,7 @@ import PredictionDataManager from './managers/PredictionDataManager.js';
 import SceneManager from './managers/SceneManager.js';
 import AnimationManager from './managers/AnimationManager.js';
 import CameraControls from 'https://unpkg.com/camera-controls/dist/camera-controls.module.js';
+import { PeopleState } from './data/Constants.js';
 
 CameraControls.install({ THREE: THREE });
 
@@ -33,6 +34,7 @@ export default class ThirdEyePop
             showPose = false,
             showFace = false,
             showHands = false,
+            showVideo = true,
             showCameraInCorner = false,
             showBloom = false,
             showGammaCorrection = false,
@@ -95,6 +97,7 @@ export default class ThirdEyePop
                 videoUrl,
                 isWebcam,
                 {
+                    showVideo: showVideo,
                     showCameraInCorner: showCameraInCorner,
                     showHeatmap: showHeatmap,
                     bgCanvas: bgCanvas,
@@ -397,15 +400,29 @@ export default class ThirdEyePop
             return renderManager.getCamera();
         }
 
-
         function getRenderer()
         {
             return renderManager.renderer;
         }
 
+        function getRenderManager()
+        {
+            return renderManager;
+        }
+
+        function getControls()
+        {
+            return cameraControls;
+        }
+
         function getActivePeople()
         {
             return sceneManager.activePeople;
+        }
+
+        function getPeople()
+        {
+            return sceneManager.peopleManager.peopleMap;
         }
 
         function resetScene()
@@ -416,21 +433,23 @@ export default class ThirdEyePop
 
         // //////////////////// end BODY /////////////////////////////
 
-
         // //////////////////// API /////////////////////////////
 
         scope.setup = setup;
         scope.render = render;
+        scope.onUpdate = null;
         scope.getPercentAnalyzed = getPercentAnalyzed;
         scope.pushPredictionData = pushPredictionData;
         scope.popPredictionData = popPredictionData;
         scope.getPredictionData = getPredictionData;
-        scope.onUpdate = null;
-        scope.getControls = () => cameraControls;
+        scope.getControls = getControls;
         scope.getScene = getScene;
         scope.getCamera = getCamera;
         scope.getRenderer = getRenderer;
+        scope.getRenderManager = getRenderManager;
         scope.getActivePeople = getActivePeople;
+        scope.PeopleState = PeopleState;
+        scope.getPeople = getPeople;
         scope.reset = resetScene;
 
         // //////////////////// end API /////////////////////////////

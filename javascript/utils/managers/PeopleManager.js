@@ -85,9 +85,21 @@ export default class PeopleManager
     {
         let trackedPerson = null;
         let id = person.traceId;
+
         if (!id)
         {
             id = person.id;
+        }
+
+        if (!id)
+        {
+            id = Math.floor(Math.random() * 1000000);
+
+            // create a new random id not in the map
+            while (this.peopleMap.has(id))
+            {
+                id = Math.floor(Math.random() * 1000000);
+            }
         }
 
         trackedPerson = this.getPerson(id);

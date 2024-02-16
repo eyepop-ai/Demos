@@ -11,6 +11,7 @@
 - Log into your EyePop account at https://dashboard.eyepop.ai/sign-in
 - Create your own **API Pop** and select a model with 3D pose data from the object library
 - After creating your pop, create or copy your API Key into the config.js file, as well as the Pop's UUID. If token is left empty, you will be navigated to an authentication workflow.
+- Edit the model.js file to change the 3d model file.
 
 ### Need a Web Server locally to test?
 

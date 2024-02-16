@@ -113,6 +113,7 @@ export default class PeopleManager
 
         trackedPerson.children = person.objects;
         trackedPerson.traceId = id;
+        person.traceID = id;
 
         let normalizedTopLeft = this.normalizePosition(person, person.source_width, person.source_height);
 

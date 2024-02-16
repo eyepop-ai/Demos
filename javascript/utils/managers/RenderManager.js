@@ -18,6 +18,7 @@ export default class RenderManager
             showBloom: false,
             showGammaCorrection: false,
             showCameraInCorner: false,
+            showVideo: true,
             bloomParams: {
                 strength: 0.5,
                 radius: 0.5,
@@ -39,6 +40,7 @@ export default class RenderManager
         this.showBloom = drawParams.showBloom;
         this.bloomParams = drawParams.bloomParams;
         this.showHeatmap = drawParams.showHeatmap;
+        this.showVideo = drawParams.showVideo;
         this.showCameraInCorner = drawParams.showCameraInCorner;
         this.showGammaCorrection = drawParams.showGammaCorrection;
 
@@ -524,7 +526,7 @@ export default class RenderManager
         const newSMAAPass = new SMAAPass(this.width / 2, this.height / 2);
         this.finalComposer.addPass(newSMAAPass);
 
-        if (this.videoTexture)
+        if (this.showVideo && this.videoTexture)
         {
             this.finalComposer.addPass(this.copyPass);
             this.copyPass.renderToScreen = true;
@@ -554,7 +556,7 @@ export default class RenderManager
             this.finalComposer.addPass(gammaCorrection);
         }
     }
-    // https://raw.githubusercontent.com/64blit/files/main/videos/remux_store_cctv.mp4.mp4
+
     getVideoTime()
     {
         return this.time;
