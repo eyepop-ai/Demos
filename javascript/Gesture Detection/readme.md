@@ -29,7 +29,7 @@ It's important to note that smoothing of these points will provide a much better
 
 ### Octo Ink Demo
 
-This example detects the distance of the index, middle, ring, and pinky fingers to the wrist point. Then, when both middle and ring fingers are closer to the wrist than both index and pinky, the "rock on spider" ( ;-) ) gesture is detected.
+This example detects the distance of the index, middle, ring, and pinky fingers to the wrist point. Then, when both middle and ring fingers are closer to the wrist than both index and pinky, the "rock on spider" gesture is detected.
 
 ### Laser Demo
 
