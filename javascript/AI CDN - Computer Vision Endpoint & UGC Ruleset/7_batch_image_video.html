@@ -7,8 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
-<body class="overflow-hidden d-flex bg-white flex-row justify-content-center gap-5"
-    style="width: 100vw; height: 100vh; scale: .8;">
+<body style="width: 100vw; height: 100vh;">
 
     <!-- A spinning loading animation -->
     <div id="loading"
@@ -22,113 +21,119 @@
         </div>
     </div>
 
-    <header id="canvasParent" class="position-absolute vw-100 mx-auto z-3" style="top: -3rem; width: 100vw;">
-        <div class="d-flex align-items-center justify-content-between text-center">
-            <a href="1_upload_image.html">
-                <img src="css/images/eyepop-logo.svg" alt="EyePop.ai Logo" class="" style="height: 70px;">
-            </a>
-            <h1 class="p-2 text-center text-blac">Batch Image / Video Tester</h1>
-            <h6 id="popConfigName" class="text-center text-blac"></h6>
-        </div>
-    </header>
+    <div class="d-flex flex-column w-100 min-vw-100 h-100 min-vh-100">
 
+        <header class="vw-100 z-3 min-vw-100" style="height:5rem;">
+            <div class="d-flex align-items-center w-100 justify-content-between text-center">
+                <a href="1_upload_image.html">
+                    <img src="css/images/eyepop-logo.svg" alt="EyePop.ai Logo" class="" style="height: 70px;">
+                </a>
+                <h1 class="p-2 text-center text-blac">Batch Image / Video Tester</h1>
+                <h6 id="popConfigName" class="text-center text-blac"></h6>
+            </div>
+        </header>
 
-    <div class="d-flex align-self-center flex-column justify-content-start" style="margin-top: 15rem;">
-        <div class="d-flex flex-column text-center bg-black">
-            <span class="text-white">Canvas 1: 3D Overlay Rendering - Click and drag to rotate, press escape to
-                reset.</span>
-            <canvas id="rendercanvas" class="bg-gradient object-fit-contain" width="640px" height="480px"></canvas>
-        </div>
+        <div class="d-flex bg-white flex-row justify-content-center gap-5 z-3">
 
-
-        <div class="d-flex flex-column text-center bg-black">
-            <span class="text-white">Canvas 2: HTML Canvas with Context2d Drawing</span>
-            <canvas id="mobilecanvas" class="bg-gradient object-fit-contain" width="640px" height="480px"></canvas>
-        </div>
-
-    </div>
-
-    <div class="d-flex flex-column justify-content-center gap-3 w-50 ">
-        <!-- FORM UPLOAD ELEMENT: Centered, Full Width Row -->
-        <div class="row justify-content-center">
-
-            <h4 class="text-black border-2 border-dark p-2"> 1. Select a folder:</h4>
-
-            <form>
-                <input type="file" class="form-control" id="file_upload" webkitdirectory
-                    accept="application/octet-stream">
-            </form>
-
-            <h4 class="text-black border-2 border-dark p-2"> 2. Click Play. </h4>
-            <form class="d-flex">
-
-                <button id="togglePlay" class="btn btn-primary" type="button">Pause</button>
-
-                <input type="number" class="form-control w-50" placeholder="Seconds to skip"
-                    aria-describedby="basic-addon2" id="framesToSkip">
-
-                <button id="saveButton" class="btn btn-info" type="button">save result</button>
-
-                <div class="form-check d-flex justify-content-center align-content-center  text-blac">
-                    <div class="form-check d-flex justify-content-center align-self-center">
-                        <input class="form-check-input" type="radio" name="positiveNegativeRadio" id="positiveRadio"
-                            value="positive">
-                        <label class="form-check-label" for="positiveRadio">
-                            fp
-                        </label>
-                    </div>
-
-                    <div class="form-check d-flex justify-content-center  align-self-center">
-                        <input class="form-check-input" type="radio" name="positiveNegativeRadio" id="negativeRadio"
-                            value="negative">
-                        <label class="form-check-label" for="negativeRadio">
-                            fn
-                        </label>
-                    </div>
-
-                    <div class="form-check d-flex justify-content-center  align-self-center">
-                        <input class="form-check-input" type="radio" name="positiveNegativeRadio"
-                            id="positiveNegativeRadio" value="negative">
-                        <label class="form-check-label" for="positiveNegativeRadio">
-                            fpn
-                        </label>
-                    </div>
+            <div class="d-flex align-self-center flex-column justify-content-start">
+                <div id="canvasParent" class="d-flex flex-column text-center bg-black">
+                    <span class="text-white">Canvas 1: 3D Overlay Rendering - Click and drag to rotate, press escape to
+                        reset.</span>
+                    <canvas id="rendercanvas" class="bg-gradient object-fit-contain" width="640px"
+                        height="480px"></canvas>
                 </div>
 
-            </form>
+
+                <div class="d-flex flex-column text-center bg-black">
+                    <span class="text-white">Canvas 2: HTML Canvas with Context2d Drawing</span>
+                    <canvas id="mobilecanvas" class="bg-gradient object-fit-contain" width="640px"
+                        height="480px"></canvas>
+                </div>
+
+            </div>
+
+            <div class="d-flex flex-column justify-content-center gap-3 w-50 ">
+                <!-- FORM UPLOAD ELEMENT: Centered, Full Width Row -->
+                <div class="row justify-content-center">
+
+                    <h4 class="text-black border-2 border-dark p-2"> 1. Select a folder:</h4>
+
+                    <form>
+                        <input type="file" class="form-control" id="file_upload" webkitdirectory
+                            accept="application/octet-stream">
+                    </form>
+
+                    <h4 class="text-black border-2 border-dark p-2"> 2. Click Play. </h4>
+                    <form class="d-flex">
+
+                        <button id="togglePlay" class="btn btn-primary" type="button">Pause</button>
+
+                        <input type="number" class="form-control w-50" placeholder="Seconds to skip"
+                            aria-describedby="basic-addon2" id="framesToSkip">
+
+                        <button id="saveButton" class="btn btn-info" type="button">save result</button>
+
+                        <div class="form-check d-flex justify-content-center align-content-center  text-blac">
+                            <div class="form-check d-flex justify-content-center align-self-center">
+                                <input class="form-check-input" type="radio" name="positiveNegativeRadio"
+                                    id="positiveRadio" value="positive">
+                                <label class="form-check-label" for="positiveRadio">
+                                    fp
+                                </label>
+                            </div>
+
+                            <div class="form-check d-flex justify-content-center  align-self-center">
+                                <input class="form-check-input" type="radio" name="positiveNegativeRadio"
+                                    id="negativeRadio" value="negative">
+                                <label class="form-check-label" for="negativeRadio">
+                                    fn
+                                </label>
+                            </div>
+
+                            <div class="form-check d-flex justify-content-center  align-self-center">
+                                <input class="form-check-input" type="radio" name="positiveNegativeRadio"
+                                    id="positiveNegativeRadio" value="negative">
+                                <label class="form-check-label" for="positiveNegativeRadio">
+                                    fpn
+                                </label>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+                <div class="gap-1 w-100">
+                    <span class="text-info">name: </span>
+                    <span id="mediaName" class="text-blac">Video</span>
+                    <span class="text-info">( file #: </span>
+                    <span id="mediaIndex" class="text-blac">0</span>
+                    <span class=""> / </span>
+                    <span id="totalFiles" class="text-blac">0</span>
+                    <span class="text-info"> ) </span>
+                    <span class="text-info">frame #: </span>
+                    <span id="mediaTime" class="text-blac">0</span>
+                </div>
+
+                <video id="myLocalVideo" playsinline controls muted class="position-absolute"
+                    style="width:1px;height:1px;"></video>
+                <video id="videoCapture" class="position-absolute z-n1" class="position-absolute"
+                    style="width: 1px; height: 1px; left:0"></video>
+
+                <div class="d-flex">
+                    <input type="text" class="form-control" placeholder="filter" aria-label="filter"
+                        aria-describedby="basic-addon2" id="jsonFilter">
+                    <input type="text" class="form-control" placeholder="search" aria-label="search"
+                        aria-describedby="basic-addon2" id="jsonSearch">
+                </div>
+
+                <div class="d-flex justify-content-center">
+                    <json-viewer id="jsonDisplay" class="align-self-center"
+                        style="width: 100%; height: 40rem; overflow: auto;"></json-viewer>
+                </div>
+
+            </div>
         </div>
-
-        <div class="gap-1 w-100">
-            <span class="text-info">name: </span>
-            <span id="mediaName" class="text-blac">Video</span>
-            <span class="text-info">( file #: </span>
-            <span id="mediaIndex" class="text-blac">0</span>
-            <span class=""> / </span>
-            <span id="totalFiles" class="text-blac">0</span>
-            <span class="text-info"> ) </span>
-            <span class="text-info">frame #: </span>
-            <span id="mediaTime" class="text-blac">0</span>
-        </div>
-
-        <video id="myLocalVideo" playsinline controls muted class="position-absolute"
-            style="width:1px;height:1px;"></video>
-        <video id="videoCapture" class="position-absolute z-n1" class="position-absolute"
-            style="width: 1px; height: 1px; left:0"></video>
-
-        <div class="d-flex">
-            <input type="text" class="form-control" placeholder="filter" aria-label="filter"
-                aria-describedby="basic-addon2" id="jsonFilter">
-            <input type="text" class="form-control" placeholder="search" aria-label="search"
-                aria-describedby="basic-addon2" id="jsonSearch">
-        </div>
-
-        <div class="d-flex justify-content-center">
-            <json-viewer id="jsonDisplay" class="align-self-center"
-                style="width: 100%; height: 40rem; overflow: auto;"></json-viewer>
-        </div>
-
     </div>
-
 
     <script type="importmap">
         {
@@ -141,7 +146,7 @@
 
     <script src="https://unpkg.com/@alenaksu/json-viewer/dist/json-viewer.bundle.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk@0.0.31"></script>
-    <script src="./config.js"></script>
+    <script src="../config.js"></script>
 
     <script type="module">
 
