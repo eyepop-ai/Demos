@@ -81,7 +81,7 @@
     </div>
 
     <script src="https://unpkg.com/@alenaksu/json-viewer/dist/json-viewer.bundle.js"></script>
-    <script src="config.js"></script>
+    <script src="../config.js"></script>
     <script>
         var cached_data = [];
         const video = document.getElementById('myLocalVideo');
@@ -150,8 +150,9 @@
 
 
                 // pause video to buffer if the closest prediction is too far behind our video
-                if (closestDiff > 0.1 && video.currentTime > cached_data[ closestIndex ].seconds)
+                if (closestDiff > 0.5 && video.currentTime > cached_data[ closestIndex ].seconds)
                 {
+                    jsonPreviewBox.data = { status: "Buffering video - Press the left arrow and the Play button to preview loaded frames." };
                     playButton.innerText = "Play";
                     video.pause();
                 }

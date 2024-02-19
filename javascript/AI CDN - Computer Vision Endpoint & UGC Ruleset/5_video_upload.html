@@ -59,78 +59,101 @@
 
     <script src="https://unpkg.com/@alenaksu/json-viewer/dist/json-viewer.bundle.js"></script>
 
-    <script src="config.js"></script>
+    <script src="../config.js"></script>
     <script src="js/main.js"></script>
     <script src="js/excerptFromSDK.min.js"></script>
 
     <script>
         var cached_data = null;
         const video = document.getElementById('myLocalVideo');
+        const jsonViewer = document.getElementById('txt_json');
 
-        FetchPopConfig(pop_endpoint, token)
-            .then(response => config = response)
-            .then(() =>
+        async function run()
+        {
+            config = await FetchPopConfig(pop_endpoint, token);
+
+            jsonViewer.data = {
+                "status": "Pop Connected...",
+                "Pop Config": config,
+            }
+
+            document.getElementById("title").innerHTML = config.name;
+
+            document.getElementById('btnPost').addEventListener('click', function (event)
             {
-                document.getElementById("title").innerHTML = config.name;
+                console.log('Posting Video:', document.getElementById("txtUrl").value);
+
+                jsonViewer.data = {
+                    "status": "Processing Video...",
+                    "Pop Config": config,
+                }
+
+                let v_url = document.getElementById("txtUrl").value;
+
+                document.getElementById("myLocalVideo").src = v_url;
+
+                GetJSONFromEyePop(v_url);
             });
 
-        document.getElementById('btnPost').addEventListener('click', function (event)
-        {
-            let v_url = document.getElementById("txtUrl").value;
+            function GetJSONFromEyePop(url)
+            {
 
-            document.getElementById("myLocalVideo").src = v_url;
+                console.log('EyePop Config:', config);
 
-            GetJSONFromEyePop(v_url);
-        });
+                const startTime = performance.now();
 
-        function GetJSONFromEyePop(url)
-        {
-
-            const startTime = performance.now();
-            ClearDisplay();
-
-            fetch(config.base_url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
-                method: 'PATCH',
-                headers: {
-                    'accept': 'application/json',
-                    'authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify({
-                    "sourceType": "URL",
-                    "url": url
+                ClearDisplay();
+                fetch(config.base_url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
+                    method: 'PATCH',
+                    headers: {
+                        'accept': 'application/json',
+                        'authorization': 'Bearer ' + config.token
+                    },
+                    body: JSON.stringify({
+                        "sourceType": "URL",
+                        "url": url
+                    })
                 })
-            })
-                .then(response => response.json())
-                .then(data =>
+                    .then(response => { console.log(response); return response.json() })
+                    .then(data =>
+                    {
+                        jsonViewer.data = {
+                            "status": "Ready!",
+                            "Pop Config": config,
+                            "EyePop.ai Response": data
+                        }
+                        console.log("Response:", data);
+                        document.getElementById("timing").innerHTML = Math.floor(performance.now() - startTime) + "ms";
+
+                        cached_data = data;
+
+                        video.play();
+                    })
+                    .catch(error => console.error('The party\'s over, there was an error:', error));
+            }
+
+            video.addEventListener('timeupdate', function ()
+            {
+                console.log("video: " + video.currentTime)
+
+                if (!cached_data)
+                    return;
+
+                let closestPredictionData = cached_data.reduce((prev, curr) =>
                 {
-                    document.getElementById("timing").innerHTML = Math.floor(performance.now() - startTime) + "ms";
+                    return (Math.abs(curr.seconds - video.currentTime) < Math.abs(prev.seconds - video.currentTime) ? curr : prev);
+                });
 
-                    cached_data = data;
+                if (closestPredictionData)
+                {
+                    console.log(closestPredictionData);
 
-                    video.play();
-                })
-                .catch(error => console.error('The party\'s over, there was an error:', error));
+                    jsonViewer.data = closestPredictionData;
+                }
+            });
         }
 
-        video.addEventListener('timeupdate', function ()
-        {
-            console.log("video: " + video.currentTime)
-
-            if (!cached_data)
-                return;
-
-            let closestPredictionData = cached_data.reduce((prev, curr) =>
-            {
-                return (Math.abs(curr.seconds - video.currentTime) < Math.abs(prev.seconds - video.currentTime) ? curr : prev);
-            });
-
-            if (closestPredictionData)
-            {
-                console.log(closestPredictionData);
-
-                document.getElementById("txt_json").data = closestPredictionData;
-            }
-        });
+        run();
     </script>
 </body>
 

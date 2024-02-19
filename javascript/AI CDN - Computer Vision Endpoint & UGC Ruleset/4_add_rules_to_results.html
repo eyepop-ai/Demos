@@ -58,13 +58,13 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
+    <script src="../config.js"></script>
     <script src="js/main.js"></script>
     <script src="js/excerptFromSDK.min.js"></script>
 
+
     <script>
         var rulesState = [];
-
         var rules = [
             {
                 description: "More than one person detected. Party time!",
@@ -150,7 +150,7 @@
             });
 
 
-            function GetJSONFromEyePop_file(file)
+            async function GetJSONFromEyePop_file(file)
             {
                 let formData = new FormData()
                 formData.append('file', file)
@@ -160,55 +160,63 @@
 
                 console.log('EyePop Config:', config);
 
-                fetch(config.base_url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
+                let result = await fetch(config.base_url + '/pipelines/' + config.pipeline_id + '/source?mode=preempt&processing=sync', {
                     method: 'POST',
                     headers: {
                         'accept': 'application/json',
                         'authorization': 'Bearer ' + config.token
                     },
                     body: formData
-                })
-                    .then(response => response.json())
-                    .then(data =>
+                });
+
+                let data = null;
+
+                try
+                {
+
+                    data = await result.json();
+
+
+                    document.getElementById("timing").innerHTML = Math.floor(performance.now() - startTime) + "ms";
+
+                    console.log(data)
+
+                    if (!data || !data[ 0 ])
+                        return;
+
+                    if (data[ 0 ].objects)
                     {
-                        document.getElementById("timing").innerHTML = Math.floor(performance.now() - startTime) + "ms";
-
-                        console.log(data)
-
-                        if (!data || !data[ 0 ])
-                            return;
-
-                        if (data[ 0 ].objects)
+                        data[ 0 ].objects.forEach(element =>
                         {
-                            data[ 0 ].objects.forEach(element =>
-                            {
-                                element.source_height = data[ 0 ].source_height;
-                                element.source_width = data[ 0 ].source_width;
-                                console.log(element);
-                                DrawEyePopReticle(element);
-                                DrawEyePopPose(element, false);
-                            });
-                        }
-
-                        var log = Rules.Check(data[ 0 ], rules, rulesState);
-                        var rulesHtml = "";
-
-                        log.forEach(element =>
-                        {
-
+                            element.source_height = data[ 0 ].source_height;
+                            element.source_width = data[ 0 ].source_width;
                             console.log(element);
-
-                            if (element[ 0 ])
-                                rulesHtml += "<span style='color: green;'>" + element[ 1 ] + "</span><br>";
-                            else
-                                rulesHtml += "<span style='color: red;'>" + element[ 1 ] + "</span><br>";
-
+                            DrawEyePopReticle(element);
+                            DrawEyePopPose(element, false);
                         });
+                    }
 
-                        document.getElementById("txt_json").innerHTML = rulesHtml;
+                    var log = Rules.Check(data[ 0 ], rules, rulesState);
+                    var rulesHtml = "";
 
-                    })
-                    .catch(error => console.error('The party\'s over, there was an error:', error));
+                    log.forEach(element =>
+                    {
+
+                        console.log(element);
+
+                        if (element[ 0 ])
+                            rulesHtml += "<span style='color: green;'>" + element[ 1 ] + "</span><br>";
+                        else
+                            rulesHtml += "<span style='color: red;'>" + element[ 1 ] + "</span><br>";
+
+                    });
+
+                    document.getElementById("txt_json").innerHTML = rulesHtml;
+                } catch (e)
+                {
+                    console.log(e);
+                    alert("Error: " + e.message);
+                }
             }
         }
 
