@@ -8,7 +8,7 @@ This is a collection of demos for the [EyePop Python SDK](https://github.com/eye
 
 - Log into your EyePop account at https://dashboard.eyepop.ai/sign-in
 - Create your own **API Pop** with any model.
-- After creating your pop, create or copy your API Key into the config.json file, as well as the Pop's UUID.
+- After creating your pop, create or copy your API Key into the `config` file, as well as the Pop's UUID.
 
 ### Need a Web Server locally to test?
 
