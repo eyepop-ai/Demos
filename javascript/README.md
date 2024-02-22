@@ -6,7 +6,7 @@
 
 ## Sign up for EyePop.ai
 
-[Sign up](https://app.eyepop.ai/sign-up)
+[Sign up](https://dashboard.eyepop.ai/auth/sign-up)
 
 ## Documentation
 

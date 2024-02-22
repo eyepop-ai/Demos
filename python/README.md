@@ -18,7 +18,7 @@ This is a collection of demos for the [EyePop Python SDK](https://github.com/eye
 
 Start your web server from within the **_parent_** directory and check out the examples: http://localhost:9001/1_upload_image.html
 
-[Sign up](https://app.eyepop.ai/sign-up)
+[Sign up](https://dashboard.eyepop.ai/auth/sign-up)
 
 ## Documentation
 
