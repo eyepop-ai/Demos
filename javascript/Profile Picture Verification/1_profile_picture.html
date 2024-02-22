@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <title>Profile Picture Verification</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@eyepop.ai/javascript-sdk"></script>
+
+</head>
+
+<body>
+    <!-- A spinning loading animation -->
+    <div id="loading"
+        class="position-absolute top-0 w-100 h-100 d-flex align-items-center justify-content-center bg-white flex-column"
+        style="z-index: 1000;">
+        <div id="loadingText" class="text-white text-start p-5">Loading Pop...</div>
+        <div class="spinner-border text-light align-self-center" role="status">
+
+            <span class="visually-hidden">Loading...</span>
+
+        </div>
+    </div>
+
+    <div class="container" style="max-width: 1200px;">
+        <!-- HEADER: Full width, Logo Image -->
+        <header class="mt-4">
+            <div class="container-fluid d-flex align-items-center">
+
+                <a href="1_upload_image.html"><img src="css/images/eyepop-logo.svg" alt="EyePop.ai Logo" class="p-2"
+                        style="height: 70px;"></a>
+            </div>
+
+            <video id="myLocalVideo" playsinline controls muted class="position-absolute"
+                style="width:1px;height:1px;"></video>
+
+        </header>
+
+        <div class="w-100 h-100 d-flex justify-content-center">
+
+            <!-- Upload profile -->
+            <div class="col-xxl-4 bg-light rounded outline border-2 border-light">
+                <div class="bg-secondary-soft px-4 py-5 rounded">
+                    <div class="d-flex flex-column align-items-center">
+                        <h4 class="mb-4 mt-0">Profile Picture</h4>
+
+                        <!-- Image upload -->
+                        <div class="rounded-circle position-relative overflow-hidden mb-3 bg-dark-subtle "
+                            style="height: 20rem; width: 20rem;">
+                            <div id="profileIcon" class="w-100 h-100" style="scale: 4;">
+                                <i
+                                    class="fas fa-fw fa-user position-absolute top-50 start-50 translate-middle text-secondary"></i>
+                            </div>
+
+                            <div id="loadingProfilePic"
+                                class="position-absolute top-0 w-100 h-100 d-flex align-items-center justify-content-center bg-white flex-column visually-hidden"
+                                style="z-index: 1000;">
+                                <div class="spinner-border text-dark align-self-center" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+
+                            <div
+                                class="w-100 h-100 d-flex justify-content-center align-items-center object-fit-cover overflow-hidden">
+                                <canvas id="mobilecanvas" class="min-w-100 w-100 h-100 min-h-100"
+                                    src="css/images/empty.png" alt="Image Preview" style="object-fit: cover;"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Content -->
+                        <p class="text-muted mt-0 mb-3">Minimum size 300px x 300px</p>
+                        <h6 class=" text-danger"> * Image must contain only one person</h6>
+
+                        <form>
+                            <input type="file" id="file_upload" name="file" hidden="">
+                        </form>
+
+                        <div class="d-flex flex-col gap-1">
+                            <label id="uploadButton" class="btn btn-success btn-block" for="file_upload">Upload</label>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal for error info -->
+        <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="modalHeader" class="modal-title" id="errorModalLabel">Whoops...</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+
+                        <h4 class=" m-4 font-bold visually-hidden m-2" for="file_upload">
+                            <span id="feedbackMessage" class=""></span>
+                        </h4>
+
+                        <div id="peopleThumbnails"
+                            class="d-flex flex-row flex-wrap gap-1 object-fit-scale justify-content-center align-content-center">
+                            </di>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <script src="../config.js"></script>
+
+        <script>
+            const loading = document.getElementById('loading');
+            const mobilecanvas = document.getElementById('mobilecanvas');
+            const file_upload = document.getElementById('file_upload');
+            const uploadButton = document.getElementById('uploadButton');
+            const removeButton = document.getElementById('removeButton');
+            const feedbackMessage = document.getElementById('feedbackMessage');
+            const modalHeader = document.getElementById('modalHeader');
+            const profileIcon = document.getElementById('profileIcon');
+            const peopleThumbnails = document.getElementById('peopleThumbnails');
+            const loadingProfilePic = document.getElementById('loadingProfilePic');
+
+            const img = new Image();
+            const ctx = mobilecanvas.getContext('2d');
+
+            const modal = new bootstrap.Modal(document.getElementById('errorModal'), {
+                keyboard: true
+            });
+
+
+            function setFeedbackMessage(header, message, color)
+            {
+                modalHeader.innerHTML = header;
+                modalHeader.style.color = color;
+                feedbackMessage.innerHTML = message;
+                feedbackMessage.style.color = color;
+            }
+
+            // Zoom in the canvas to show the person bounds
+            function drawPerson(canvas, person)
+            {
+                canvas.width = person.width;
+                canvas.height = person.height;
+
+                // draw the image zoomed in with person.x,  person.y,   person.width, person.height
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, person.x, person.y, person.width, person.height, 0, 0, person.width, person.height);
+            }
+
+            // Draw thumbnails of all people detected
+            function drawThumbnails(thumbnailParent, prediction)
+            {
+
+                for (let i = 0; i < prediction.objects.length; i++)
+                {
+                    const newCanvas = document.createElement('canvas');
+                    thumbnailParent.appendChild(newCanvas);
+
+                    newCanvas.width = prediction.objects[ i ].width;
+                    newCanvas.height = prediction.objects[ i ].height;
+                    const ctx = newCanvas.getContext('2d');
+                    const aspectRatio = prediction.objects[ i ].width / prediction.objects[ i ].height;
+
+                    ctx.drawImage(img, prediction.objects[ i ].x, prediction.objects[ i ].y, prediction.objects[ i ].width, prediction.objects[ i ].height, 0, 0, prediction.objects[ i ].width, prediction.objects[ i ].width / aspectRatio);
+
+                    // scale down the canvas to be a thumbnail
+                    newCanvas.style.width = "75px";
+                    newCanvas.style.height = "75px";
+
+                    if (aspectRatio < 1)
+                    {
+                        newCanvas.style.width = (75 * aspectRatio) + "px";
+                    } else
+                    {
+                        newCanvas.style.height = (75 / aspectRatio) + "px";
+                    }
+                }
+            }
+
+            // Count the number of people detected
+            function countPeople(prediction)
+            {
+                let personCount = 0;
+
+                if (!prediction.objects)
+                {
+                    return personCount;
+                }
+
+                for (let i = 0; i < prediction.objects.length; i++)
+                {
+                    if (prediction.objects[ i ].classLabel === "person")
+                    {
+                        personCount++;
+                    }
+                }
+                return personCount;
+            }
+
+            async function run()
+            {
+
+
+                async function processFile(file)
+                {
+
+                    // draw the image on the canvas
+                    ctx.clearRect(0, 0, mobilecanvas.width, mobilecanvas.height);
+                    img.onload = () =>
+                    {
+                        mobilecanvas.width = img.width;
+                        mobilecanvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                    };
+                    img.src = URL.createObjectURL(file);
+
+                    config = await EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token);
+
+                    console.log("EyePopSDK config: ", config);
+
+                    config.input = {
+                        "name": "file_upload",
+                    };
+
+                    config.draw = [];
+
+                    EyePopSDK.EyePopSDK.init(config);
+
+                    profileIcon.classList.add('visually-hidden');
+                    feedbackMessage.parentElement.classList.remove('visually-hidden');
+
+
+                    EyePopSDK.EyePopAPI.instance.OnPrediction = (prediction) =>
+                    {
+                        loadingProfilePic.classList.add('visually-hidden');
+                        console.log("On Prediction: ", prediction);
+                        peopleThumbnails.innerHTML = "";
+
+                        let personCount = countPeople(prediction);
+
+                        switch (personCount)
+                        {
+                            case 0:
+
+                                console.log("No people detected");
+                                setFeedbackMessage("Whoops...", "No person detected, please retry with an image containing a person.", "red");
+                                modal.show();
+
+                                break;
+
+                            case 1:
+
+                                console.log("Single person detected");
+                                const personDetected = prediction.objects[ 0 ];
+                                drawPerson(mobilecanvas, personDetected);
+                                setFeedbackMessage("Success!", "Continue to the next step.", "green");
+                                modal.show();
+
+                                break;
+
+                            default:
+
+                                setFeedbackMessage("Whoops...", personCount + " people detected, please upload an image with a single person.", "red");
+                                drawThumbnails(peopleThumbnails, prediction);
+                                modal.show();
+
+                                break;
+                        }
+
+                    }
+
+                    EyePopSDK.EyePopAPI.GetJSONFromEyePop_file(file);
+
+                }
+
+                file_upload.addEventListener('change', function (event)
+                {
+                    console.log('Processing Image:', file_upload.files[ 0 ]);
+
+                    loadingProfilePic.classList.remove('visually-hidden');
+
+                    let file = file_upload.files[ 0 ];
+
+                    if (file)
+                    {
+                        processFile(file);
+                    }
+                });
+
+                // removeButton.addEventListener('click', function (event)
+                // {
+                //     profileIcon.classList.remove('visually-hidden');
+                //     mobilecanvas.width = 0;
+                //     mobilecanvas.height = 0;
+                //     file_upload.value = "";
+                //     profileIcon.style.display = "block";
+                //     peopleThumbnails.innerHTML = "";
+                //     feedbackMessage.innerHTML = "";
+                // });
+
+            }
+
+
+            EyePopSDK.EyePopAPI.FetchPopConfig(pop_endpoint, token)
+                .then(() => { loading.remove(); })
+                .then(() => { run(); });
+
+        </script>
+</body>
+
+</html>
