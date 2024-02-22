@@ -4,7 +4,7 @@
 
 ### Getting Start
 
-- Log into your EyePop account at https://dashboard.eyepop.ai/sign-in
+- Log into your EyePop account at https://dashboard.eyepop.ai/auth/sign-in
 - Create your own **API Pop** and select _Live - People and Common Object_ from the object library
 - Check out the **API Info** section of your Pop and copy'n paste the `endpoint` and `Auth Token` into `config.js` of your local copy of this repo.
 

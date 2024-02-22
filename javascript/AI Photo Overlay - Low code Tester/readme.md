@@ -6,7 +6,7 @@
 
 ### Getting started
 
-- Log into your EyePop account at https://dashboard.eyepop.ai/sign-in
+- Log into your EyePop account at https://dashboard.eyepop.ai/auth/sign-in
 - Create an **API Pop**
 - After creating your pop, create or copy your API Key into the config.js file, as well as the Pop's UUID. If token is left empty, you will be navigated to an authentication workflow.
 
