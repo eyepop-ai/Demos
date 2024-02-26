@@ -27,7 +27,7 @@
     {
         "title": "Octo Ink: Realtime Gesture Controlled Ink Shooting",
         "description": "A realtime 3D gesture controlled drawing app that uses a webcam to detect a hand gesture and draw on the screen.",
-        "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/javascript/Gesture%20Detection/imgs/",
+        "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/javascript/Gesture%20Detection/imgs/octo_ink.jpg",
         "link": "https://github.com/eyepop-ai/Demos/tree/main/javascript/Gesture%20Detection"
     }
     ,
@@ -59,4 +59,3 @@
         "link": "https://github.com/eyepop-ai/Demos/tree/main/python/Screen%20Capture%20Analyzer%20(cv2)"
     }
 ]
-
