@@ -197,22 +197,19 @@ const buildScene = async (scene, renderer, modelData) =>
         {
             loader.load(modelData.path, (object) =>
             {
-                // object.scene.position.set(0.0, -4.1, 0);
-                // object.scene.scale.set(-2, 2.5, -2);
-
-                object.rotation.set(
+                object.scene.rotation.set(
                     modelData.rotation.x * THREE.MathUtils.DEG2RAD,
                     modelData.rotation.y * THREE.MathUtils.DEG2RAD,
                     modelData.rotation.z * THREE.MathUtils.DEG2RAD,
                 );
 
-                object.scale.x = modelData.scale.x;
-                object.scale.y = modelData.scale.y;
-                object.scale.z = modelData.scale.z;
+                object.scene.scale.x = modelData.scale.x;
+                object.scene.scale.y = modelData.scale.y;
+                object.scene.scale.z = modelData.scale.z;
 
-                object.position.x = modelData.position.x;
-                object.position.y = modelData.position.y;
-                object.position.z = modelData.position.z;
+                object.scene.position.x = modelData.position.x;
+                object.scene.position.y = modelData.position.y;
+                object.scene.position.z = modelData.position.z;
 
                 object.scene.traverse((o) =>
                 {
