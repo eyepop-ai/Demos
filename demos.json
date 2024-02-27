@@ -2,7 +2,7 @@
     {
         "title": "3D Motion Capture",
         "description": "A real-time 3D Motion Capture in the browser that tracks arms and spine movement.",
-        "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/javascript/3D%20Motion%20Capture/imgs/mocap_demo.jpg",
+        "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/javascript/3D%20Motion%20Capture/imgs/mocap_demo.gif",
         "link": "https://github.com/eyepop-ai/Demos/tree/main/javascript/3D%20Motion%20Capture"
     },
     {
@@ -27,7 +27,7 @@
     {
         "title": "Octo Ink: Realtime Gesture Controlled Ink Shooting",
         "description": "A realtime 3D gesture controlled drawing app that uses a webcam to detect a hand gesture and draw on the screen.",
-        "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/javascript/Gesture%20Detection/imgs/octo_ink.jpg",
+        "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/javascript/Gesture%20Detection/imgs/ink.gif",
         "link": "https://github.com/eyepop-ai/Demos/tree/main/javascript/Gesture%20Detection"
     }
     ,
