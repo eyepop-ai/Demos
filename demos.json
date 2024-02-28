@@ -3,59 +3,59 @@
         "title": "3D Motion Capture",
         "description": "A real-time 3D Motion Capture in the browser that tracks arms and spine movement.",
         "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/javascript/3D%20Motion%20Capture/imgs/mocap_demo.gif",
-        "link": "https://github.com/eyepop-ai/Demos/tree/main/javascript/3D%20Motion%20Capture"
+        "url": "https://github.com/eyepop-ai/Demos/tree/main/javascript/3D%20Motion%20Capture"
     },
     {
         "title": "AI CDN: The Basics of EyePop.ai",
         "description": "A quick introduction to using EyePop.ai in your web applications.",
         "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/javascript/AI%20CDN%20-%20Computer%20Vision%20Endpoint%20%26%20UGC%20Ruleset/images/6.gif",
-        "link": "https://github.com/eyepop-ai/Demos/tree/main/javascript/AI%20CDN%20-%20Computer%20Vision%20Endpoint%20%26%20UGC%20Ruleset"
+        "url": "https://github.com/eyepop-ai/Demos/tree/main/javascript/AI%20CDN%20-%20Computer%20Vision%20Endpoint%20%26%20UGC%20Ruleset"
     },
     {
         "title": "AI Photo Overlay - Low code Sunglasses Overlay",
         "description": "A simple low-code method of adding sunglasses to people based on their detected eye positions.",
         "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/javascript/AI%20Photo%20Overlay%20-%20Low%20code%20Tester/css/images/brave_IOR7hRMEgL.png",
-        "link": "https://github.com/eyepop-ai/Demos/tree/main/javascript/AI%20Photo%20Overlay%20-%20Low%20code%20Tester"
+        "url": "https://github.com/eyepop-ai/Demos/tree/main/javascript/AI%20Photo%20Overlay%20-%20Low%20code%20Tester"
     },
     {
         "title": "Fitness Rep Counter",
         "description": "A realtime fitness rep counter that utilizes your webcam and low code rules to track and count bicep curls.",
         "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/javascript/Fitness%20Rep%20Counter/css/images/reps.gif",
-        "link": "https://github.com/eyepop-ai/Demos/tree/main/javascript/Fitness%20Rep%20Counter"
+        "url": "https://github.com/eyepop-ai/Demos/tree/main/javascript/Fitness%20Rep%20Counter"
     }
     ,
     {
         "title": "Octo Ink: Realtime Gesture Controlled Ink Shooting",
         "description": "A realtime 3D gesture controlled drawing app that uses a webcam to detect a hand gesture and draw on the screen.",
         "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/javascript/Gesture%20Detection/imgs/ink.gif",
-        "link": "https://github.com/eyepop-ai/Demos/tree/main/javascript/Gesture%20Detection"
+        "url": "https://github.com/eyepop-ai/Demos/tree/main/javascript/Gesture%20Detection"
     }
     ,
     {
         "title": "3D Laser: Realtime 3D Laser Pointer",
         "description": "A realtime 3D laser pointer that draws lasers pointing in the direction of any detected index fingers.",
         "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/javascript/Gesture%20Detection/imgs/lasers3d.jpg",
-        "link": "https://github.com/eyepop-ai/Demos/tree/main/javascript/Gesture%20Detection"
+        "url": "https://github.com/eyepop-ai/Demos/tree/main/javascript/Gesture%20Detection"
     }
     ,
     {
         "title": "AI Profile Picture Verification",
         "description": "A simple AI profile picture verification system that uses EyePop.ai to verify if an uploaded image contains exactly one person or not.",
         "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/javascript/Profile%20Picture%20Verification/imgs/profile_verification.jpg",
-        "link": "https://github.com/eyepop-ai/Demos/tree/main/javascript/Gesture%20Detection"
+        "url": "https://github.com/eyepop-ai/Demos/tree/main/javascript/Gesture%20Detection"
     }
     ,
     {
         "title": "Retail Customer Analytics",
         "description": "A analytics demo that tracks and analyzes customer behavior in a retail store.",
         "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/javascript/Retail%20Customer%20Analytics/css/images/readme_example_heatmap.gif",
-        "link": "https://github.com/eyepop-ai/Demos/tree/main/javascript/Retail%20Customer%20Analytics"
+        "url": "https://github.com/eyepop-ai/Demos/tree/main/javascript/Retail%20Customer%20Analytics"
     }
     ,
     {
         "title": "Python Screen Capture Analyzer",
         "description": "A simple python script that captures your screen, analyzes, and draws a visualization overlay when space is pressed.",
         "image": "https://raw.githubusercontent.com/eyepop-ai/Demos/main/python/Screen%20Capture%20Analyzer%20(cv2)/images/ep_py_screencap.gif",
-        "link": "https://github.com/eyepop-ai/Demos/tree/main/python/Screen%20Capture%20Analyzer%20(cv2)"
+        "url": "https://github.com/eyepop-ai/Demos/tree/main/python/Screen%20Capture%20Analyzer%20(cv2)"
     }
 ]
