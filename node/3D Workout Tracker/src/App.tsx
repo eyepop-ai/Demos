@@ -21,7 +21,6 @@ const App: React.FC = () =>
   // initialize the EyePop SDK
   useEffect(() =>
   {
-    if (eyePop) return
     if (eyePop?.ready) return;
 
 
@@ -30,8 +29,8 @@ const App: React.FC = () =>
 
       // Initialize the EyePop SDK
       await initialize({
-        popId: 'e4fd9369a9de42f6becfb90e11f4620c',
-        secretKey: 'AAHHcbNafB-AyslKYRhYSFaMZ0FBQUFBQm1BYkpJWXFxeTVEbGVoaEFOSzJueW9jbnpDMGZZU3JHTTR3MElKZTBlN3VMRVpveWtEM1dISVlHTGhUc2JKUHJDVjY5eW5LUkRtV3BISExJSFo0TUtrZ3V1Nmdmc1Utc0JhY0NVTW1HZUFlZUZsdGM9'
+        popId: '',
+        secretKey: ''
       })
 
       await startWebcam();
