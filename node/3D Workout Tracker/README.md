@@ -24,8 +24,8 @@ yarn install; yarn dev
 
 Dependencies
 The project uses several dependencies, including:
-
-- @eyepop.ai/javascript-sdk: The EyePop SDK for tracking user movements.
+- @eyepop.ai/eyepop: The EyePop Node SDK for people tracking.
+- @eyepop.ai/javascript-sdk: The EyePop low code rules parser for workout tracking.
 - @react-three/fiber, @react-three/drei: Libraries for working with Three.js in React.
 - zustand: A small, fast state management library.
 - tailwindcss: A utility-first CSS framework.
