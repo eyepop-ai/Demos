@@ -4,7 +4,7 @@ import { useEyePop } from '../hook/EyePopContext.jsx';
 const Controls = () =>
 {
     // Add your component logic here
-    const { startInference, setInferenceData, reset, isCollision, isTraffic, videoRef, getFlowStatistics } = useEyePop();
+    const { startInference, startFileInference, reset, isCollision, isTraffic, videoRef, getFlowStatistics } = useEyePop();
     const videoURlRef = useRef(null);
 
     // const [ collisionDetected, setCollisionDetected ] = useState(false);
@@ -51,7 +51,7 @@ const Controls = () =>
     const handleFileUpload = (e) =>
     {
         const file = e.target.files[ 0 ];
-        setInferenceData(file);
+        startFileInference(file);
     };
 
     const handleNewScene = () =>

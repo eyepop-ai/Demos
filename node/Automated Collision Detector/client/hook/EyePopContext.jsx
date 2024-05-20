@@ -14,6 +14,7 @@ const EyePopProvider = ({ children }) =>
     const [ isCollision, setCollision ] = useState(false);
     const [ isTraffic, setTraffic ] = useState(false);
     const [ prediction, setPrediction ] = useState(null);
+    const [ inferenceInProgress, setInferenceInProgress ] = useState(false);
 
     const videoRef = useRef(null);
 
@@ -35,7 +36,7 @@ const EyePopProvider = ({ children }) =>
         console.log('Initializing EyePop.ai endpoint...');
 
         EyePop.endpoint({
-            popId: '<POP_UUID>',
+            popId: 'transient',
             auth: {
                 oAuth2: true
             },
@@ -60,7 +61,7 @@ const EyePopProvider = ({ children }) =>
 
     }, []);
 
-    function getClosestPrediction(second)
+    function getClosestPrediction(second, inferenceData)
     {
         let closest = null;
         let closestDistance = Infinity;
@@ -78,10 +79,10 @@ const EyePopProvider = ({ children }) =>
         return closest;
     }
 
-
     // Analyze an image and parse results
     async function startInference(url = '')
     {
+        setInferenceInProgress(true);
         console.log('URL:', url, endpoint);
         videoRef.current.src = url;
         videoRef.current.play();
@@ -89,13 +90,6 @@ const EyePopProvider = ({ children }) =>
         const results = await endpoint.process({ url: url });
 
         const data = [];
-        // Create a promise that resolves when the video has seeked
-        const seekedPromise = new Promise(resolve =>
-        {
-            if (!videoRef.current) { resolve(); return; }
-            videoRef.current.onseeked = resolve;
-        });
-
 
         for await (let result of results)
         {
@@ -131,58 +125,13 @@ const EyePopProvider = ({ children }) =>
         link.download = 'data.json';
         link.click();
 
+        setInferenceInProgress(false);
         setData(data);
         setVideoURL(url);
-
-        if (!videoRef.current) return;
-        videoRef.current.currentTime = 0;
-
-        console.log('Video URL:', videoURL);
-        let animationFrameId;
-        let cancelTime = -1;
-
-        const onVideoUpdate = () =>
-        {
-            const time = videoRef.current.currentTime;
-            const closestPrediction = getClosestPrediction(time);
-            const frameResults = processFrame(closestPrediction);
-
-            if (frameResults)
-            {
-                setCollision(frameResults.collision);
-                setTraffic(frameResults.traffic);
-                setPrediction(closestPrediction);
-            }
-
-            if (frameResults.collision && Math.abs(cancelTime - time) > 1.0)
-            {
-                cancelTime = time;
-                // Pause the loop
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            } else
-            {
-                // Request the next frame
-                animationFrameId = requestAnimationFrame(onVideoUpdate);
-            }
-        }
-
-        const onVideoStart = () =>
-        {
-            // Start the loop if it's not already running
-            if (!animationFrameId)
-            {
-                console.log('Video started');
-                animationFrameId = requestAnimationFrame(onVideoUpdate);
-            }
-        }
-
-        videoRef.current.addEventListener('play', onVideoStart);
-
     }
 
     // Load inference data from a JSON file
-    async function setInferenceData(file)
+    async function startFileInference(file)
     {
         const reader = new FileReader();
         let jsonData = null;
@@ -198,6 +147,54 @@ const EyePopProvider = ({ children }) =>
 
             setData(jsonData.data);
             setVideoURL(jsonData.url);
+
+
+            videoRef.current.src = jsonData.url;
+            videoRef.current.currentTime = 0;
+
+            console.log('Video url:', jsonData.url);
+            let animationFrameId;
+            let cancelTime = -1;
+
+            const onVideoUpdate = () =>
+            {
+                const time = videoRef.current.currentTime;
+                const closestPrediction = getClosestPrediction(time, jsonData.data);
+                const frameResults = processFrame(closestPrediction);
+
+                if (frameResults)
+                {
+                    setCollision(frameResults.collision);
+                    setTraffic(frameResults.traffic);
+                    setPrediction(closestPrediction);
+                }
+
+                if (frameResults.collision && Math.abs(cancelTime - time) > 1.0)
+                {
+                    cancelTime = time;
+                    // Pause the loop
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                } else
+                {
+                    // Request the next frame
+                    animationFrameId = requestAnimationFrame(onVideoUpdate);
+                }
+            }
+
+            const onVideoStart = () =>
+            {
+                // Start the loop if it's not already running
+                if (!animationFrameId)
+                {
+                    console.log('Video started');
+                    animationFrameId = requestAnimationFrame(onVideoUpdate);
+                }
+            }
+
+            videoRef.current.addEventListener('play', onVideoStart);
+
+            videoRef.current.play();
 
         }
 
@@ -218,7 +215,6 @@ const EyePopProvider = ({ children }) =>
             endpoint,
             videoURL,
             startInference,
-            setInferenceData,
             videoRef,
             getClosestPrediction,
             getVehicles,
@@ -226,6 +222,7 @@ const EyePopProvider = ({ children }) =>
             isTraffic,
             prediction,
             reset,
+            startFileInference,
             getFlowStatistics
         }}>
 
