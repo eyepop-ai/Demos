@@ -9,7 +9,7 @@ const EyePopProvider = ({ children }) =>
 {
     const [ endpoint, setEndpoint ] = useState(undefined);
     const [ isLoadingEyePop, setLoading ] = useState(true);
-    const [ inferenceData, setData ] = useState([]);
+    const [ data, setData ] = useState([]);
     const [ videoURL, setVideoURL ] = useState('');
     const [ isCollision, setCollision ] = useState(false);
     const [ isTraffic, setTraffic ] = useState(false);
@@ -21,14 +21,12 @@ const EyePopProvider = ({ children }) =>
 
     const eyepopInference =
         `ep_infer id=1  category-name="vehicle"
-            model=eyepop-vehicle:EPVehicleB1_Vehicle_TorchScriptCuda_float32 threshold=0.5
-            ! ep_infer id=2
-            tracing=deepsort
-            model=legacy:reid-mobilenetv2_x1_4_ImageNet_TensorFlowLite_int8
+            model=eyepop-vehicle:EPVehicleB1_Vehicle_TorchScriptCuda_float32 threshold=0.75
+        ! ep_infer id=2
+            tracing=deepsort,max_age=5.0,iuo_threshold=0.1
             secondary-to-id=1
             secondary-for-class-ids=<0,1,2,3,4,5>
-            thread=true
-            ! ep_mixer name="meta_mixer"`;
+           thread=true`;
 
     // Initialize the EyePop.ai endpoint
     useEffect(() =>
@@ -65,6 +63,7 @@ const EyePopProvider = ({ children }) =>
     {
         let closest = null;
         let closestDistance = Infinity;
+        if (!inferenceData) return closest;
 
         for (const prediction of inferenceData)
         {
@@ -96,11 +95,9 @@ const EyePopProvider = ({ children }) =>
 
             data.push(result);
             console.log('Inference length:', data.length);
-            // await seekedPromise;
             if (videoRef.current)
             {
                 videoRef.current.currentTime = result.seconds;
-                videoRef.current.play();
             }
 
             const frameResults = processFrame(result);
@@ -111,6 +108,7 @@ const EyePopProvider = ({ children }) =>
                 setTraffic(frameResults.traffic);
                 setPrediction(result);
             }
+            setData(data);
         }
 
         const inferenceObj = { "url": url, "data": data };
@@ -147,67 +145,78 @@ const EyePopProvider = ({ children }) =>
 
             setData(jsonData.data);
             setVideoURL(jsonData.url);
-
-
-            videoRef.current.src = jsonData.url;
-            videoRef.current.currentTime = 0;
-
-            console.log('Video url:', jsonData.url);
-            let animationFrameId;
-            let cancelTime = -1;
-
-            const onVideoUpdate = () =>
-            {
-                const time = videoRef.current.currentTime;
-                const closestPrediction = getClosestPrediction(time, jsonData.data);
-                const frameResults = processFrame(closestPrediction);
-
-                if (frameResults)
-                {
-                    setCollision(frameResults.collision);
-                    setTraffic(frameResults.traffic);
-                    setPrediction(closestPrediction);
-                }
-
-                if (frameResults.collision && Math.abs(cancelTime - time) > 1.0)
-                {
-                    cancelTime = time;
-                    // Pause the loop
-                    cancelAnimationFrame(animationFrameId);
-                    animationFrameId = null;
-                } else
-                {
-                    // Request the next frame
-                    animationFrameId = requestAnimationFrame(onVideoUpdate);
-                }
-            }
-
-            const onVideoStart = () =>
-            {
-                // Start the loop if it's not already running
-                if (!animationFrameId)
-                {
-                    console.log('Video started');
-                    animationFrameId = requestAnimationFrame(onVideoUpdate);
-                }
-            }
-
-            videoRef.current.addEventListener('play', onVideoStart);
-
-            videoRef.current.play();
-
         }
 
         reader.readAsText(file);
+    }
 
+    useEffect(() =>
+    {
+        if (!data) return;
+        if (!data.length) return;
+        if (!data.length > 0) return;
+        if (!videoURL) return;
+        if (!videoURL.length) return;
+        if (!videoRef.current) return;
+
+        playVideo(videoURL, data);
+    }, [ data, videoURL ]);
+
+
+    function playVideo(url, data)
+    {
+
+        videoRef.current.src = url;
+        videoRef.current.currentTime = 0;
+        console.log('Video url:', url);
+        let animationFrameId;
+        let cancelTime = -1;
+
+        const onVideoUpdate = () =>
+        {
+            const time = videoRef.current.currentTime;
+            const closestPrediction = getClosestPrediction(time, data);
+            const frameResults = processFrame(closestPrediction);
+
+            if (frameResults)
+            {
+                setCollision(frameResults.collision);
+                setTraffic(frameResults.traffic);
+                setPrediction(closestPrediction);
+            }
+
+            if (frameResults && frameResults?.collision && Math.abs(cancelTime - time) > 1.0)
+            {
+                cancelTime = time;
+                // Pause the loop
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            } else
+            {
+                // Request the next frame
+                animationFrameId = requestAnimationFrame(onVideoUpdate);
+            }
+        }
+
+        const onVideoStart = () =>
+        {
+            // Start the loop if it's not already running
+            if (!animationFrameId)
+            {
+                console.log('Video started');
+                animationFrameId = requestAnimationFrame(onVideoUpdate);
+            }
+        }
+
+        videoRef.current.addEventListener('play', onVideoStart);
+
+        videoRef.current.play();
     }
 
     function reset()
     {
         resetCollisionDetection();
     }
-
-
 
     return (
 
@@ -227,7 +236,9 @@ const EyePopProvider = ({ children }) =>
         }}>
 
             {
+
                 isLoadingEyePop ?
+
                     <div className='absolute top-0 left-0 w-screen h-screen flex flex-col justify-center align-center object-center align-items-center'>
                         <div className='h1 text-6xl text-white text-center'>
                             Loading...
@@ -236,12 +247,14 @@ const EyePopProvider = ({ children }) =>
                             (allow popup windows to continue)
                         </div>
                     </div>
+
                     :
 
-                    <div className='flex justify-center items-center h-screen'>
+                    <div className='flex justify-center items-center h-screen w-screen'>
                         {children}
                         <video ref={videoRef} controls autoPlay crossOrigin='anonymous' src={videoURL} className='w-full hidden' ></video>
                     </div>
+
             }
 
         </EyePopContext.Provider>

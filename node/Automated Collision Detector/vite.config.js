@@ -12,7 +12,7 @@ const root = resolve(dirname(path), 'client')
 const plugins = [
     viteReact({ jsxRuntime: 'classic' }),
     nodePolyfills(),
-    CustomHmr() // uncomment this this to enable a full refresh on any changes to any files
+    // CustomHmr() // uncomment this this to enable a full refresh on any changes to any files
 ]
 
 

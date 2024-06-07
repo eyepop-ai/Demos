@@ -92,6 +92,95 @@ const EyePopDrawing = () =>
         setShaderMaterial(material)
     }
 
+    const drawBox = (ctx, box, primaryColor, secondaryColor, lineWidth = 1) =>
+    {
+        var mindim = Math.min(box.height, box.width)
+        var corner_size = Math.max(15, mindim / 5.33333)
+        var padding = Math.max(mindim * 0.02, 5)
+        corner_size = corner_size - padding
+
+        //faded blue background
+        ctx.beginPath()
+        ctx.rect(box.x, box.y, box.width, box.height)
+        ctx.lineWidth = lineWidth
+        ctx.stroke()
+
+        var corners = [
+            //top left corner
+            [
+                { x: box.x, y: box.y + corner_size },
+                { x: box.x, y: box.y },
+                { x: box.x + corner_size, y: box.y },
+            ],
+            //bottom left corner
+            [
+                { x: box.x, y: box.y + box.height - corner_size },
+                { x: box.x, y: box.y + box.height },
+                { x: box.x + corner_size, y: box.y + box.height },
+            ],
+            //top right corner
+            [
+                { x: box.x + box.width - corner_size, y: box.y },
+                { x: box.x + box.width, y: box.y },
+                { x: box.x + box.width, y: box.y + corner_size },
+            ],
+            //bottom right corner
+            [
+                { x: box.x + box.width, y: box.y + box.height - corner_size },
+                { x: box.x + box.width, y: box.y + box.height },
+                { x: box.x + box.width - corner_size, y: box.y + box.height },
+            ],
+        ]
+
+        corners.forEach((corner) =>
+        {
+            ctx.beginPath()
+            ctx.moveTo(corner[ 0 ].x, corner[ 0 ].y)
+            ctx.lineTo(corner[ 1 ].x, corner[ 1 ].y)
+            ctx.lineTo(corner[ 2 ].x, corner[ 2 ].y)
+            ctx.strokeStyle = primaryColor
+            ctx.lineWidth = lineWidth
+            ctx.stroke()
+        })
+
+        var corners2 = [
+            //2nd top left corner
+            [
+                { x: box.x + padding, y: box.y + padding + corner_size },
+                { x: box.x + padding, y: box.y + padding },
+                { x: box.x + padding + corner_size, y: box.y + padding },
+            ],
+            //2nd bottom left corner
+            [
+                { x: box.x + padding, y: box.y - padding + box.height - corner_size },
+                { x: box.x + padding, y: box.y - padding + box.height },
+                { x: box.x + padding + corner_size, y: box.y - padding + box.height },
+            ],
+            //2nd top right corner
+            [
+                { x: box.x - padding + box.width - corner_size, y: box.y + padding },
+                { x: box.x - padding + box.width, y: box.y + padding },
+                { x: box.x - padding + box.width, y: box.y + padding + corner_size },
+            ],
+            //2nd bottom right corner
+            [
+                { x: box.x - padding + box.width, y: box.y - padding + box.height - corner_size },
+                { x: box.x - padding + box.width, y: box.y - padding + box.height },
+                { x: box.x - padding + box.width - corner_size, y: box.y - padding + box.height },
+            ],
+        ]
+
+        corners2.forEach((corner) =>
+        {
+            ctx.beginPath()
+            ctx.moveTo(corner[ 0 ].x, corner[ 0 ].y)
+            ctx.lineTo(corner[ 1 ].x, corner[ 1 ].y)
+            ctx.lineTo(corner[ 2 ].x, corner[ 2 ].y)
+            ctx.strokeStyle = secondaryColor
+            ctx.lineWidth = lineWidth
+            ctx.stroke()
+        })
+    }
 
     useFrame(() =>
     {
@@ -133,27 +222,27 @@ const EyePopDrawing = () =>
             ctx.lineWidth = 3;
             ctx.stroke();
 
-
             // draw on the ctx an arrow pointing in the direction of the vehicle velocity and a rectangle around the vehicle
             if (vehicle.trafficFactor > 0.5)
             {
-                ctx.strokeStyle = 'orange';
+                ctx.strokeStyle = '#ffbe0b';
             } else
             {
-                ctx.strokeStyle = 'green';
+                // ctx.strokeStyle = '#3A86FF';
+                ctx.strokeStyle = '#5fff4e';
             }
 
             if (vehicle.collisionFactor > 0.5)
             {
 
-                ctx.strokeStyle = 'red';
+                ctx.strokeStyle = '#ff002f';
 
                 if (vehicle.wasProcessed)
                 {
-                    ctx.lineWidth = 5;
+                    ctx.lineWidth = 4;
                 } else
                 {
-                    ctx.lineWidth = 20;
+                    ctx.lineWidth = 10;
                 }
 
                 vehicle.wasProcessed = true;
@@ -164,16 +253,12 @@ const EyePopDrawing = () =>
                 ctx.lineWidth = 2;
             }
 
-            ctx.beginPath();
-            ctx.rect(vehicle.x, vehicle.y, vehicle.width, vehicle.height);
-
-            ctx.stroke();
+            drawBox(ctx, vehicle, ctx.strokeStyle, ctx.strokeStyle, ctx.lineWidth);
 
             // draw the vehicle id
             ctx.fillStyle = 'white';
             ctx.font = 'bold 14px Arial';
-            ctx.fillText(vehicle.id, vehicle.x + vehicle.width / 4, vehicle.y + vehicle.height / 2);
-
+            ctx.fillText("ID " + vehicle.id, vehicle.x + vehicle.width / 4, vehicle.y + vehicle.height / 2);
         }
 
         const flowStats = getFlowStatistics();
@@ -184,7 +269,7 @@ const EyePopDrawing = () =>
         const flowCount2 = flowStats.flow2.count;
         // in the center of the canvas, draw two arrows pointing in the direction of the flow and the number of vehicles in that flow direction
         ctx.strokeStyle = 'blue';
-        ctx.lineWidth = 5;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(canvas.width / 4, (canvas.height / 2) + 100);
         ctx.lineTo(canvas.width / 4 + flowDirection1.x * 100, (canvas.height / 2 - flowDirection1.y * 100) + 100);
@@ -200,7 +285,7 @@ const EyePopDrawing = () =>
         ctx.stroke();
 
         ctx.strokeStyle = 'blue';
-        ctx.lineWidth = 5;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(canvas.width / 4, (canvas.height / 4) + 100);
         ctx.lineTo(canvas.width / 4 + flowDirection2.x * 100, (canvas.height / 4 - flowDirection2.y * 100) + 100);
@@ -218,8 +303,6 @@ const EyePopDrawing = () =>
         ctx.font = 'bold 50px Arial';
         ctx.fillText(flowCount1, canvas.width / 4 - 100, canvas.height / 2 + 100);
         ctx.fillText(flowCount2, canvas.width / 4 - 100, canvas.height / 4 + 100);
-
-        // eyePopRenderer.draw(prediction);
 
         shaderMaterial.needsUpdate = true;
         shaderMaterial.uniforms.videoTexture.value = videoTexture;
