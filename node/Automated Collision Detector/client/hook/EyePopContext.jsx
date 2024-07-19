@@ -2,6 +2,8 @@ import React, { createContext, useState, useContext, useRef, useEffect } from 'r
 
 import { EyePop } from "@eyepop.ai/eyepop";
 import { processFrame, getVehicles, getFlowStatistics, resetCollisionDetection } from "../CollisionDetector.js";
+import { once } from 'events';
+import * as THREE from 'three';
 
 const EyePopContext = createContext();
 
@@ -14,14 +16,24 @@ const EyePopProvider = ({ children }) =>
     const [ isCollision, setCollision ] = useState(false);
     const [ isTraffic, setTraffic ] = useState(false);
     const [ prediction, setPrediction ] = useState(null);
-    const [ inferenceInProgress, setInferenceInProgress ] = useState(false);
+    const [ progress, setProgress ] = useState(0);
+    const [ errorMessage, setErrorMessage ] = useState(null);
+    const [ saveResult, setSaveResult ] = useState(true);
+    const [ firstPoint, setFirstPoint ] = useState(null);
+    const [ secondPoint, setSecondPoint ] = useState(null);
+    const [ videoLoop, setVideoLoop ] = useState(null);
+
+    const [ videoTexture, setVideoTexture ] = useState(null);
+    const [ aspect, setAspect ] = useState(1);
+
 
     const videoRef = useRef(null);
+    const maskCanvasRef = useRef(null);
 
 
     const eyepopInference =
         `ep_infer id=1  category-name="vehicle"
-            model=eyepop-vehicle:EPVehicleB1_Vehicle_TorchScriptCuda_float32 threshold=0.75
+            model=eyepop-vehicle:EPVehicleB1_Vehicle_TorchScriptCuda_float32 threshold=0.5
         ! ep_infer id=2
             tracing=deepsort,max_age=5.0,iuo_threshold=0.1
             secondary-to-id=1
@@ -33,8 +45,9 @@ const EyePopProvider = ({ children }) =>
     {
         console.log('Initializing EyePop.ai endpoint...');
 
+        setLoading(true);
         EyePop.endpoint({
-            popId: 'transient',
+            popId: `transient`,
             auth: {
                 oAuth2: true
             },
@@ -47,14 +60,16 @@ const EyePopProvider = ({ children }) =>
             .then(async (endpoint) =>
             {
 
-                setEndpoint(endpoint);
-
                 await endpoint.changePopComp(eyepopInference);
+
+                setEndpoint(endpoint);
 
                 setLoading(false);
             }).catch((error) =>
             {
                 console.error('Failed to connect to EyePop.ai endpoint:', error);
+                setErrorMessage(error.message);
+                setLoading(true);
             });
 
     }, []);
@@ -78,139 +93,259 @@ const EyePopProvider = ({ children }) =>
         return closest;
     }
 
-    // Analyze an image and parse results
-    async function startInference(url = '')
+    const readFile = async (file) =>
     {
-        setInferenceInProgress(true);
-        console.log('URL:', url, endpoint);
+        return new Promise((resolve, reject) =>
+        {
+            const reader = new FileReader();
+            reader.onload = (event) =>
+            {
+                if (!event.target.result)
+                {
+                    reject('Failed to read file:', file);
+                    return;
+                }
+                resolve(event.target.result);
+            }
+            reader.readAsDataURL(file);
+        })
+    }
+
+    const setVideoProperties = () =>
+    {
+        maskCanvasRef.current.width = videoRef.current.videoWidth;
+        maskCanvasRef.current.height = videoRef.current.videoHeight;
+
+        const aspect = videoRef.current.videoWidth / videoRef.current.videoHeight;
+
+        setAspect(aspect + Math.random() * 0.0001);
+        videoRef.current.crossOrigin = "anonymous";
+        const texture = new THREE.VideoTexture(videoRef.current);
+        texture.generateMipmaps = true;
+
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.encoding = THREE.sRGBEncoding;
+
+        texture.needsUpdate = true;
+
+        setVideoTexture(texture);
+
+        console.log('Video Properties:', videoRef.current.videoWidth, videoRef.current.videoHeight, aspect, texture);
+    }
+
+    // Helper function to convert a Base64 string to a Blob
+    const base64ToBlob = (base64, mimeType = 'video/mp4') =>
+    {
+        const byteString = atob(base64.split(',')[ 1 ]);
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++)
+        {
+            ia[ i ] = byteString.charCodeAt(i);
+        }
+        return new Blob([ ab ], { type: mimeType });
+    };
+
+
+    const resetVideoProperties = () =>
+    {
+        reset();
+        setData([]);
+        setErrorMessage(null);
+        setProgress(0);
+        videoLoop && cancelAnimationFrame(videoLoop);
+        setVideoURL(null);
+        setLoading(false);
+        setCollision(false);
+    }
+    // Analyze an image and parse results
+    async function start(file)
+    {
+
+        if (videoRef.current)
+        {
+            videoRef.current.src = '';
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0;
+        }
+
+        resetVideoProperties();
+
+        let url = null
+
+        if (file.type !== 'video/mp4')
+        {
+            setLoading(false);
+            // convert file to json file
+            let fileData = await readFile(file)
+
+            fileData = fileData.split(',')[ 1 ];
+            fileData = atob(fileData);
+
+            let jsonData = null;
+            jsonData = JSON.parse(fileData)
+
+            const tempData = jsonData.data;
+            const videoBlob = base64ToBlob(jsonData.videoBase64);
+            url = URL.createObjectURL(videoBlob);
+            videoRef.current.src = url;
+            videoRef.current.load();
+            videoRef.current.currentTime = 0;
+            await once(videoRef.current, 'loadeddata');
+
+            setVideoProperties()
+            setVideoURL(url);
+            playVideo(tempData);
+
+            return
+        }
+
+        url = URL.createObjectURL(file);
         videoRef.current.src = url;
-        videoRef.current.play();
+        setVideoURL(url);
 
-        const results = await endpoint.process({ url: url });
+        let results = null;
 
-        const data = [];
+        //wait for video to load
+        videoRef.current.load();
+        videoRef.current.currentTime = 0;
+
+        await once(videoRef.current, 'loadeddata');
+        setVideoURL(url + "");
+
+        setLoading(true);
+
+        setVideoProperties()
+
+        try
+        {
+            results = await endpoint.process({
+                file: file,
+                mimeType: file.type,
+            })
+        } catch (e)
+        {
+            console.error(e)
+            setErrorMessage(e.message);
+            setLoading(true)
+        }
+
+
+        const localDataArray = [];
+
+        setLoading(true);
+        setProgress(0.1);
+
 
         for await (let result of results)
         {
+            videoRef.current.currentTime = result.seconds;
+            localDataArray.push(result);
 
-            data.push(result);
-            console.log('Inference length:', data.length);
-            if (videoRef.current)
+            if ('event' in result && result.event.type === 'error')
             {
-                videoRef.current.currentTime = result.seconds;
+                setErrorMessage(result.event.message);
+                results.cancel()
+                setLoading(true);
+                throw new Error(result.event.message)
             }
 
-            const frameResults = processFrame(result);
+            let videoLength = videoRef.current?.duration;
+            let progress = Math.round((result.seconds / videoLength) * 100);
 
-            if (frameResults)
-            {
-                setCollision(frameResults.collision);
-                setTraffic(frameResults.traffic);
-                setPrediction(result);
-            }
-            setData(data);
+            setProgress(progress ?? result.seconds);
+            console.log('Inference Progress:', progress);
         }
 
-        const inferenceObj = { "url": url, "data": data };
+        setLoading(false);
+        playVideo(localDataArray);
 
-        // save the data to a data.json file
-        //  by creating a Blob and using URL.createObjectURL and link
-        const json = JSON.stringify(inferenceObj, null, 2);
-        const blob = new Blob([ json ], { type: 'application/json' });
-        const dataUrl = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = 'data.json';
-        link.click();
+        setData(localDataArray);
 
-        setInferenceInProgress(false);
-        setData(data);
-        setVideoURL(url);
-    }
+        if (!saveResult) return
 
-    // Load inference data from a JSON file
-    async function startFileInference(file)
-    {
-        const reader = new FileReader();
-        let jsonData = null;
-        reader.onload = async (event) =>
+        // Assuming `url` is the object URL of the file you want to convert to Base64
+        fetch(url).then(response => response.blob()).then(async (blob) =>
         {
-            if (!event.target.result)
-            {
-                console.error('Failed to read file:', file);
-                return;
-            }
+            const base64data = await readFile(file)
 
-            jsonData = JSON.parse(event.target.result);
+            // Create a JSON object including the Base64 data
+            const jsonData = JSON.stringify({
+                data: localDataArray,
+                videoBase64: base64data // Store the Base64 string
+            });
 
-            setData(jsonData.data);
-            setVideoURL(jsonData.url);
-        }
+            // Convert the JSON object to a blob
+            const jsonBlob = new Blob([ jsonData ], { type: 'application/json' });
+            const saveData = URL.createObjectURL(jsonBlob);
 
-        reader.readAsText(file);
+            // Use the same method to create a link and trigger the download
+            const link = document.createElement('a');
+            link.setAttribute('href', saveData);
+            link.setAttribute('download', file.name + '.json');
+            document.body.appendChild(link); // Append to the document
+            link.click();
+            link.remove();
+
+            // Optionally, revoke the object URL if it's no longer needed
+            URL.revokeObjectURL(saveData);
+
+        });
+
     }
 
-    useEffect(() =>
+
+    function cancelAllAnimationFrames()
     {
-        if (!data) return;
-        if (!data.length) return;
-        if (!data.length > 0) return;
-        if (!videoURL) return;
-        if (!videoURL.length) return;
-        if (!videoRef.current) return;
-
-        playVideo(videoURL, data);
-    }, [ data, videoURL ]);
+        var id = window.requestAnimationFrame(function () { })
+        while (id--)
+        {
+            window.cancelAnimationFrame(id)
+        }
+    }
 
 
-    function playVideo(url, data)
+
+    function playVideo(dataParam)
     {
 
-        videoRef.current.src = url;
-        videoRef.current.currentTime = 0;
-        console.log('Video url:', url);
-        let animationFrameId;
-        let cancelTime = -1;
+        if (videoLoop)
+        {
+            console.log('Previous loop stopped:', videoURL);
+            cancelAnimationFrame(videoLoop);
+        }
 
-        const onVideoUpdate = () =>
+        const videoLoopAnimation = () =>
         {
             const time = videoRef.current.currentTime;
-            const closestPrediction = getClosestPrediction(time, data);
+
+            const closestPrediction = getClosestPrediction(time + .15, dataParam);
+            setPrediction(closestPrediction);
+
             const frameResults = processFrame(closestPrediction);
 
             if (frameResults)
             {
                 setCollision(frameResults.collision);
                 setTraffic(frameResults.traffic);
-                setPrediction(closestPrediction);
             }
 
-            if (frameResults && frameResults?.collision && Math.abs(cancelTime - time) > 1.0)
-            {
-                cancelTime = time;
-                // Pause the loop
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            } else
-            {
-                // Request the next frame
-                animationFrameId = requestAnimationFrame(onVideoUpdate);
-            }
-        }
+            setVideoLoop(requestAnimationFrame(videoLoopAnimation));
+        };
 
-        const onVideoStart = () =>
+        videoRef.current.onended = () =>
         {
-            // Start the loop if it's not already running
-            if (!animationFrameId)
-            {
-                console.log('Video started');
-                animationFrameId = requestAnimationFrame(onVideoUpdate);
-            }
+            videoLoop && cancelAnimationFrame(videoLoop);
         }
 
-        videoRef.current.addEventListener('play', onVideoStart);
+        setVideoLoop(requestAnimationFrame(videoLoopAnimation));
 
+        videoRef.current.currentTime = 0;
+        videoRef.current.loop = true
+        videoRef.current.autoplay = true
         videoRef.current.play();
+
     }
 
     function reset()
@@ -223,7 +358,6 @@ const EyePopProvider = ({ children }) =>
         <EyePopContext.Provider value={{
             endpoint,
             videoURL,
-            startInference,
             videoRef,
             getClosestPrediction,
             getVehicles,
@@ -231,31 +365,48 @@ const EyePopProvider = ({ children }) =>
             isTraffic,
             prediction,
             reset,
-            startFileInference,
-            getFlowStatistics
+            getFlowStatistics,
+            start,
+            setSaveResult,
+            saveResult,
+            firstPoint,
+            secondPoint,
+            setFirstPoint,
+            setSecondPoint,
+            maskCanvasRef,
+            videoTexture,
+            aspect,
         }}>
 
             {
 
-                isLoadingEyePop ?
+                isLoadingEyePop &&
 
-                    <div className='absolute top-0 left-0 w-screen h-screen flex flex-col justify-center align-center object-center align-items-center'>
-                        <div className='h1 text-6xl text-white text-center'>
-                            Loading...
-                        </div>
-                        <div className='text text-white text-center'>
-                            (allow popup windows to continue)
-                        </div>
+                <div className='absolute top-0 left-0 w-screen h-screen flex flex-col justify-center align-center object-center align-items-center z-50 bg-black'>
+                    <div className='h1 text-6xl text-white text-center'>
+                        {progress <= 0 ? 'Loading...' : 'Predicting...'}
+                    </div>
+                    <div className={`'text text-white text-center w-full ' ${progress <= 0 ? 'visible' : 'hidden'}`}>
+                        (allow popup windows to continue)
                     </div>
 
-                    :
-
-                    <div className='flex justify-center items-center h-screen w-screen'>
-                        {children}
-                        <video ref={videoRef} controls autoPlay crossOrigin='anonymous' src={videoURL} className='w-full hidden' ></video>
-                    </div>
-
+                    <span className={`'flex justify-center items-center w-full text-4xl text-white text-center ' ${progress > 0 ? 'visible' : 'hidden'}`}>
+                        {progress}% complete
+                    </span>
+                </div>
             }
+
+            {errorMessage && <div className='absolute top-0 left-0 w-screen h-screen flex flex-col justify-center align-center object-center align-items-center z-50 bg-black text-5xl text-red-500'>
+                {errorMessage}
+            </div>
+            }
+
+            <canvas ref={maskCanvasRef} id='maskCanvas' className='hidden'></canvas>
+
+            <div className='flex justify-center items-center h-screen w-screen'>
+                <video ref={videoRef} controls playsInline autoPlay loop crossOrigin='anonymous' src={videoURL} className='w-full hidden' ></video>
+                {children}
+            </div>
 
         </EyePopContext.Provider>
 

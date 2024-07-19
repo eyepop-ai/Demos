@@ -14,7 +14,8 @@ export function Index()
     const canvasRef = useRef(null);
 
     return (
-        <div ref={canvasParentRef} className='flex flex-col justify-center items-center gap-2 m-5 text-white h-full w-full'>
+        <div ref={canvasParentRef} className='flex flex-col justify-center items-center text-white h-full w-full'>
+
             <Controls />
 
             <Canvas

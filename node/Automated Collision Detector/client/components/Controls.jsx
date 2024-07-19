@@ -1,18 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useEyePop } from '../hook/EyePopContext.jsx';
 
+const DEBUG = true;
 const Controls = () =>
 {
     // Add your component logic here
-    const { startInference, startFileInference, reset, isCollision, isTraffic, videoRef, getFlowStatistics } = useEyePop();
-    const videoURlRef = useRef(null);
+    const { saveResult, setSaveResult, start, reset, isCollision, isTraffic, videoRef, getFlowStatistics } = useEyePop();
 
-    // const [ collisionDetected, setCollisionDetected ] = useState(false);
     const [ trafficDetected, setTrafficDetected ] = useState(false);
     const [ collisionQueued, setCollisionQueued ] = useState(false);
 
     useEffect(() =>
     {
+        if (DEBUG) return
         setTrafficDetected(isTraffic);
         console.log('isCollision:', isCollision, collisionQueued);
 
@@ -28,31 +28,20 @@ const Controls = () =>
         setTimeout(() =>
         {
             setCollisionQueued(false);
-            videoRef.current.play();
+
+            if (videoRef.current.paused)
+            {
+                videoRef.current.play();
+            }
         }, 250);
 
     }, [ isCollision, isTraffic, videoRef ]);
 
-    const start = async (e) =>
-    {
-        const url = videoURlRef.current.value;
-
-        if (!url)
-        {
-            alert('Please enter a video URL');
-            return;
-        }
-
-        console.log('Starting inference with URL:', url);
-
-        await startInference(url);
-    }
-
-    const handleFileUpload = (e) =>
+    const handleVideoFileUpload = (e) =>
     {
         const file = e.target.files[ 0 ];
-        startFileInference(file);
-    };
+        start(file)
+    }
 
     const handleNewScene = () =>
     {
@@ -76,21 +65,19 @@ const Controls = () =>
 
 
     return (
-        <>
-            <h3 className='text-3xl'>Automated Collision Detection</h3>
+        <div className='absolute top-0 left-0 w-screen flex flex-col justify-center items-center'>
+            <h3 className='text-3xl z-50 '>Automated Collision Detection</h3>
 
-            <div className='flex flex-row justify-center items-center gap-5 m-2 text-white'>
+            <div className='flex flex-row justify-center items-center gap-5 m-2 text-white z-50 '>
 
-                <input ref={videoURlRef} type="text" className='input text' placeholder="Enter URL" />
+                <div className='flex flex-col gap-2 group'>
+                    <input type="file" className=' w-60' placeholder="Select File" onChange={handleVideoFileUpload} accept=".mp4,.mov,.webm,.json" />
 
-                <div className='btn btn-primary' onClick={start}> Start Inference </div>
-
-                <div className="text">OR</div>
-
-                <div className="flex flex-col">
-                    <div className="text">Load inference json file:</div>
-
-                    <input type="file" className='input text flex justify-center text-center content-center p-1 w-60' accept=".json" onChange={handleFileUpload} placeholder='Load json inference file' />
+                    <div className='flex flex-row gap-2 group'>
+                        <input className='toggle toggle-success' type="checkbox" checked={saveResult ?? true} onChange={(e) => setSaveResult(e.target.checked)}  >
+                        </input>
+                        <span className='group'>Save Predictions</span>
+                    </div>
                 </div>
 
                 <div className='btn btn-primary' onClick={handleNewScene}> Reset Metrics </div>
@@ -131,7 +118,7 @@ const Controls = () =>
 
             </div>
 
-        </>
+        </div>
     );
 };
 

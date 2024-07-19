@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 var vehicles = new Map();
-
+var vehiclesArray = [];
 
 
 class Vehicle
@@ -22,6 +22,34 @@ class Vehicle
         this.active = true;
         this.threshold = 10;
         this.wasProcessed = false;
+        this.setInactiveTimeout = null;
+        this.opacityInterval = null;
+        this.opacity = 1.0;
+        this.directionalFlow = 0;
+    }
+
+    setActive(active)
+    {
+
+        if (active)
+        {
+            clearInterval(this.opacityInterval);
+            clearTimeout(this.setInactiveTimeout);
+            this.opacity = 1.0;
+            this.active = true;
+        } else
+        {
+            this.opacityInterval = setInterval(() =>
+            {
+                this.opacity -= .1;
+            }, 50);
+
+            this.setInactiveTimeout = setTimeout(() =>
+            {
+                this.active = false;
+            }, 500);
+        }
+
     }
 
     //
@@ -39,13 +67,14 @@ class Vehicle
         const distY = Math.abs(newY - this.y);
         const changeSampleCount = 5;
 
-        if (distX < 10 && distY < 10 || !(distX === 0 || distY === 0))
+        if ((distX < 10 && distY < 10) && (newWidth < 200 && newHeight < 200))
         {
-            this.active = true;
+            this.setActive(true);
         } else
         {
-            this.active = false;
+            this.setActive(false);
         }
+
 
         // We ignore any stagnant positions, as we only care about the position delta
         if (newX === this.x || newY === this.y)
@@ -71,27 +100,6 @@ class Vehicle
         this.x = newX;
         this.y = newY;
 
-        // if the new position suddenly makes a large jump, bigger than the last 5 positions, ignore it
-        if (this.positions.length > changeSampleCount)
-        {
-            let averageChangeX = 0;
-            let averageChangeY = 0;
-            for (let i = this.positions.length - changeSampleCount; i >= 0 && i < this.positions.length; i++)
-            {
-                averageChangeX += Math.abs(this.positions[ i ].x - this.positions[ i - 1 ].x);
-                averageChangeY += Math.abs(this.positions[ i ].y - this.positions[ i - 1 ].y);
-            }
-
-            averageChangeX /= changeSampleCount;
-            averageChangeY /= changeSampleCount;
-
-            if (distX > averageChangeX * 2 || distY > averageChangeY * 4 || averageChangeX > 25 || averageChangeY > 25)
-            {
-                this.active = false;
-                return;
-            }
-        }
-
 
         // Update acceleration history, maintaining a fixed size of history
         if (this.accelerations.length >= 40)
@@ -105,9 +113,9 @@ class Vehicle
         // If the new position is too far from the last position, we ignore it
         //   but preserve the position data for calculating the velocity.
         //   This is a hack to prevent erroneous velocity spikes.
-        if (distX > 20 || distY > 20)
+        if (distX > 50 || distY > 50)
         {
-            this.active = false;
+            this.setActive(false);
             return;
         }
 
@@ -157,10 +165,11 @@ class Vehicle
 
 
         meanAcceleration /= count;
-        this.threshold = meanAcceleration * 4;
+        this.threshold = meanAcceleration * 15;
 
-        const sampleDistance = Math.abs(sample - meanAcceleration);
-        if (sampleDistance > 20)
+        const outlierScale = Math.abs(sample - meanAcceleration);
+        // if the sample is an outlier, we ignore it
+        if (outlierScale > 20)
         {
             return false;
         }
@@ -225,119 +234,138 @@ function findClosestVehicle(object, vehiclesMap, threshold = 100)
 }
 
 
-var primaryDirections = [];
-
-function getFlowStatistics()
+function getPerpendicularVectors(point1, point2)
 {
-    const allVelocities = [];
-    for (const car of getVehicles(true).values())
-    {
-        let velocity = car.getVelocity();
+    // Convert the 2D points to 3D vectors (z = 0)
+    const v1 = new THREE.Vector3(point1.x, point1.y, 0);
+    const v2 = new THREE.Vector3(point2.x, point2.y, 0);
 
-        if (!velocity.x || !velocity.y) { continue; }
+    // Calculate the direction vector
+    const direction = new THREE.Vector3().subVectors(v2, v1);
+    direction.normalize();
 
-        allVelocities.push(new THREE.Vector2(-1 * velocity.x, velocity.y));
-    }
+    // Find a vector perpendicular to the direction vector in the XY plane
+    const perpendicular1 = new THREE.Vector3(-direction.y, direction.x, 0);
+    perpendicular1.normalize();
 
-    if (allVelocities.length < 2) return { flow1: { direction: new THREE.Vector2(0, 0), count: 0 }, flow2: { direction: new THREE.Vector2(0, 0), count: 0 } };
+    // The second perpendicular vector is simply the negative of the first one
+    const perpendicular2 = new THREE.Vector3(direction.y, -direction.x, 0);
+    perpendicular2.normalize();
 
-    let flow1Direction = null;
-    let flow2Direction = null;
-
-    if (primaryDirections.length > 0)
-    {
-        flow1Direction = primaryDirections[ 0 ];
-        flow2Direction = primaryDirections[ 1 ];
-    }
-
-    primaryDirections = findPrimaryDirections(allVelocities, flow1Direction, flow2Direction);
-
-    const direction = {
-        flow1:
-        {
-            direction: primaryDirections[ 0 ],
-            count: 0
-        },
-        flow2:
-        {
-            direction: primaryDirections[ 1 ],
-            count: 0
-        },
-
-    };
-
-    for (const vel of allVelocities)
-    {
-        if (vel.angleTo(direction.flow1.direction) < Math.PI / 2)
-        {
-            direction.flow1.count += 1;
-        } else
-        {
-            direction.flow2.count += 1;
-        }
-    }
-
-    return direction;
+    return { perpendicular2, perpendicular1 };
 }
 
-function findPrimaryDirections(velocities, direction1 = null, direction2 = null)
+const lineBox = new THREE.Box3();
+const vehicleBox = new THREE.Box3();
+
+function isVehiclePassingThroughLine(vehicle, pointA, pointB, perpendiculars)
 {
-    const numBuckets = 8; // You can adjust the number of buckets based on the granularity you need
-    const buckets = new Array(numBuckets).fill().map(() => ({
-        vectorSum: new THREE.Vector2(0, 0),
-        count: 0
-    }));
+    if (!vehicle || !pointA || !pointB || !perpendiculars) return false;
+    if (!vehicle.x || !vehicle.y || !vehicle.width || !vehicle.height) return false;
+    if (!pointA.x || !pointA.y || !pointB.x || !pointB.y) return false;
 
-    // Distribute vectors into buckets based on their angle
-    for (const velocity of velocities)
+    const vehicleCorners = [
+        new THREE.Vector3(vehicle.x, vehicle.y, 0),
+        new THREE.Vector3(vehicle.x + vehicle.width, vehicle.y, 0),
+        new THREE.Vector3(vehicle.x, vehicle.y + vehicle.height, 0),
+        new THREE.Vector3(vehicle.x + vehicle.width, vehicle.y + vehicle.height, 0) // Fixed typo "heigh" to "height"
+    ];
+
+    const pointCorners = [
+        new THREE.Vector3(pointA.x, pointA.y, 0),
+        new THREE.Vector3(pointA.x, pointA.y, 0),
+        new THREE.Vector3(pointB.x, pointB.y, 0),
+        new THREE.Vector3(pointB.x, pointB.y, 0)
+    ];
+
+
+    // Create a threejs plane from the two points
+    lineBox.setFromPoints(pointCorners);
+    // Create a box for the vehicle
+    vehicleBox.setFromPoints(vehicleCorners);
+
+    // Check if the line intersects the vehicle box
+    return vehicleBox.intersectsBox(lineBox);
+}
+
+function getFlowStatistics(pointA, pointB)
+{
+    // detect all vehicles in the scene passing through the line segment defined by pointA and pointB
+    // and calculate the flow statistics for the two directions
+    if (!pointA || !pointB) return null;
+    if (!pointA.x || !pointA.y || !pointB.x || !pointB.y) return null;
+
+    const result = {
+        flow1: {
+            direction: new THREE.Vector2(0, 0),
+            count: 0,
+            angle: 0
+        },
+        flow2: {
+            direction: new THREE.Vector2(0, 0),
+            count: 0,
+            angle: 0
+        }
+    };
+
+    const perpendiculars = getPerpendicularVectors(pointA, pointB);
+    result.flow1.direction.copy(perpendiculars.perpendicular1);
+    result.flow2.direction.copy(perpendiculars.perpendicular2);
+    result.flow1.angle = vectorToAngle(perpendiculars.perpendicular1)
+    result.flow2.angle = vectorToAngle(perpendiculars.perpendicular2)
+
+    const allVehicles = getVehicles(true); // Assuming this function returns a list of vehicles with positions and velocities
+
+    for (let i = 0; i < allVehicles.length; i++)
     {
-        let angle = velocity.angle();
+        const vehicle = allVehicles[ i ];
+        const vehicleVelocity = new THREE.Vector2(vehicle.getVelocity().x, vehicle.getVelocity().y);
 
-        const index = Math.floor(angle / (2 * Math.PI) * numBuckets);
-        buckets[ index ].vectorSum.add(velocity);
-        buckets[ index ].count += 1;
-    }
+        // Calculate if the vehicle is passing through the line between pointA and pointB
+        //   mark it as passing through the first direction or the second direction based on the angle
+        const angle1 = vehicleVelocity.angleTo(result.flow1.direction);
+        const angle2 = vehicleVelocity.angleTo(result.flow2.direction);
 
-    // Compute average direction for each bucket
-    const directions = buckets
-        .filter(bucket => bucket.count > 0) // Filter out empty buckets
-        .map(bucket =>
+        const isPassing = isVehiclePassingThroughLine(vehicle, pointA, pointB, perpendiculars);
+
+        if (isPassing && vehicle.active)
         {
-            const avgVector = bucket.vectorSum.clone().divideScalar(bucket.count);
-            return avgVector.normalize();
-        });
-
-    if (!direction1 && !direction2)
-    {
-        // Sort directions by count
-        directions.sort((a, b) => buckets[ directions.indexOf(b) ].count - buckets[ directions.indexOf(a) ].count);
-
-        return [ directions[ 0 ], directions[ 0 ].clone().negate() ];
-    } else
-    {
-        // find the two directions closest to the previous directions1, and directions2
-        let closestDirection1 = null;
-        let closestDirection2 = null;
-        let minAngle1 = 100;
-        let minAngle2 = 100;
-        for (const dir of directions)
-        {
-            let angle1 = dir.angleTo(direction1);
-            let angle2 = dir.angleTo(direction2);
-            if (angle1 < minAngle1)
+            if (angle1 > angle2)
             {
-                minAngle1 = angle1;
-                closestDirection1 = dir;
-            }
-            if (angle2 < minAngle2)
+                vehicle.directionalFlow = 1;
+            } else
             {
-                minAngle2 = angle2;
-                closestDirection2 = dir;
+                vehicle.directionalFlow = 2;
             }
         }
-
-        return [ closestDirection1, closestDirection2 ];
     }
+
+    // Calculate the flow statistics
+    for (let i = 0; i < allVehicles.length; i++)
+    {
+        const vehicle = allVehicles[ i ];
+        if (vehicle.directionalFlow === 0) continue;
+
+        if (vehicle.directionalFlow === 1)
+        {
+            result.flow1.count += 1;
+        } else if (vehicle.directionalFlow === 2)
+        {
+            result.flow2.count += 1;
+        }
+    }
+
+    return result;
+}
+
+function vectorToAngle(vector)
+{
+    // Get the angle in radians between the positive x-axis and the point (vector.x, vector.y)
+    const angleRadians = Math.atan2(vector.y, vector.x);
+    // Convert the angle from radians to degrees
+    const angleDegrees = angleRadians * (180 / Math.PI);
+    // Ensure the angle is in the range [0, 360)
+    return (angleDegrees + 360) % 360;
 }
 
 function detectCollision(vehicleMap)
@@ -356,7 +384,6 @@ function detectCollision(vehicleMap)
             !vehicle.wasProcessed
         )
         {
-            console.log('Collision detected', vehicle.id, lastAcceleration, vehicle.threshold?.toFixed(2));
 
             vehicle.collisionFactor = 1.0;
             collisionDetected = true;
@@ -400,7 +427,7 @@ function processFrame(frameData)
     {
         if (vehidle.active)
         {
-            vehidle.active = false;
+            vehidle.setActive(false);
         }
     }
 
@@ -430,7 +457,7 @@ function processFrame(frameData)
 
                 const newVehicle = new Vehicle(newId, object.x, object.y, object.width, object.height);
                 vehicles.set(newId, newVehicle);
-
+                vehiclesArray.push(newVehicle);
             }
 
         }
@@ -441,24 +468,24 @@ function processFrame(frameData)
     return detectCollision(vehicles);
 }
 
-function getVehicles(allVehicles = false)
+
+
+function getVehicles(includeInactive = false)
 {
-    if (allVehicles)
+    if (includeInactive)
     {
-        return vehicles;
+        return vehiclesArray
     }
 
     // Return only active vehicles
-    return Array.from(vehicles.values()).filter((car) => car.active);
+    return vehiclesArray.filter(vehicle => vehicle.active);
 }
 
 function resetCollisionDetection()
 {
-
-    const vehicles = getVehicles(true);
     // clear the vehicles map
     vehicles.clear();
-    primaryDirections = [];
+    vehiclesArray = [];
 }
 
 export { processFrame, getVehicles, getFlowStatistics, resetCollisionDetection };

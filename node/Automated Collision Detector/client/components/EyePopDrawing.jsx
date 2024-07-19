@@ -3,36 +3,61 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useEyePop } from '../hook/EyePopContext';
 import { Render2d } from '@eyepop.ai/eyepop-render-2d';
 import * as THREE from 'three';
-import { normalizePosition } from '../utils/BaseUtils';
+import { Html } from '@react-three/drei';
+
+let isMouseDown = false;
 
 const EyePopDrawing = () =>
 {
-    const { prediction, videoRef, getVehicles, getFlowStatistics } = useEyePop();
+    const { prediction, videoRef, getVehicles, getFlowStatistics, setFirstPoint, firstPoint, setSecondPoint, secondPoint, videoURL, maskCanvasRef, aspect, videoTexture } = useEyePop();
 
-    const { invalidate } = useThree();
+    const { invalidate, camera, scene, raycaster } = useThree();
 
     const [ canvas, setCanvas ] = useState(null);
     const [ ctx, setCtx ] = useState(null);
-    const [ aspect, setAspect ] = useState(1);
 
     const [ canvasTexture, setCanvasTexture ] = useState(null);
-    const [ videoTexture, setVideoTexture ] = useState(null);
     const [ eyePopRenderer, setEyePopRenderer ] = useState(null);
     const [ shaderMaterial, setShaderMaterial ] = useState(null);
 
+    const [ mousePosition, setMousePosition ] = useState({ x: 0, y: 0 });
+
+    const flowDataRef = useRef(null);
+
     let lastTime = -99.0;
+
+    const onMouseMove = (e) =>
+    {
+        const x = (e.clientX / window.innerWidth) * videoRef.current.videoWidth;
+        const y = (e.clientY / window.innerHeight) * videoRef.current.videoHeight;
+
+        setMousePosition({ x, y });
+
+        if (isMouseDown)
+        {
+            setSecondPoint({ x, y })
+        }
+
+    }
+
+    useEffect(() =>
+    {
+        document.addEventListener('mousemove', onMouseMove);
+        return () =>
+        {
+            document.removeEventListener('mousemove', onMouseMove);
+        }
+
+    }, [ videoURL ])
 
 
     const setupCavas = () =>
     {
+        if (!maskCanvasRef.current) return;
+        if (!videoRef.current) return;
+        if (!videoRef.current.videoWidth) return;
 
-        let tempCanvas = document.createElement('canvas');
-        tempCanvas.id = 'maskCanvas';
-        document.body.appendChild(tempCanvas);
-        tempCanvas.style.display = 'none';
-        tempCanvas.width = videoRef.current.videoWidth;
-        tempCanvas.height = videoRef.current.videoHeight;
-
+        let tempCanvas = maskCanvasRef.current;
 
         const maskCtx = tempCanvas.getContext('2d');
         maskCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
@@ -40,29 +65,19 @@ const EyePopDrawing = () =>
         const tempCanvasTexture = new THREE.CanvasTexture(tempCanvas);
         tempCanvasTexture.needsUpdate = true;
 
-        const texture = new THREE.VideoTexture(videoRef.current);
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.needsUpdate = true;
 
-        setVideoTexture(texture);
         setCtx(maskCtx);
         setCanvas(tempCanvas);
         setCanvasTexture(tempCanvasTexture);
-        setAspect(videoRef.current.videoWidth / videoRef.current.videoHeight);
 
-
-        // Use the eyepop renderer to draw the closest prediction
-        const renderer = Render2d.renderer(maskCtx, [
-            Render2d.renderBox(true),
-        ]);
-
-        setEyePopRenderer(renderer);
-
-        return { eyePopTexture: tempCanvasTexture, videoTexture: texture };
+        return { eyePopTexture: tempCanvasTexture };
     }
 
     const setupShaderMaterial = (videoTex, canvasTex) =>
     {
+        if (!videoTex) return;
+        if (!canvasTex) return;
+
         const material = new THREE.ShaderMaterial({
             uniforms: {
                 videoTexture: { value: videoTex },
@@ -92,12 +107,14 @@ const EyePopDrawing = () =>
         setShaderMaterial(material)
     }
 
-    const drawBox = (ctx, box, primaryColor, secondaryColor, lineWidth = 1) =>
+    const drawBox = (ctx, box, primaryColor, secondaryColor, lineWidth = 1, opacity = 1.0) =>
     {
         var mindim = Math.min(box.height, box.width)
         var corner_size = Math.max(15, mindim / 5.33333)
         var padding = Math.max(mindim * 0.02, 5)
         corner_size = corner_size - padding
+
+        lineWidth = lineWidth * opacity
 
         //faded blue background
         ctx.beginPath()
@@ -182,45 +199,74 @@ const EyePopDrawing = () =>
         })
     }
 
+    const drawArrow = (ctx, vehicle, color = 'blue') =>
+    {
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(vehicle.x + vehicle.width / 2, vehicle.y + vehicle.height / 2);
+        ctx.lineTo(vehicle.x + vehicle.width / 2 + vehicle.velocity.x, vehicle.y + vehicle.height / 2 + vehicle.velocity.y);
+
+        // draws the arrow tip
+        const angle = Math.atan2(vehicle.velocity.y, vehicle.velocity.x);
+        ctx.lineTo(vehicle.x + vehicle.width / 2 + vehicle.velocity.x - 10 * Math.cos(angle - Math.PI / 6), vehicle.y + vehicle.height / 2 + vehicle.velocity.y - 10 * Math.sin(angle - Math.PI / 6));
+        ctx.moveTo(vehicle.x + vehicle.width / 2 + vehicle.velocity.x, vehicle.y + vehicle.height / 2 + vehicle.velocity.y);
+        ctx.lineTo(vehicle.x + vehicle.width / 2 + vehicle.velocity.x - 10 * Math.cos(angle + Math.PI / 6), vehicle.y + vehicle.height / 2 + vehicle.velocity.y - 10 * Math.sin(angle + Math.PI / 6));
+        ctx.lineWidth = 3;
+        ctx.stroke();
+    }
+
+    useEffect(() =>
+    {
+        if (!videoURL) return;
+        if (!videoTexture) return;
+
+        const textures = setupCavas();
+
+        if (textures)
+        {
+            setupShaderMaterial(videoTexture, textures.eyePopTexture);
+        }
+
+        lastTime = -99.0;
+
+    }, [ videoURL, videoTexture ])
+
+
     useFrame(() =>
     {
         if (!videoRef.current) { return; }
-        if (videoRef.current.readyState < 2) { return; }
         if (videoRef.current.currentTime === lastTime) { return; }
 
         lastTime = videoRef.current.currentTime;
 
-        if (!canvas)
+        if (!canvas && videoTexture)
         {
             const textures = setupCavas();
-            setupShaderMaterial(textures.videoTexture, textures.eyePopTexture);
+            if (textures)
+            {
+                setupShaderMaterial(videoTexture, textures.eyePopTexture);
+            }
         }
 
         if (!prediction) return;
         if (!canvas) return;
         if (!ctx) return;
-        if (!eyePopRenderer) return;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
-        const vehicles = getVehicles(false);
+        const vehicles = getVehicles(true);
 
         for (const vehicle of vehicles)
         {
 
-            ctx.strokeStyle = 'blue';
-            ctx.beginPath();
-            ctx.moveTo(vehicle.x + vehicle.width / 2, vehicle.y + vehicle.height / 2);
-            ctx.lineTo(vehicle.x + vehicle.width / 2 + vehicle.velocity.x, vehicle.y + vehicle.height / 2 + vehicle.velocity.y);
+            if (!vehicle || !vehicle.x || !vehicle.y || !vehicle.width || !vehicle.height) continue;
+            if (!vehicle.velocity || !vehicle.velocity.x || !vehicle.velocity.y) continue;
 
-            // draws the arrow tip
-            const angle = Math.atan2(vehicle.velocity.y, vehicle.velocity.x);
-            ctx.lineTo(vehicle.x + vehicle.width / 2 + vehicle.velocity.x - 10 * Math.cos(angle - Math.PI / 6), vehicle.y + vehicle.height / 2 + vehicle.velocity.y - 10 * Math.sin(angle - Math.PI / 6));
-            ctx.moveTo(vehicle.x + vehicle.width / 2 + vehicle.velocity.x, vehicle.y + vehicle.height / 2 + vehicle.velocity.y);
-            ctx.lineTo(vehicle.x + vehicle.width / 2 + vehicle.velocity.x - 10 * Math.cos(angle + Math.PI / 6), vehicle.y + vehicle.height / 2 + vehicle.velocity.y - 10 * Math.sin(angle + Math.PI / 6));
-            ctx.lineWidth = 3;
-            ctx.stroke();
+            if (vehicle.active && vehicle.opacity >= 1.0)
+            {
+                drawArrow(ctx, vehicle)
+            }
 
             // draw on the ctx an arrow pointing in the direction of the vehicle velocity and a rectangle around the vehicle
             if (vehicle.trafficFactor > 0.5)
@@ -239,85 +285,154 @@ const EyePopDrawing = () =>
 
                 if (vehicle.wasProcessed)
                 {
-                    ctx.lineWidth = 4;
+                    ctx.lineWidth = 2;
                 } else
                 {
-                    ctx.lineWidth = 10;
+                    ctx.lineWidth = 6;
                 }
 
                 vehicle.wasProcessed = true;
-                // vehicle.collisionFactor = 0.0;
+                vehicle.collisionFactor = 0.0;
 
             } else
             {
                 ctx.lineWidth = 2;
             }
 
-            drawBox(ctx, vehicle, ctx.strokeStyle, ctx.strokeStyle, ctx.lineWidth);
+            if (vehicle.active)
+            {
+                drawBox(ctx, vehicle, ctx.strokeStyle, ctx.strokeStyle, ctx.lineWidth, vehicle.opacity);
 
-            // draw the vehicle id
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 14px Arial';
-            ctx.fillText("ID " + vehicle.id, vehicle.x + vehicle.width / 4, vehicle.y + vehicle.height / 2);
+                // draw the vehicle id
+                ctx.fillStyle = 'white';
+                const fontSize = Math.min(vehicle.width / 4, 14);
+                ctx.font = `bold ${fontSize}px Arial`;
+                ctx.fillText("ID " + vehicle.id, vehicle.x + vehicle.width / 4, vehicle.y + vehicle.height / 2);
+            }
         }
 
-        const flowStats = getFlowStatistics();
+        // draw line between the two points
+        if (firstPoint && secondPoint)
+        {
+            ctx.beginPath();
+            ctx.moveTo(firstPoint.x, firstPoint.y);
+            ctx.lineTo(secondPoint.x, secondPoint.y);
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.strokeStyle = '#01d9ff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
 
-        const flowDirection1 = flowStats.flow1.direction;
-        const flowDirection2 = flowStats.flow2.direction;
-        const flowCount1 = flowStats.flow1.count;
-        const flowCount2 = flowStats.flow2.count;
-        // in the center of the canvas, draw two arrows pointing in the direction of the flow and the number of vehicles in that flow direction
-        ctx.strokeStyle = 'blue';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(canvas.width / 4, (canvas.height / 2) + 100);
-        ctx.lineTo(canvas.width / 4 + flowDirection1.x * 100, (canvas.height / 2 - flowDirection1.y * 100) + 100);
-        ctx.stroke();
+            // draw a circle at the first point and second point with an outline
+            ctx.beginPath();
+            ctx.arc(firstPoint.x, firstPoint.y, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = '#01d9ff';
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.stroke();
 
+            ctx.beginPath();
+            ctx.arc(secondPoint.x, secondPoint.y, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = '#01d9ff';
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.stroke();
 
-        ctx.lineWidth = 2;
-        // draw arrow tip for flowDirection1
-        const angle1 = Math.atan2(-flowDirection1.y, flowDirection1.x);
-        ctx.lineTo(canvas.width / 4 + flowDirection1.x * 100 - 10 * Math.cos(angle1 - Math.PI / 6), (canvas.height / 2 - flowDirection1.y * 100) + 100 - 10 * Math.sin(angle1 - Math.PI / 6));
-        ctx.moveTo(canvas.width / 4 + flowDirection1.x * 100, (canvas.height / 2 - flowDirection1.y * 100) + 100);
-        ctx.lineTo(canvas.width / 4 + flowDirection1.x * 100 - 10 * Math.cos(angle1 + Math.PI / 6), (canvas.height / 2 - flowDirection1.y * 100) + 100 - 10 * Math.sin(angle1 + Math.PI / 6));
-        ctx.stroke();
+        }
 
-        ctx.strokeStyle = 'blue';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(canvas.width / 4, (canvas.height / 4) + 100);
-        ctx.lineTo(canvas.width / 4 + flowDirection2.x * 100, (canvas.height / 4 - flowDirection2.y * 100) + 100);
-        ctx.stroke();
+        const flowStats = getFlowStatistics(firstPoint, secondPoint);
+        flowDataRef.current = flowStats;
 
-        ctx.lineWidth = 2;
-        // draw arrow tip for flowDirection2
-        const angle2 = Math.atan2(-flowDirection2.y, flowDirection2.x);
-        ctx.lineTo(canvas.width / 4 + flowDirection2.x * 100 - 10 * Math.cos(angle2 - Math.PI / 6), (canvas.height / 4 - flowDirection2.y * 100) + 100 - 10 * Math.sin(angle2 - Math.PI / 6));
-        ctx.moveTo(canvas.width / 4 + flowDirection2.x * 100, (canvas.height / 4 - flowDirection2.y * 100) + 100);
-        ctx.lineTo(canvas.width / 4 + flowDirection2.x * 100 - 10 * Math.cos(angle2 + Math.PI / 6), (canvas.height / 4 - flowDirection2.y * 100) + 100 - 10 * Math.sin(angle2 + Math.PI / 6));
-        ctx.stroke();
-
-        ctx.fillStyle = 'red';
-        ctx.font = 'bold 50px Arial';
-        ctx.fillText(flowCount1, canvas.width / 4 - 100, canvas.height / 2 + 100);
-        ctx.fillText(flowCount2, canvas.width / 4 - 100, canvas.height / 4 + 100);
-
-        shaderMaterial.needsUpdate = true;
-        shaderMaterial.uniforms.videoTexture.value = videoTexture;
-        shaderMaterial.uniforms.eyePopTexture.value = canvasTexture;
-        shaderMaterial.uniforms.videoTexture.value.needsUpdate = true;
-        shaderMaterial.uniforms.eyePopTexture.value.needsUpdate = true;
+        if (shaderMaterial)
+        {
+            shaderMaterial.needsUpdate = true;
+            shaderMaterial.uniforms.videoTexture.value = videoTexture;
+            shaderMaterial.uniforms.eyePopTexture.value = canvasTexture;
+            shaderMaterial.uniforms.videoTexture.value.needsUpdate = true;
+            shaderMaterial.uniforms.eyePopTexture.value.needsUpdate = true;
+        }
 
     })
+
+    const onMouseDown = (e) =>
+    {
+        let x = mousePosition.x;
+        let y = mousePosition.y;
+        console.log('mouse down', x, y);
+        isMouseDown = (true);
+        setFirstPoint({ x: x, y: y });
+    }
+
+    const onMouseUp = (e) =>
+    {
+        let x = mousePosition.x;
+        let y = mousePosition.y;
+        console.log('mouse up', x, y);
+        isMouseDown = (false);
+        setSecondPoint({ x: x, y: y });
+    }
 
     return (
         <>
             {aspect && shaderMaterial &&
-                <mesh position={[ 0, 0, 0.01 ]} material={shaderMaterial} onClick={() => { videoRef.current.paused ? videoRef.current.play() : videoRef.current.pause() }}>
+                <mesh position={[ 0, 0, 0.01 ]} material={shaderMaterial}
+                    onPointerDown={onMouseDown}
+                    onPointerUp={onMouseUp}
+                >
                     <planeGeometry args={[ aspect, 1, 1 ]} />
                 </mesh >
+            }
+
+            {flowDataRef.current &&
+                <>
+                    <Html position={[ (-aspect / 2) + .1, .35, 0 ]} fullscreen={false} transform={true} distanceFactor={.5} >
+
+                        <div className='flex flex-row justify-between w-full'>
+
+                            <div className=" gap-4 h-full  bg-black opacity-75 min-w-32 min-h-32 justify-center text-center rounded-full outline outline-white ">
+
+                                <div className='text-4xl translate-y-full' >
+                                    {flowDataRef.current.flow1.count}
+                                </div>
+
+
+                                <div className="w-1/6 ml-14 mt-14" style={{ transform: `rotate(${flowDataRef.current.flow1.angle}deg)` }}>
+                                    <div className="w-full h-px bg-white"></div>
+                                    <div className="relative">
+                                        <div className="absolute -left-3 -translate-y-1 rotate-90 w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-white rounded-sm"></div> {/* Tip */}
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </Html >
+
+                    <Html position={[ (aspect / 2) - .1, .35, 0 ]} fullscreen={false} transform={true} distanceFactor={.5} >
+
+                        <div className='flex flex-row justify-between w-full'>
+
+                            <div className="gap-4 h-full bg-black opacity-75 min-w-32 min-h-32 justify-center text-center rounded-full outline outline-white ">
+
+                                <div className='text-4xl translate-y-full' >
+                                    {flowDataRef.current.flow2.count}
+                                </div>
+
+                                <div className="w-1/6 ml-14 mt-14" style={{ transform: `rotate(${flowDataRef.current.flow2.angle}deg)` }}>
+                                    <div className="w-full h-px bg-white"></div>
+                                    <div className="relative">
+                                        <div className="absolute -left-3 -translate-y-1 rotate-90 w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-white rounded-sm"></div> {/* Tip */}
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </Html >
+                </>
             }
         </>
     );
