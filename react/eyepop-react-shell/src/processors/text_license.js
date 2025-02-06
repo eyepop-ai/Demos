@@ -2,7 +2,7 @@ import Processor from './processor';
 import EyePop from '@eyepop.ai/eyepop';
 import Render2d from '@eyepop.ai/eyepop-render-2d'
 
-class TextAdsProcessor extends Processor {
+class TextLicenseProcessor extends Processor {
 
   constructor() {
       super();
@@ -55,24 +55,26 @@ class TextAdsProcessor extends Processor {
         }
         this.renderer.draw(result)
 
-        const coverage = this.calculateCoveragePercentage(result);
-        console.log('Coverage:', coverage);
-        
-        canvasContext.font = '40px Arial';
-        canvasContext.fillStyle = 'lightblue';
-        const msg = coverage > 20 ? 
-          `Coverage: ${coverage.toFixed(0)}% (Too high)` : 
-          `Coverage: ${coverage.toFixed(0)}% (OK)`;
-        
-        // Draw white background box for the coverage text
-        const textWidth = canvasContext.measureText(msg).width;
-        const textHeight = 40; // Height of the text
-        canvasContext.fillStyle = 'white';
-        canvasContext.fillRect(5, 5, textWidth + 10, textHeight + 10);
+        //find Number Label
+        const labels = this.LookForWord(result, 'number');
+        console.log('Labels:', labels);
+        if(!labels.length) return 
 
-        // Draw the coverage text on top of the white box
-        canvasContext.fillStyle = 'black';
-        canvasContext.fillText(msg, 10, 10);
+        const labelNumber = labels[0]
+
+        // Find the object to the right of the label in the same general y position
+        const rightObject = result.objects.find(obj => 
+          obj.y < labelNumber.y + labelNumber.height &&
+          obj.y + obj.height > labelNumber.y &&
+          obj.x > labelNumber.x + labelNumber.width
+        );
+
+        if (rightObject) {
+          console.log('Object to the right:', rightObject);
+        } else {
+          console.log('No object found to the right of the label.');
+        }
+
     }        
   }
 
@@ -95,4 +97,4 @@ class TextAdsProcessor extends Processor {
   }
 }
 
-export default TextAdsProcessor;
+export default TextLicenseProcessor;

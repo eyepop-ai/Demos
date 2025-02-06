@@ -12,7 +12,10 @@ export const processors = [
     name: "text_live",
     module: () => import("../processors/text_live"),
   },
-
+  {
+    name: "text_license",
+    module: () => import("../processors/text_license"),
+  },
 ];
 
 export default function CameraPage() {
@@ -28,7 +31,7 @@ export default function CameraPage() {
   const [showLoading, setShowLoading] = useState(false)  
 
   // Available processors
-  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[1])
+  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[2])
   const currentModuleRef = useRef<any | null>(null)  
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
 
@@ -90,12 +93,20 @@ export default function CameraPage() {
     if (!ctx) return
 
     const updateFrame = async () => {
-      //console.log("updateFrame", videoRef.current, canvasRef.current, drawPreviewRef.current)
       if (!videoRef.current || !canvasRef.current) return requestAnimationFrame(updateFrame)
       if (!drawPreviewRef.current) return requestAnimationFrame(updateFrame)
 
       DrawImage(videoRef.current, videoRef.current.videoWidth, videoRef.current.videoHeight, true)
-      await currentModuleRef.current?.processFrame()
+      const isFound = await currentModuleRef.current?.processFrame()
+
+      if(isFound) {
+        const ctx = ctxRef.current;
+        if (ctx) {
+          ctx.font = "20px Arial";
+          ctx.fillStyle = "Lightblue";
+          ctx.fillText("Found Boba Fett", 10, 30);
+        }
+      }
 
       requestAnimationFrame(updateFrame)
     }
@@ -118,34 +129,20 @@ export default function CameraPage() {
     console.log("Processing photo with:", currentProcessor)
     await freezeCanvas(image)
 
-    if (image instanceof File) {
-      image = await new Promise<Blob>((resolve, reject) => {
-        canvasRef.current?.toBlob(blob => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error("Failed to create Blob from canvas."));
-          }
-        }, "image/jpeg");
-      });
-    }
-
-    // if (currentProcessor) {
-    //   try {
-    //     // Await the dynamic import to resolve the module
-    //     const module = await processors[1].module();
-    //     if (module && typeof module.default === "function") {
-    //       const processor: Processor = new module.default();
-    //       await processor.processPhoto(image, ctx);
-    //     } else {
-    //       console.error(`Processor ${currentProcessor.name} does not have a processPhoto function.`);
-    //     }
-    //   } catch (error) {
-    //     console.error(`Error loading processor ${currentProcessor.name}:`, error)
-    //   }
-    // } else {
-    //   console.error(`Processor ${currentProcessor.name} not found.`)
+    // if (image instanceof File) {
+    //   image = await new Promise<Blob>((resolve, reject) => {
+    //     canvasRef.current?.toBlob(blob => {
+    //       if (blob) {
+    //         resolve(blob);
+    //       } else {
+    //         reject(new Error("Failed to create Blob from canvas."));
+    //       }
+    //     }, "image/jpeg");
+    //   });
     // }
+
+    console.log("Processing photo with:", currentProcessor, image)
+    await currentModuleRef.current?.processPhoto(image, ctx)
 
     setShowLoading(false)
   }
@@ -176,10 +173,6 @@ export default function CameraPage() {
       offsetY = 0
     }
 
-
-    //change canvas resolution to match img
-
-
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
 
     ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight)
@@ -206,7 +199,7 @@ export default function CameraPage() {
       img.onload = () => {
         if (!canvasRef.current) return reject(new Error("Canvas not available"));
 
-        DrawImage(img, img.width, img.height, true);
+        DrawImage(img, img.width, img.height, false);
         resolve();
       };
 

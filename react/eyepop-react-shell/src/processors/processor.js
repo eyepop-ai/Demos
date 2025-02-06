@@ -4,6 +4,7 @@ class Processor {
     renderer = null
     stream = null
     results = null
+    lastPrediction = null
 
     constructor() {
         // Initialize settings or any other properties here
@@ -45,6 +46,18 @@ class Processor {
         // Implement the logic to process a frame
         console.log('Processing frame:', frame);
         // Add your frame processing code here
+    }
+
+    LookForWord(predictionJson, word) {
+        if (!predictionJson || !predictionJson.objects) {
+            throw new Error("Invalid prediction JSON");
+        }
+    
+        return predictionJson?.objects.filter(obj =>
+            obj.texts && obj.texts.some(textObj => 
+            textObj.text.toLowerCase() === word.toLowerCase()
+            )
+        );
     }
 }
 
