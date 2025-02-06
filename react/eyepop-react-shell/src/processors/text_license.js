@@ -69,11 +69,21 @@ class TextLicenseProcessor extends Processor {
           obj.x > labelNumber.x + labelNumber.width
         );
 
-        if (rightObject) {
-          console.log('Object to the right:', rightObject);
-        } else {
-          console.log('No object found to the right of the label.');
-        }
+        if (!rightObject) return
+
+        canvasContext.font = '40px Arial';
+        canvasContext.fillStyle = 'lightblue';
+        const msg = "Found #: "+ rightObject.texts[0].text;
+        
+        // Draw white background box for the coverage text
+        const textWidth = canvasContext.measureText(msg).width;
+        const textHeight = 40; // Height of the text
+        canvasContext.fillStyle = 'white';
+        canvasContext.fillRect(5, 5, textWidth + 10, textHeight + 10);
+
+        // Draw the coverage text on top of the white box
+        canvasContext.fillStyle = 'black';
+        canvasContext.fillText(msg, 10, 10); 
 
     }        
   }

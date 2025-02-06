@@ -58,7 +58,7 @@ class TextLiveProcessor extends Processor {
       
   }
 
-  async processFrame() {
+  async processFrame(canvasContext) {
     if(!this.stream) return
     if(!this.results) return
     if(!this.endpoint) return
@@ -66,8 +66,26 @@ class TextLiveProcessor extends Processor {
     if(!this.lastPrediction) return
 
     this.renderer.draw(this.lastPrediction)
-    
-    return this.LookForWord(this.lastPrediction, "Boba")
+
+    if(this.LookForWord(this.lastPrediction, "Boba").length)
+    {
+        const ctx = canvasContext;
+        if (ctx) {
+          ctx.font = "20px Arial";
+          ctx.fillStyle = "Lightblue";
+          ctx.fillText("Found Boba Fett", 10, 30);
+        }
+    }
+
+    if(this.LookForWord(this.lastPrediction, "Thanks").length)
+    {
+        const ctx = canvasContext;
+        if (ctx) {
+          ctx.font = "20px Arial";
+          ctx.fillStyle = "Lightblue";
+          ctx.fillText("You are welcome! :)", 10, 30);
+        }
+    }
   }
 
  

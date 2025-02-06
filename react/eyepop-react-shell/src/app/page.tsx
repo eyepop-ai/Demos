@@ -31,7 +31,7 @@ export default function CameraPage() {
   const [showLoading, setShowLoading] = useState(false)  
 
   // Available processors
-  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[2])
+  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[1])
   const currentModuleRef = useRef<any | null>(null)  
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
 
@@ -78,7 +78,6 @@ export default function CameraPage() {
 
           drawToCanvas()
           await currentModuleRef.current.setCanvasContext(ctxRef.current, newStream)
-          //await currentModuleRef.current.setStream(newStream)
         }
       }
     } catch (error) {
@@ -96,17 +95,8 @@ export default function CameraPage() {
       if (!videoRef.current || !canvasRef.current) return requestAnimationFrame(updateFrame)
       if (!drawPreviewRef.current) return requestAnimationFrame(updateFrame)
 
-      DrawImage(videoRef.current, videoRef.current.videoWidth, videoRef.current.videoHeight, true)
-      const isFound = await currentModuleRef.current?.processFrame()
-
-      if(isFound) {
-        const ctx = ctxRef.current;
-        if (ctx) {
-          ctx.font = "20px Arial";
-          ctx.fillStyle = "Lightblue";
-          ctx.fillText("Found Boba Fett", 10, 30);
-        }
-      }
+      DrawImage(videoRef.current, videoRef.current.videoWidth, videoRef.current.videoHeight, false)
+      await currentModuleRef.current?.processFrame(ctxRef.current)
 
       requestAnimationFrame(updateFrame)
     }
@@ -129,17 +119,17 @@ export default function CameraPage() {
     console.log("Processing photo with:", currentProcessor)
     await freezeCanvas(image)
 
-    // if (image instanceof File) {
-    //   image = await new Promise<Blob>((resolve, reject) => {
-    //     canvasRef.current?.toBlob(blob => {
-    //       if (blob) {
-    //         resolve(blob);
-    //       } else {
-    //         reject(new Error("Failed to create Blob from canvas."));
-    //       }
-    //     }, "image/jpeg");
-    //   });
-    // }
+    if (image instanceof File) {
+      image = await new Promise<Blob>((resolve, reject) => {
+        canvasRef.current?.toBlob(blob => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error("Failed to create Blob from canvas."));
+          }
+        }, "image/jpeg");
+      });
+    }
 
     console.log("Processing photo with:", currentProcessor, image)
     await currentModuleRef.current?.processPhoto(image, ctx)

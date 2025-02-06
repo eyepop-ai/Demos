@@ -42,16 +42,14 @@ class Processor {
         // Add your code to apply new settings here
     }
 
-    async processFrame(frame) {
+    processFrame(canvasContext) {
         // Implement the logic to process a frame
         console.log('Processing frame:', frame);
         // Add your frame processing code here
     }
 
     LookForWord(predictionJson, word) {
-        if (!predictionJson || !predictionJson.objects) {
-            throw new Error("Invalid prediction JSON");
-        }
+        if (!predictionJson || !predictionJson.objects) return [];
     
         return predictionJson?.objects.filter(obj =>
             obj.texts && obj.texts.some(textObj => 
