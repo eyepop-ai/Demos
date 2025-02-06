@@ -44,7 +44,6 @@ class Processor {
 
     processFrame(canvasContext) {
         // Implement the logic to process a frame
-        console.log('Processing frame:', frame);
         // Add your frame processing code here
     }
 
