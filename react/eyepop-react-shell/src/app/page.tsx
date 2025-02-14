@@ -187,7 +187,7 @@ export default function CameraPage() {
 
 
     console.log("Processing video with:", currentProcessor, video)
-    await currentModuleRef.current?.processVideo(video, ctx)
+    const processingResult = await currentModuleRef.current?.processVideo(video, ctx)
 
     videoRef.current.play()
     drawToCanvas()

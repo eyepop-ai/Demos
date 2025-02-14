@@ -67,9 +67,12 @@ class PersonPoseProcessor extends Processor {
 
         const cachedData = localStorage.getItem(video.name);
         if (cachedData) {
-            console.log("Using cached video data.");
             this.buffer = JSON.parse(cachedData);
-            return;
+            if (this.buffer.length > 0) 
+            {
+                console.log("Using cached video data.");
+                return;
+            }
         }
 
         this.buffer = []
@@ -84,14 +87,12 @@ class PersonPoseProcessor extends Processor {
             canvasContext.width = result.source_width
             canvasContext.height = result.source_height
 
-            //console.log("VIDEO RESULT", result)
+            console.log("VIDEO RESULT", result)
 
 
             this.buffer.push(result)
 
-            // @ts-ignore
             if ('event' in result && result.event.type === 'error') {
-                // @ts-ignore
                 console.log("VIDEO RESULT", result.event.message)
             }
         }
@@ -110,14 +111,21 @@ class PersonPoseProcessor extends Processor {
         if (!this.buffer?.length) return
 
         const currentTime = video.currentTime;
-        const currentFrame = this.getClosestPrediction(currentTime)
-        console.log("currentFrame", currentFrame, currentTime, this.buffer[0].timestamp)
+        let currentFrame = this.getClosestPrediction(currentTime)
+        
         if (currentFrame) {
             if (canvasContext.canvas.width !== currentFrame.source_width ||
                 canvasContext.canvas.height !== currentFrame.source_height) {
                 canvasContext.canvas.width = currentFrame.source_width
                 canvasContext.canvas.height = currentFrame.source_height
             }
+
+            if (!currentFrame.objects || !currentFrame.objects.length > 0) 
+                return
+
+            // Filter to most prominent object by area
+            currentFrame = this.getBiggestObjectInScene(currentFrame, "person")
+
             this.renderer.draw(currentFrame)
             this.lastPrediction = currentFrame
         }
@@ -133,6 +141,28 @@ class PersonPoseProcessor extends Processor {
                 ? curr
                 : prev
         })
+    }
+
+    getBiggestObjectInScene(prediction, filterLabel= null) {
+        if (!prediction.objects || prediction.objects.length === 0) return null
+
+        let filteredObjects = filterLabel
+            ? prediction.objects.filter(obj => obj.classLabel === filterLabel)
+            : prediction.objects
+
+        if (filteredObjects.length === 0) return {
+            ...prediction,
+            objects:[]
+        }
+
+        return {
+            ...prediction,
+            objects: [filteredObjects.reduce((largest, obj) => {
+                const area = obj.width * obj.height
+                const largestArea = largest.width * largest.height
+                return area > largestArea ? obj : largest
+            }, filteredObjects[0])]
+        }
     }
 }
 
