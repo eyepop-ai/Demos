@@ -42,7 +42,7 @@ class Processor {
         // Add your code to apply new settings here
     }
 
-    processFrame(canvasContext) {
+    processFrame(canvasContext, videoRef) {
         // Implement the logic to process a frame
         // Add your frame processing code here
     }

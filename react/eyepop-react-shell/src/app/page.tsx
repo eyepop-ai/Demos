@@ -16,6 +16,14 @@ export const processors = [
     name: "text_license",
     module: () => import("../processors/text_license"),
   },
+  {
+    name: "trail_live",
+    module: () => import("../processors/trail_live"),
+  },
+  {
+    name: "person_pose",
+    module: () => import("../processors/person_pose"),
+  },
 ];
 
 export default function CameraPage() {
@@ -31,7 +39,7 @@ export default function CameraPage() {
   const [showLoading, setShowLoading] = useState(false)  
 
   // Available processors
-  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[2])
+  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[4])
   const currentModuleRef = useRef<any | null>(null)  
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
 
@@ -71,7 +79,11 @@ export default function CameraPage() {
       if (videoRef.current) {
         videoRef.current.srcObject = newStream
         videoRef.current.onloadedmetadata = async () => {
+          if (!videoRef.current) return
+
           videoRef.current?.play()
+          
+          videoRef.current.muted = true
 
           if (!canvasRef.current) return
           ctxRef.current = canvasRef.current?.getContext("2d")
@@ -92,11 +104,12 @@ export default function CameraPage() {
     if (!ctx) return
 
     const updateFrame = async () => {
+      console.log("updateFrame", drawPreviewRef.current) //videoRef.current, canvasRef.current, ctxRef.current)
       if (!videoRef.current || !canvasRef.current) return requestAnimationFrame(updateFrame)
       if (!drawPreviewRef.current) return requestAnimationFrame(updateFrame)
 
       DrawImage(videoRef.current, videoRef.current.videoWidth, videoRef.current.videoHeight, false)
-      await currentModuleRef.current?.processFrame(ctxRef.current)
+      await currentModuleRef.current?.processFrame(ctxRef.current, videoRef.current)
 
       requestAnimationFrame(updateFrame)
     }
@@ -133,6 +146,51 @@ export default function CameraPage() {
 
     console.log("Processing photo with:", currentProcessor, image)
     await currentModuleRef.current?.processPhoto(image, ctx)
+
+    setShowLoading(false)
+  }
+
+  const processVideo = async (video: File) => {
+    if (!canvasRef.current) return
+    if(!videoRef.current) return
+
+    const ctx = ctxRef.current
+    if (!ctx) return
+
+    setShowLoading(true)
+
+    console.log("Processing video with:", currentProcessor)
+    //set videoRef to file
+    videoRef.current.srcObject = null
+    videoRef.current.src = URL.createObjectURL(video)
+    // Remove the current function in requestAnimationFrame
+    const updateFrame = () => {};
+    requestAnimationFrame(updateFrame);
+    
+    setShowReset(true)
+
+    videoRef.current.crossOrigin = "anonymous"
+    videoRef.current.pause()
+    
+    videoRef.current.onloadedmetadata = async () => {
+      //setting up redraw to canvas
+      if (!canvasRef.current) return
+
+      if(videoRef.current?.videoWidth && videoRef.current?.videoHeight) {
+        canvasRef.current.width = videoRef.current?.videoWidth
+        canvasRef.current.height = videoRef.current?.videoHeight
+      }
+
+      console.log("videoRef.current?.videoWidth", videoRef.current?.videoWidth, videoRef.current?.videoHeight)
+      
+    }
+
+
+    console.log("Processing video with:", currentProcessor, video)
+    await currentModuleRef.current?.processVideo(video, ctx)
+
+    videoRef.current.play()
+    drawToCanvas()
 
     setShowLoading(false)
   }
@@ -200,6 +258,7 @@ export default function CameraPage() {
   };
 
   const resetCanvas = () => {
+    startCamera()
     drawPreviewRef.current = true
     setShowReset(false)
   }
@@ -207,7 +266,13 @@ export default function CameraPage() {
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      processPhoto(file)
+      if (file.type.startsWith("image/")) {
+        processPhoto(file)
+      } else if(file.type.startsWith("video/")) {
+        processVideo(file)
+      } else {
+        console.error("Unsupported file type:", file.type)
+      }
     }
   }
 
@@ -281,7 +346,7 @@ export default function CameraPage() {
               />
               <label className="w-14 h-14 flex items-center justify-center bg-white rounded-full border-4 border-gray-400 cursor-pointer">
                 📷
-                <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                <input type="file" accept="image/*,video/*" className="hidden" onChange={handleFileUpload} />
               </label>
             </>
           ) : (
