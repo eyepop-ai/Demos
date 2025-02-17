@@ -47,7 +47,7 @@ export default function CameraPage() {
   const [showLoading, setShowLoading] = useState(false)  
 
   // Available processors
-  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[5])
+  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[6])
   const currentModuleRef = useRef<any | null>(null)  
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
 

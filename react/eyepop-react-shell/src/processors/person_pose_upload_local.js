@@ -5,26 +5,6 @@ import Render2d from '@eyepop.ai/eyepop-render-2d'
 class PersonPoseUploadLocal extends Processor {
     buffer = [];
 
-    //Pop(
-    //    components = [
-    //        InferenceComponent(
-    //            model = 'eyepop.person:latest',
-    //            categoryName = "person",
-    //            forward = CropForward(
-    //                maxItems = 128,
-    //                targets = [
-    //                    InferenceComponent(
-    //                        model = 'eyepop.person.2d-body-points:latest',
-    //                        categoryName = "2d-body-points",
-    //                        confidenceThreshold = 0.25
-    //                    )
-    //                ]
-    //            )
-    //        )
-    //    ]
-    //)
-
-
     PERSON2D = {
         components: [
             {
@@ -43,7 +23,8 @@ class PersonPoseUploadLocal extends Processor {
                         {
                             type: PopComponentType.INFERENCE,
                             categoryName: "2d-body-points",
-                            model: "eyepop.person.2d-body-points:latest"
+                            model: "eyepop.person.2d-body-points:latest",
+                            confidenceThreshold: 0.25
                         },
                     ],
                 },
@@ -56,20 +37,11 @@ class PersonPoseUploadLocal extends Processor {
     }
 
     async setCanvasContext(canvasContext, stream) {
-        //const pop_uuid = process.env.NEXT_PUBLIC_TEXT_AD_POP_UUID;
-        //const api_key = process.env.NEXT_PUBLIC_TEXT_AD_POP_API_KEY;
-
+       
         if (this.endpoint)
             this.endpoint.disconnect()
 
         this.endpoint = await EyePop.workerEndpoint({
-            // auth: { session: data.session },
-            //popId: pop_uuid,
-            //auth: {
-            //    secretKey: api_key,
-            //},
-            //eyepopUrl: process.env.NEXT_PUBLIC_TEXT_AD_POP_API_URL,
-            //stopJobs: false
             isLocalMode: true
         }).connect()
 
@@ -114,14 +86,14 @@ class PersonPoseUploadLocal extends Processor {
 
         console.log('Processing video:', video);
 
-        const cachedData = localStorage.getItem(video.name);
-        if (cachedData) {
-            this.buffer = JSON.parse(cachedData);
-            //if (this.buffer.length > 0) {
-            //    console.log("Using cached video data.");
-            //    return;
-            //}
-        }
+        //const cachedData = localStorage.getItem(video.name);
+        //if (cachedData) {
+        //    this.buffer = JSON.parse(cachedData);
+        //    if (this.buffer.length > 0) {
+        //        console.log("Using cached video data.");
+        //        return;
+        //    }
+        //}
 
         this.buffer = []
 
