@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@eyepop.ai/eyepop": "^1.9.2",
-    "@eyepop.ai/eyepop-render-2d": "^1.9.2",
+    "@eyepop.ai/eyepop": "^1.10.0",
+    "@eyepop.ai/eyepop-render-2d": "^1.10.0",
     "next": "15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

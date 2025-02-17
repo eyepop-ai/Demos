@@ -52,19 +52,20 @@ class PersonPoseLiveProcessor extends Processor {
 
     async setCanvasContext(canvasContext, stream) {
         //const pop_uuid = process.env.NEXT_PUBLIC_PERSON_POSE_POP_UUID;
-        const api_key = process.env.NEXT_PUBLIC_PERSON_POSE_POP_API_KEY;
+        //const api_key = process.env.NEXT_PUBLIC_PERSON_POSE_POP_API_KEY;
 
         this.endpoint = await EyePop.workerEndpoint({
             // auth: { session: data.session },
             //popId: pop_uuid,
-            auth: {
-                secretKey: api_key,
-            },
+            //auth: {
+            //    secretKey: api_key,
+            //},
             //eyepopUrl: process.env.NEXT_PUBLIC_TEXT_AD_POP_API_URL,
             //stopJobs: false
+            isLocalMode: true
         }).connect()
 
-        this.endpoint.changePop(PERSON2D);
+        this.endpoint.changePop(this.PERSON2D);
 
         this.renderer = Render2d.renderer(canvasContext, [
             Render2d.renderContour(),

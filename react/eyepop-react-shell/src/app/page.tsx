@@ -5,11 +5,11 @@ import { useEffect, useRef, useState } from "react"
 
 export const processors = [
   {
-    name: "text_ads",
+    name: "text_ads", //0
     module: () => import("../processors/text_ads"),
   },
   {
-    name: "text_live",
+    name: "text_live", 
     module: () => import("../processors/text_live"),
   },
   {
@@ -23,11 +23,15 @@ export const processors = [
   {
     name: "person_pose",
     module: () => import("../processors/person_pose"),
-    },
-    {
-        name: "person_pose_live",
-        module: () => import("../processors/person_pose_live"),
-    },
+  },
+  {
+    name: "person_pose_live", //5
+    module: () => import("../processors/person_pose_live"),
+  },
+  {
+    name: "person_pose_upload_local",
+    module: () => import("../processors/person_pose_upload_local"),
+  },
 ];
 
 export default function CameraPage() {
@@ -43,7 +47,7 @@ export default function CameraPage() {
   const [showLoading, setShowLoading] = useState(false)  
 
   // Available processors
-  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[5])
+  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[6])
   const currentModuleRef = useRef<any | null>(null)  
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
 
