@@ -23,7 +23,11 @@ export const processors = [
   {
     name: "person_pose",
     module: () => import("../processors/person_pose"),
-  },
+    },
+    {
+        name: "person_pose_live",
+        module: () => import("../processors/person_pose_live"),
+    },
 ];
 
 export default function CameraPage() {
@@ -39,7 +43,7 @@ export default function CameraPage() {
   const [showLoading, setShowLoading] = useState(false)  
 
   // Available processors
-  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[4])
+  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[5])
   const currentModuleRef = useRef<any | null>(null)  
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
 
