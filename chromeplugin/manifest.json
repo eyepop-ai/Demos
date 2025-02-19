@@ -1,0 +1,31 @@
+{
+    "manifest_version": 3,
+    "name": "EyePop.ai Vision AI",
+    "version": "1.0",
+    "description": "Right-click an image to extract data from it.",
+    "permissions": [
+        "contextMenus",
+        "storage",
+        "activeTab",
+        "scripting"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "host_permissions": [ "<all_urls>" ],
+    "content_scripts": [
+        {
+            "matches": [ "<all_urls>" ],
+            "js": [ "config.js", "eyepop.min.js", "content.js" ]
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [ "config.js", "eyepop.min.js" ],
+            "matches": [ "<all_urls>" ]
+        }
+    ],
+    "action": {
+        "default_popup": "popup.html"
+    }
+}
