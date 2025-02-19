@@ -1,4 +1,16 @@
 import "react-native-polyfill-globals/auto"; // Ensures polyfills are available
+import React, {useEffect} from 'react';
+import {Alert, StyleSheet, Text, View} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import {useIsFocused} from '@react-navigation/native'; // Ensures API call only happens when the tab is active
+import EyePop, {ForwardOperatorType, PopComponentType, StreamSource} from '@eyepop.ai/eyepop';
+import {ImagePickerAsset} from "expo-image-picker/src/ImagePicker.types";
+
+import {pino} from "pino";
+
+import * as FileSystem from 'expo-file-system';
+import {EncodingType} from 'expo-file-system';
+
 import { Buffer } from "buffer";
 
 // Explicitly set Buffer globally
@@ -6,14 +18,7 @@ if (typeof global.Buffer === "undefined") {
   global.Buffer = Buffer;
 }
 
-import React, { useEffect } from 'react';
-import { StyleSheet, Image, View, Text, Alert } from 'react-native';
-import * as FileSystem from 'expo-file-system'; // Used to read image data
-import * as ImagePicker from 'expo-image-picker';
-import { useIsFocused } from '@react-navigation/native'; // Ensures API call only happens when the tab is active
-import EyePop from '@eyepop.ai/eyepop';
-//import Render2d from '@eyepop.ai/eyepop-render-2d'
-
+const logger = pino({ level: "debug", name: "eyepop-example" });
 
 export default function TabOneScreen() {
   const isFocused = useIsFocused(); // Ensures API runs when tab is active
@@ -30,78 +35,57 @@ export default function TabOneScreen() {
     setIsProcessing(true);
     try {
       // Pick an image (optional: for testing)
-      const image = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images', // This should work,
-        allowsEditing: true,
-        base64: true, // Get base64 data
-        quality: 1,
+      const picked = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images', 'videos', 'livePhotos'],
+        quality: 1
       });
 
-      if (image.canceled) {
+      if (picked.canceled) {
         return;
       }
-
-      const popUUID = "<POP UUID>"
-      const apiKey = "<api key>"
-      
-      console.log('Image selected.');  
-      console.log("Endpoint:", EyePop.workerEndpoint);
-
+      const popUUID = " your pop id ";
+      const apiKey = " your secret api key ";
       // Initialize the EyePop worker endpoint
       let endpoint = EyePop.workerEndpoint({
         auth: { secretKey: apiKey },
-        popId: popUUID,  // Replace with actual Pop ID
+        popId: popUUID,
+          logger: logger
       });
 
-      console.log('Endpoint initialized:', endpoint);
+      console.log('Connecting Endpoint ...');
       
       try {
-        console.log("Calling .connect()...");
         endpoint = await endpoint.connect();
-        console.log("Successfully connected:", endpoint);
       } catch (error) {
         console.error("Error during connection:", error);
-        //console.error("🛠 Full Error Stack:", error.stack);
         return
       }
-      
-      console.log('Endpoint connected:', endpoint);
 
-      console.log(endpoint)
+      console.log(`About to send asset ${picked.assets[0].fileName} `+
+          `with mimeType=${picked.assets[0].mimeType} `+
+          `and length=${picked.assets[0].fileSize}`);
 
-      const uri = image.assets[0].uri; // Extracts the first selected image
-      const type = "image/jpeg"; // Adjust if needed
-
-      console.log('Image URI:', uri); // Log the image URI  
-  
-      const blob = await uriToBlob(uri);
-
-      const file = new File([blob], "upload.jpg", { type: "image/jpeg" });
-    
-      console.log('File created:', file); 
+      // Using the PathSource with a local file path to start the upload to the AI worker.
+      // React Native does not support streaming HTTP request bodies, hence the library
+      // will attempt to load the whole file into memory which can cause OOM errors.
+      // TODO: EyePop library to provide platform specific fix.
       let results = await endpoint.process({
-        file: file,
-        mimeType: 'image/*',
+        path: picked.assets[0].uri.substring('file://'.length),
+        mimeType: picked.assets[0].mimeType
       })
 
-      let jsonResponse = null;
-
+      console.log('Retrieving inference results ...');
       for await (let result of results) {
-        console.log(result)
-        jsonResponse = result;
-      
+        console.log(JSON.stringify(result, undefined, 2));
       }
 
-      Alert.alert('Success', 'Image sent successfully!\r\n'+JSON.stringify(jsonResponse) );
-
+      Alert.alert('Success', `${picked.assets[0].mimeType} sent successfully!`);
     } catch (error) {
-      console.log('Error:', error);
-      console.error('Error sending image:', error);
+      console.error('Error:', error);
       Alert.alert('Error', 'Failed to send image.');
     } finally {
       setIsProcessing(false);
     }
-
   };
 
   return (isProcessing) ? (
@@ -122,8 +106,7 @@ export default function TabOneScreen() {
 // Function to convert image URI to Blob
 const uriToBlob = async (uri: string): Promise<Blob> => {
   const response = await fetch(uri);
-  const blob = await response.blob();
-  return blob;
+  return await response.blob();
 };
 
 const styles = StyleSheet.create({
