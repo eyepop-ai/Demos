@@ -1,46 +1,10 @@
 import "react-native-polyfill-globals/auto"; // Ensures polyfills are available
 import { Buffer } from "buffer";
-//import { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } from "react-native-webrtc";
 
 // Explicitly set Buffer globally
 if (typeof global.Buffer === "undefined") {
   global.Buffer = Buffer;
 }
-
-// Ensure the SDK detects React Native as a browser-like environment
-// if (typeof global.document === "undefined") {
-//   global.document = {}; // Fake document object so it selects the fetch-based client
-//   console.log("🛠 Fake document object created.", global.document);
-// }
-
-// // Force a React Native-friendly HTTP client
-// global.createHttpClient = async () => ({
-//   fetch: async (input, init) => fetch(input, init),
-//   close: async () => {}, // No-op for React Native
-// });
-
-// console.log("✅ Overridden createHttpClient to use native fetch()", global.createHttpClient);
-
-// import { polyfillWebSocket } from 'react-native-polyfill-globals/src/websocket';
-
-// // Explicitly polyfill WebSocket
-// polyfillWebSocket();
-
-// Ensure WebRTC objects are available globally
-// if (typeof global.RTCPeerConnection === "undefined") {
-//   global.RTCPeerConnection = RTCPeerConnection;
-// }
-
-// if (typeof global.RTCSessionDescription === "undefined") {
-//   global.RTCSessionDescription = RTCSessionDescription;
-// }
-
-// if (typeof global.RTCIceCandidate === "undefined") {
-//   global.RTCIceCandidate = RTCIceCandidate;
-// }
-
-// console.log("✅ WebRTC setup complete!");
-
 
 import React, { useEffect } from 'react';
 import { StyleSheet, Image, View, Text, Alert } from 'react-native';
@@ -48,14 +12,12 @@ import * as FileSystem from 'expo-file-system'; // Used to read image data
 import * as ImagePicker from 'expo-image-picker';
 import { useIsFocused } from '@react-navigation/native'; // Ensures API call only happens when the tab is active
 import EyePop from '@eyepop.ai/eyepop';
-//console.log("EyePop SDK:", EyePop);
-//console.log("EyePop SDK:", EyePop.WorkerEndpoint);
-
 //import Render2d from '@eyepop.ai/eyepop-render-2d'
 
 
 export default function TabOneScreen() {
   const isFocused = useIsFocused(); // Ensures API runs when tab is active
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
   useEffect(() => {
     if (isFocused) {
@@ -65,6 +27,7 @@ export default function TabOneScreen() {
 
   // Function to send an image to EyePop.ai
   const sendImageToEyePop = async () => {
+    setIsProcessing(true);
     try {
       // Pick an image (optional: for testing)
       const image = await ImagePicker.launchImageLibraryAsync({
@@ -78,14 +41,10 @@ export default function TabOneScreen() {
         return;
       }
 
-      // Convert the image to base64 (if not already done)
-      //const base64Image = `data:image/jpeg;base64,${image.base64}`;
-
       const popUUID = "<POP UUID>"
       const apiKey = "<api key>"
-
+      
       console.log('Image selected.');  
-      //console.log('Image:', image);
       console.log("Endpoint:", EyePop.workerEndpoint);
 
       // Initialize the EyePop worker endpoint
@@ -102,7 +61,7 @@ export default function TabOneScreen() {
         console.log("Successfully connected:", endpoint);
       } catch (error) {
         console.error("Error during connection:", error);
-        console.error("🛠 Full Error Stack:", error.stack);
+        //console.error("🛠 Full Error Stack:", error.stack);
         return
       }
       
@@ -125,24 +84,38 @@ export default function TabOneScreen() {
         mimeType: 'image/*',
       })
 
+      let jsonResponse = null;
+
       for await (let result of results) {
         console.log(result)
+        jsonResponse = result;
+      
       }
 
-      Alert.alert('Success', 'Image sent successfully!');
+      Alert.alert('Success', 'Image sent successfully!\r\n'+JSON.stringify(jsonResponse) );
 
     } catch (error) {
       console.log('Error:', error);
       console.error('Error sending image:', error);
       Alert.alert('Error', 'Failed to send image.');
+    } finally {
+      setIsProcessing(false);
     }
+
   };
 
-  return (
+  return (isProcessing) ? (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
+      <Text style={styles.title}>Test Upload</Text>
       <View style={styles.separator} />
       <Text>Sending Image to EyePop.ai...</Text>
+    </View>
+  ):(
+    <View style={styles.container}>
+      <Text style={styles.title}>Test Upload</Text>
+      <View style={styles.separator} />
+      <Text>Test Again</Text>
+      <Text style={styles.link} onPress={sendImageToEyePop}>Send Image</Text>
     </View>
   );
 }
@@ -168,5 +141,9 @@ const styles = StyleSheet.create({
     height: 1,
     width: '80%',
     backgroundColor: '#ccc',
+  },
+  link: {
+    color: 'blue',
+    textDecorationLine: 'underline',
   },
 });
