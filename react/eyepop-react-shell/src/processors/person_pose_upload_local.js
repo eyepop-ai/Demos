@@ -140,27 +140,7 @@ class PersonPoseUploadLocal extends Processor {
         })
     }
 
-    getBiggestObjectInScene(prediction, filterLabel = null) {
-        if (!prediction.objects || prediction.objects.length === 0) return null
-
-        let filteredObjects = filterLabel
-            ? prediction.objects.filter(obj => obj.classLabel === filterLabel)
-            : prediction.objects
-
-        if (filteredObjects.length === 0) return {
-            ...prediction,
-            objects: []
-        }
-
-        return {
-            ...prediction,
-            objects: [filteredObjects.reduce((largest, obj) => {
-                const area = obj.width * obj.height
-                const largestArea = largest.width * largest.height
-                return area > largestArea ? obj : largest
-            }, filteredObjects[0])]
-        }
-    }
+   
 
 }
 

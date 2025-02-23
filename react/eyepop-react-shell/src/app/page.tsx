@@ -36,6 +36,10 @@ export const processors = [
     name: "(Upload Img) Sticker Effect - Detect Person and sticker them",
     module: () => import("../processors/sticker_effect_upload"),
   },
+  {
+    name: "(Live) Crop to Person - Detect Person and crop display to them",
+    module: () => import("../processors/crop_person"),
+  },
 
 ];
 
@@ -53,8 +57,8 @@ export default function CameraPage() {
   const [endpointDisconnected, setEndpointDisconnected] = useState(true)
 
   // Available processors
-  const [selectedProcessorIndex, setSelectedProcessorIndex] = useState<number>(7)
-  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[selectedProcessorIndex])
+  const [selectedProcessorIndex, setSelectedProcessorIndex] = useState<number>(processors.length - 1)
+  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[processors.length - 1])
   const currentModuleRef = useRef<any | null>(null)
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
 
@@ -248,7 +252,7 @@ export default function CameraPage() {
     setShowLoading(false)
   }
 
-  const DrawImage = (img: any, img_width: number, img_height: number, shouldFill = true) => {
+  const DrawImage = (img: any, img_width: number, img_height: number, shouldFill = false) => {
     //console.log("DrawImage", img, img_width, img_height, shouldFill, canvasRef.current, ctxRef.current)
     if (!videoRef.current || !canvasRef.current) return
 

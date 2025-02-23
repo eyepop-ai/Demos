@@ -6,46 +6,6 @@ import { ComposablePops } from './composable_pops';
 class PersonPoseLiveProcessor extends Processor {
     buffer = [];
 
-    // PERSON2D = {
-    //     components: [
-    //         {
-    //             type: PopComponentType.INFERENCE,
-    //             model: "eyepop.person:latest",
-    //             categoryName: "person",
-    //             confidenceThreshold: 0.8,
-    //             forward: {
-    //                 operator: {
-    //                     type: ForwardOperatorType.CROP,
-    //                     crop: {
-    //                         maxItems: 128
-    //                     },
-    //                 },
-    //                 targets: [
-    //                     {
-    //                         type: PopComponentType.TRACING,
-    //                         reidModel: "eyepop.person.reid:latest",
-    //                         forward: {
-    //                             operator: {
-    //                                 type: ForwardOperatorType.CROP,
-    //                                 crop: {
-    //                                     boxPadding: 0.1,
-    //                                 },
-    //                             },
-    //                             targets: [
-    //                                 {
-    //                                     type: PopComponentType.INFERENCE,
-    //                                     categoryName: "2d-body-points",
-    //                                     model: "eyepop.person.2d-body-points:latest"
-    //                                 },
-    //                             ],
-    //                         },
-    //                     },
-    //                 ],
-    //             },
-    //         },
-    //     ],
-    // };
-
     constructor() {
         super();
         // Additional initialization if needed
@@ -191,27 +151,7 @@ class PersonPoseLiveProcessor extends Processor {
         })
     }
 
-    getBiggestObjectInScene(prediction, filterLabel = null) {
-        if (!prediction.objects || prediction.objects.length === 0) return null
-
-        let filteredObjects = filterLabel
-            ? prediction.objects.filter(obj => obj.classLabel === filterLabel)
-            : prediction.objects
-
-        if (filteredObjects.length === 0) return {
-            ...prediction,
-            objects: []
-        }
-
-        return {
-            ...prediction,
-            objects: [filteredObjects.reduce((largest, obj) => {
-                const area = obj.width * obj.height
-                const largestArea = largest.width * largest.height
-                return area > largestArea ? obj : largest
-            }, filteredObjects[0])]
-        }
-    }
+   
 }
 
 export default PersonPoseLiveProcessor;
