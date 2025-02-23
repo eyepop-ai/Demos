@@ -35,7 +35,7 @@ class TextAdsProcessor extends Processor {
     ])
   }
 
-  async processPhoto(photo, canvasContext) {
+  async processPhoto(photo, canvasContext, name, roi) {
 
     console.log('Processing photo:', photo);
 

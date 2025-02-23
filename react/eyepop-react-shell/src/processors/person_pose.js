@@ -37,7 +37,7 @@ class PersonPoseProcessor extends Processor {
         ])
     }
 
-    async processPhoto(photo, canvasContext) {
+    async processPhoto(photo, canvasContext, name, roi) {
 
         console.log('Processing photo:', photo);
 
@@ -61,7 +61,7 @@ class PersonPoseProcessor extends Processor {
         }
     }
 
-    async processVideo(video, canvasContext) {
+    async processVideo(video, canvasContext, name, roi) {
 
         console.log('Processing video:', video);
 
@@ -101,7 +101,7 @@ class PersonPoseProcessor extends Processor {
         console.log("Cached video data.");
     }
 
-    async processFrame(canvasContext, video) {
+    async processFrame(canvasContext, video, roi) {
 
         //console.log('Processing video frame:', video, this.endpoint, this.renderer);
         if (!this.endpoint) return
@@ -164,6 +164,8 @@ class PersonPoseProcessor extends Processor {
             }, filteredObjects[0])]
         }
     }
+
+    
 }
 
 export default PersonPoseProcessor;

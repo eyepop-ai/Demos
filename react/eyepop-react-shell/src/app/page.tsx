@@ -5,51 +5,61 @@ import { useEffect, useRef, useState } from "react"
 
 export const processors = [
   {
-    name: "text_ads", //0
+    name: "(Upload img) Text Ad - check text coverage", //0
     module: () => import("../processors/text_ads"),
   },
   {
-    name: "text_live", 
+    name: "(Live) Text Live - Detect text",
     module: () => import("../processors/text_live"),
   },
   {
-    name: "text_license",
+    name: "(Upload img) License - check id #",
     module: () => import("../processors/text_license"),
   },
   {
-    name: "trail_live",
+    name: "(Live) Trail - Follow an object",
     module: () => import("../processors/trail_live"),
   },
   {
-    name: "person_pose",
+    name: "(Upload Img/Vid) Detect Person Pose",
     module: () => import("../processors/person_pose"),
   },
   {
-    name: "person_pose_live", //5
+    name: "(Edge Runtime - Live) Detect Person Pose", //5
     module: () => import("../processors/person_pose_live"),
   },
   {
-    name: "person_pose_upload_local",
+    name: "(Edge Runtime - Upload Img) Detect Person Pose",
     module: () => import("../processors/person_pose_upload_local"),
   },
+  {
+    name: "(Upload Img) Sticker Effect - Detect Person and sticker them",
+    module: () => import("../processors/sticker_effect_upload"),
+  },
+
 ];
 
 export default function CameraPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)  
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null)
-  
+
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment")
   const [showSettings, setShowSettings] = useState(false)
   const drawPreviewRef = useRef<boolean>(true)
   const [showReset, setShowReset] = useState(false)
-  const [showLoading, setShowLoading] = useState(false)  
+  const [showLoading, setShowLoading] = useState(false)
+  const [endpointDisconnected, setEndpointDisconnected] = useState(true)
 
   // Available processors
-  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[6])
-  const currentModuleRef = useRef<any | null>(null)  
+  const [selectedProcessorIndex, setSelectedProcessorIndex] = useState<number>(7)
+  const [currentProcessor, setCurrentProcessor] = useState<any | null>(processors[selectedProcessorIndex])
+  const currentModuleRef = useRef<any | null>(null)
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
+
+  // const [canvasROI, setCanvasROI] = useState<any[]>([])
+  const canvasROIref = useRef<any[]>([])
 
   useEffect(() => {
     const fetchDevices = async () => {
@@ -71,7 +81,7 @@ export default function CameraPage() {
 
 
     return
-  }, [facingMode])
+  }, [facingMode, currentProcessor]) // Runs when facingMode or currentProcessor changes
 
   const startCamera = async () => {
     try {
@@ -81,16 +91,19 @@ export default function CameraPage() {
       const newStream = await navigator.mediaDevices.getUserMedia(constraints)
       setStream(newStream)
 
+      if(currentModuleRef.current)
+        await currentModuleRef.current.destroy()
+
       const m = await currentProcessor.module()
       currentModuleRef.current = new m.default()
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = newStream
         videoRef.current.onloadedmetadata = async () => {
           if (!videoRef.current) return
 
           videoRef.current?.play()
-          
+
           videoRef.current.muted = true
 
           if (!canvasRef.current) return
@@ -112,12 +125,42 @@ export default function CameraPage() {
     if (!ctx) return
 
     const updateFrame = async () => {
-      console.log("updateFrame", drawPreviewRef.current) //videoRef.current, canvasRef.current, ctxRef.current)
+      //console.log("updateFrame", drawPreviewRef.current) //videoRef.current, canvasRef.current, ctxRef.current)
       if (!videoRef.current || !canvasRef.current) return requestAnimationFrame(updateFrame)
       if (!drawPreviewRef.current) return requestAnimationFrame(updateFrame)
 
       DrawImage(videoRef.current, videoRef.current.videoWidth, videoRef.current.videoHeight, false)
       await currentModuleRef.current?.processFrame(ctxRef.current, videoRef.current)
+
+      if(!currentModuleRef?.current?.endpoint)
+      {
+        setEndpointDisconnected(true)
+        return requestAnimationFrame(updateFrame)
+      }
+
+      setEndpointDisconnected(false)
+
+      //console.log("canvasROI", canvasROIref.current.length, currentModuleRef.current?.endpoint)
+
+      canvasROIref.current.forEach(point => {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+        ctx.fillStyle = "red";
+        ctx.fill();
+      });
+
+      if (canvasROIref.current.length == 2) {
+
+        //console.log("canvasROI", canvasROI)
+        const roi = canvasROIref.current
+        const [start, end] = roi
+        const width = end.x - start.x
+        const height = end.y - start.y
+        ctx.strokeStyle = "red"
+        ctx.lineWidth = 2
+        ctx.strokeRect(start.x, start.y, width, height)
+
+      }
 
       requestAnimationFrame(updateFrame)
     }
@@ -134,6 +177,8 @@ export default function CameraPage() {
 
     const ctx = ctxRef.current
     if (!ctx) return
+
+    const name = image instanceof File ? image.name : new Date().toISOString().replace(/[:.-]/g, "_") + ".jpg";
 
     setShowLoading(true)
 
@@ -153,14 +198,14 @@ export default function CameraPage() {
     }
 
     console.log("Processing photo with:", currentProcessor, image)
-    await currentModuleRef.current?.processPhoto(image, ctx)
+    await currentModuleRef.current?.processPhoto(image, ctx, name, canvasROIref.current)
 
     setShowLoading(false)
   }
 
   const processVideo = async (video: File) => {
     if (!canvasRef.current) return
-    if(!videoRef.current) return
+    if (!videoRef.current) return
 
     const ctx = ctxRef.current
     if (!ctx) return
@@ -172,25 +217,25 @@ export default function CameraPage() {
     videoRef.current.srcObject = null
     videoRef.current.src = URL.createObjectURL(video)
     // Remove the current function in requestAnimationFrame
-    const updateFrame = () => {};
+    const updateFrame = () => { };
     requestAnimationFrame(updateFrame);
-    
+
     setShowReset(true)
 
     videoRef.current.crossOrigin = "anonymous"
     videoRef.current.pause()
-    
+
     videoRef.current.onloadedmetadata = async () => {
       //setting up redraw to canvas
       if (!canvasRef.current) return
 
-      if(videoRef.current?.videoWidth && videoRef.current?.videoHeight) {
+      if (videoRef.current?.videoWidth && videoRef.current?.videoHeight) {
         canvasRef.current.width = videoRef.current?.videoWidth
         canvasRef.current.height = videoRef.current?.videoHeight
       }
 
       console.log("videoRef.current?.videoWidth", videoRef.current?.videoWidth, videoRef.current?.videoHeight)
-      
+
     }
 
 
@@ -276,13 +321,59 @@ export default function CameraPage() {
     if (file) {
       if (file.type.startsWith("image/")) {
         processPhoto(file)
-      } else if(file.type.startsWith("video/")) {
+      } else if (file.type.startsWith("video/")) {
         processVideo(file)
       } else {
         console.error("Unsupported file type:", file.type)
       }
     }
   }
+
+  // const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  //   if (!canvasRef.current) return
+  //   const rect = canvasRef.current.getBoundingClientRect()
+  //   const x = event.clientX - rect.left
+  //   const y = event.clientY - rect.top
+
+  //   currentModuleRef.current?.startDrawingBox(x, y)
+  // }
+
+  // const handleMouseUp = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  //   if (!canvasRef.current) return
+  //   const rect = canvasRef.current.getBoundingClientRect()
+  //   const x = event.clientX - rect.left
+  //   const y = event.clientY - rect.top
+
+  //   currentModuleRef.current?.stopDrawingBox(x, y)
+  //   currentModuleRef.current?.sendBoxCoordinates(x, y)
+  //   currentModuleRef.current?.resetBoxCoordinates()
+  // }
+
+  // const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  //   if (!canvasRef.current) return
+  //   const rect = canvasRef.current.getBoundingClientRect()
+  //   const x = event.clientX - rect.left
+  //   const y = event.clientY - rect.top
+
+  //   currentModuleRef.current?.updateDrawingBox(x, y)
+  //   currentModuleRef.current?.drawBoxOnCanvas(x, y)
+  // }
+
+  //on click on canvas copy the coordinates of the click to the clipboard
+  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current) return;
+
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const coordinates = `X: ${x}, Y: ${y}`;
+
+    navigator.clipboard.writeText(coordinates);
+    console.log("Coordinates copied to clipboard:", coordinates);
+
+    canvasROIref.current.push({ x, y })
+    canvasROIref.current = canvasROIref.current.slice(-2);
+  };
 
   return (
     <div className="relative w-screen h-screen bg-black flex justify-center items-center overflow-hidden">
@@ -291,11 +382,67 @@ export default function CameraPage() {
         <video ref={videoRef} autoPlay playsInline className="hidden" />
 
         {/* Canvas as the background */}
-        <canvas ref={canvasRef} className="absolute w-full h-full object-cover" />
-       
-        {/* Settings Modal */}
-        {showSettings && (
-          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-80">
+        <canvas
+          ref={canvasRef}
+          className="absolute w-full h-full object-cover"
+          // onMouseDown={handleMouseDown}
+          // onMouseUp={handleMouseUp}
+          // onMouseMove={handleMouseMove}
+          onClick={handleCanvasClick}
+        />
+
+        
+
+        {/* UI Controls */}
+        <div className="absolute bottom-5 w-full flex justify-center space-x-8">
+
+
+          {/* Capture Photo or Reset Button (Bottom-Center) */}
+          {!showReset ? (
+            <>
+              <button
+                className="w-16 h-16 bg-white rounded-full border-4 border-gray-400"
+                onClick={takePhoto}
+              />
+              <label className="w-14 h-14 flex items-center justify-center bg-white rounded-full border-4 border-gray-400 cursor-pointer">
+                📷
+                <input type="file" accept="image/*,video/*" className="hidden" onChange={handleFileUpload} />
+              </label>
+            </>
+          ) : (
+            <>
+              <button
+                className="w-16 h-16 bg-white rounded-full border-4 border-gray-400"
+                onClick={takePhoto}
+              />
+              <button
+                className="w-16 h-16 bg-white text-white rounded-full border-4 border-gray-400"
+                onClick={resetCanvas}
+              >🔄</button>
+            </>
+          )}
+        </div>
+      </div>
+      {/* Loading Overlay */}
+      {(showLoading || endpointDisconnected) && (
+        <div className="absolute w-full h-full bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-white text-lg ml-4">
+            {endpointDisconnected ? "Connecting..." : "Processing..."}
+          </p>
+        </div>
+      )}
+
+      {/* Settings Button (Top-Right) */}
+      <button
+        className="absolute bottom-5 right-5 text-white text-2xl bg-gray-700 rounded-full p-2"
+        onClick={() => setShowSettings(true)}
+      >
+        ⚙️
+      </button>
+      {/* Settings Modal */}
+      {showSettings && (
+          <div className="text-black absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-80">
             <div className="bg-white p-4 rounded-lg flex flex-col space-y-4">
               <p className="text-lg font-bold">Select Camera</p>
               <select
@@ -318,12 +465,20 @@ export default function CameraPage() {
               <p className="text-lg font-bold">Select Processor</p>
               <select
                 className="px-4 py-2 rounded-md border border-gray-300"
-                value={currentProcessor || ""}
-                onChange={(e) => setCurrentProcessor(processors.find(p => p.name === e.target.value))}
+                value={selectedProcessorIndex}
+                onChange={(e) => {
+                  resetCanvas()
+                  setSelectedProcessorIndex(Number(e.target.value))
+                  setCurrentProcessor(processors[Number(e.target.value)])
+                  setShowSettings(false)
+                  console.log("Selected processor:", processors[Number(e.target.value)].name)
+                  console.log("Selected processor module:", processors[Number(e.target.value)].module)
+                }
+                }
               >
                 {processors.map((processor, index) => (
-                  <option key={index} value={processor.name}>
-                    {processor.name}
+                  <option key={index} value={index}>
+                  {processor.name}
                   </option>
                 ))}
               </select>
@@ -334,45 +489,6 @@ export default function CameraPage() {
             </div>
           </div>
         )}
-
-        {/* UI Controls */}
-        <div className="absolute bottom-5 w-full flex justify-center space-x-8">
-          {/* Settings Button (Top-Right) */}
-          <button
-            className="absolute top-5 right-5 text-white text-2xl bg-gray-700 rounded-full p-2"
-            onClick={() => setShowSettings(true)}
-          >
-            ⚙️
-          </button>
-
-          {/* Capture Photo or Reset Button (Bottom-Center) */}
-          {!showReset ? (
-            <>
-              <button
-                className="w-16 h-16 bg-white rounded-full border-4 border-gray-400"
-                onClick={takePhoto}
-              />
-              <label className="w-14 h-14 flex items-center justify-center bg-white rounded-full border-4 border-gray-400 cursor-pointer">
-                📷
-                <input type="file" accept="image/*,video/*" className="hidden" onChange={handleFileUpload} />
-              </label>
-            </>
-          ) : (
-            <button
-              className="w-16 h-16 bg-white text-white rounded-full border-4 border-gray-400"
-              onClick={resetCanvas}
-            >
-              🔄
-            </button>
-          )}
-        </div>
-      </div>
-      {/* Loading Overlay */}
-      {showLoading && (
-        <div className="absolute w-full h-full bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      )}
     </div>
   )
 }

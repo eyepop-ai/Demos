@@ -11,10 +11,16 @@ class Processor {
         this.settings = {};
     }
 
-    processPhoto(photo, canvasContext) {
+    processPhoto(photo, canvasContext, name, roi) {
         // Implement the logic to process a photo
         console.log('Processing photo:', photo);
-        // Add your photo processing code here
+        // Add your processing code here
+    }
+
+    processVideo(video, canvasContext, name, roi) {
+        // Implement the logic to process a video
+        console.log('Processing photo:', video);
+        // Add your processing code here
     }
 
     async setCanvasContext(canvasContext, stream) {
@@ -42,9 +48,17 @@ class Processor {
         // Add your code to apply new settings here
     }
 
-    processFrame(canvasContext, videoRef) {
+    processFrame(canvasContext, videoRef, roi) {
         // Implement the logic to process a frame
         // Add your frame processing code here
+    }
+
+    destroy(){
+        if(!this.endpoint) return;
+
+        console.log("Destroying processor");
+
+        this.endpoint.disconnect();
     }
 
     LookForWord(predictionJson, word) {

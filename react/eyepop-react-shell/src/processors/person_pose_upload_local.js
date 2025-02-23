@@ -5,32 +5,7 @@ import Render2d from '@eyepop.ai/eyepop-render-2d'
 class PersonPoseUploadLocal extends Processor {
     buffer = [];
 
-    PERSON2D = {
-        components: [
-            {
-                type: PopComponentType.INFERENCE,
-                model: "eyepop.person:latest",
-                categoryName: "person",
-                //confidenceThreshold: 0.7,
-                forward: {
-                    operator: {
-                        type: ForwardOperatorType.CROP,
-                        crop: {
-                            maxItems: 128
-                        },
-                    },
-                    targets: [
-                        {
-                            type: PopComponentType.INFERENCE,
-                            categoryName: "2d-body-points",
-                            model: "eyepop.person.2d-body-points:latest",
-                            confidenceThreshold: 0.25
-                        },
-                    ],
-                },
-            },
-        ],
-    };
+   
     constructor() {
         super();
         // Additional initialization if needed
@@ -60,7 +35,7 @@ class PersonPoseUploadLocal extends Processor {
         ])
     }
 
-    async processPhoto(photo, canvasContext) {
+    async processPhoto(photo, canvasContext, name, roi) {
 
         console.log('Processing photo:', photo);
 
@@ -82,7 +57,7 @@ class PersonPoseUploadLocal extends Processor {
         }
     }
 
-    async processVideo(video, canvasContext) {
+    async processVideo(video, canvasContext, name, roi) {
 
         console.log('Processing video:', video);
 
@@ -122,7 +97,7 @@ class PersonPoseUploadLocal extends Processor {
         //localStorage.setItem(video.name, JSON.stringify(this.buffer));
         //console.log("Cached video data.");
     }
-    async processFrame(canvasContext, video) {
+    async processFrame(canvasContext, video, roi) {
 
         //console.log('Processing video frame:', video, this.endpoint, this.renderer);
         if (!this.endpoint) return

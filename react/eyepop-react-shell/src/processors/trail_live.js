@@ -59,7 +59,7 @@ class TrailLiveProcessor extends Processor {
 
   }
 
-  async processFrame(canvasContext, videoRef) {
+  async processFrame(canvasContext, videoRef, roi) {
     if (!this.stream) return
     if (!this.results) return
     if (!this.endpoint) return

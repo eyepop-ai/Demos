@@ -1,49 +1,50 @@
 import Processor from './processor';
 import { ContourType, EndpointState, EyePop, ForwardOperatorType, InferenceType, PopComponentType, TransientPopId } from "@eyepop.ai/eyepop";
 import Render2d from '@eyepop.ai/eyepop-render-2d'
+import { ComposablePops } from './composable_pops';
 
 class PersonPoseLiveProcessor extends Processor {
     buffer = [];
 
-    PERSON2D = {
-        components: [
-            {
-                type: PopComponentType.INFERENCE,
-                model: "eyepop.person:latest",
-                categoryName: "person",
-                confidenceThreshold: 0.8,
-                forward: {
-                    operator: {
-                        type: ForwardOperatorType.CROP,
-                        crop: {
-                            maxItems: 128
-                        },
-                    },
-                    targets: [
-                        {
-                            type: PopComponentType.TRACING,
-                            reidModel: "eyepop.person.reid:latest",
-                            forward: {
-                                operator: {
-                                    type: ForwardOperatorType.CROP,
-                                    crop: {
-                                        boxPadding: 0.1,
-                                    },
-                                },
-                                targets: [
-                                    {
-                                        type: PopComponentType.INFERENCE,
-                                        categoryName: "2d-body-points",
-                                        model: "eyepop.person.2d-body-points:latest"
-                                    },
-                                ],
-                            },
-                        },
-                    ],
-                },
-            },
-        ],
-    };
+    // PERSON2D = {
+    //     components: [
+    //         {
+    //             type: PopComponentType.INFERENCE,
+    //             model: "eyepop.person:latest",
+    //             categoryName: "person",
+    //             confidenceThreshold: 0.8,
+    //             forward: {
+    //                 operator: {
+    //                     type: ForwardOperatorType.CROP,
+    //                     crop: {
+    //                         maxItems: 128
+    //                     },
+    //                 },
+    //                 targets: [
+    //                     {
+    //                         type: PopComponentType.TRACING,
+    //                         reidModel: "eyepop.person.reid:latest",
+    //                         forward: {
+    //                             operator: {
+    //                                 type: ForwardOperatorType.CROP,
+    //                                 crop: {
+    //                                     boxPadding: 0.1,
+    //                                 },
+    //                             },
+    //                             targets: [
+    //                                 {
+    //                                     type: PopComponentType.INFERENCE,
+    //                                     categoryName: "2d-body-points",
+    //                                     model: "eyepop.person.2d-body-points:latest"
+    //                                 },
+    //                             ],
+    //                         },
+    //                     },
+    //                 ],
+    //             },
+    //         },
+    //     ],
+    // };
 
     constructor() {
         super();
@@ -65,7 +66,7 @@ class PersonPoseLiveProcessor extends Processor {
             isLocalMode: true
         }).connect()
 
-        this.endpoint.changePop(this.PERSON2D);
+        this.endpoint.changePop(ComposablePops.Person2D);
 
         this.renderer = Render2d.renderer(canvasContext, [
             Render2d.renderContour(),
@@ -105,7 +106,7 @@ class PersonPoseLiveProcessor extends Processor {
     }
 
 
-    async processPhoto(photo, canvasContext) {
+    async processPhoto(photo, canvasContext, name, roi) {
 
         console.log('Processing photo:', photo);
 
@@ -129,7 +130,7 @@ class PersonPoseLiveProcessor extends Processor {
         }
     }
 
-    async processVideo(video, canvasContext) {
+    async processVideo(video, canvasContext, name, roi) {
 
         console.log('Processing video:', video);
 
@@ -168,7 +169,7 @@ class PersonPoseLiveProcessor extends Processor {
         console.log("Cached video data.");
     }
 
-    async processFrame(canvasContext, videoRef) {
+    async processFrame(canvasContext, videoRef, roi) {
         if (!this.stream) return
         if (!this.results) return
         if (!this.endpoint) return
