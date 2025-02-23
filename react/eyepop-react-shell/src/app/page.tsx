@@ -134,7 +134,7 @@ export default function CameraPage() {
       if (!drawPreviewRef.current) return requestAnimationFrame(updateFrame)
 
       DrawImage(videoRef.current, videoRef.current.videoWidth, videoRef.current.videoHeight, false)
-      await currentModuleRef.current?.processFrame(ctxRef.current, videoRef.current)
+      await currentModuleRef.current?.processFrame(ctxRef.current, videoRef.current, canvasROIref.current)
 
       if(!currentModuleRef?.current?.endpoint)
       {
