@@ -35,6 +35,7 @@ export const ComposablePops = {
             {
                 type: PopComponentType.INFERENCE,
                 model: "eyepop.sam2.encoder.tiny:latest",
+                hidden: true,
                 categoryName: "segmentation",
                 forward: {
                     operator: {
@@ -69,6 +70,7 @@ export const ComposablePops = {
             {
                 type: PopComponentType.INFERENCE,
                 model: "eyepop.sam2.encoder.tiny:latest",
+                hidden: true,
                 categoryName: "segmentation",
                 forward: {
                     operator: {

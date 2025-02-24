@@ -3,7 +3,7 @@ import EyePop from '@eyepop.ai/eyepop';
 import Render2d from '@eyepop.ai/eyepop-render-2d'
 import { ComposablePops } from './composable_pops';
 
-class PersonPoseProcessor extends Processor {
+class StickerAnyProcessor extends Processor {
     buffer = [];
 
     constructor() {
@@ -24,9 +24,9 @@ class PersonPoseProcessor extends Processor {
             stopJobs: false
         }).connect()
 
-        //this.endpoint.changePop(ComposablePops.SAM2);
+        await this.endpoint.changePop(ComposablePops.SAM2);
 
-        await this.endpoint.changePop(ComposablePops.PersonSAM2)
+        //await this.endpoint.changePop(ComposablePops.PersonSAM2)
 
         this.renderer = Render2d.renderer(canvasContext, [
             Render2d.renderContour(),
@@ -47,7 +47,7 @@ class PersonPoseProcessor extends Processor {
 
         let drawResult = null;
 
-        const cachedData = localStorage.getItem(name);
+        const cachedData = localStorage.getItem(name+JSON.stringify(roi));
         if (cachedData) {
             drawResult = JSON.parse(cachedData);
         }
@@ -62,6 +62,8 @@ class PersonPoseProcessor extends Processor {
                 roi = { topLeft: { x: 0, y: 0 }, bottomRight: { x: photo.width, y: photo.height } };
                 console.log("No ROI provided, using full image");
             }
+
+            console.log("Processing photo with ROI:", { boxes: [roi] });
 
             let results = await this.endpoint.process({
                 file: photo,
@@ -99,7 +101,9 @@ class PersonPoseProcessor extends Processor {
             const url = URL.createObjectURL(blob);
             const img = new Image();
             img.onload = () => {
-                this.liftContour(canvasContext, drawResult.objects[0].objects[0].contours, img)
+                //const contours = drawResult.objects[0].objects[0].contours
+                const contours = drawResult.objects[0].contours
+                this.liftContour(canvasContext, contours, img)
                 URL.revokeObjectURL(url);
             };
             img.src = url;
@@ -203,4 +207,4 @@ class PersonPoseProcessor extends Processor {
 
 }
 
-export default PersonPoseProcessor;
+export default StickerAnyProcessor;

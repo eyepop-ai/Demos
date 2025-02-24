@@ -34,7 +34,11 @@ export const processors = [
   },
   {
     name: "(Upload Img) Sticker Effect - Detect Person and sticker them",
-    module: () => import("../processors/sticker_effect_upload"),
+    module: () => import("../processors/sticker_effect_person_upload"),
+  },
+  {
+    name: "(Upload Img) Sticker Effect - Detect Any object in a region and sticker it",
+    module: () => import("../processors/sticker_effect_any_upload"),
   },
   {
     name: "(Live) Crop to Person - Detect Person and crop display to them",
@@ -82,9 +86,8 @@ export default function CameraPage() {
 
   useEffect(() => {
     startCamera()
-
-
     return
+
   }, [facingMode, currentProcessor]) // Runs when facingMode or currentProcessor changes
 
   const startCamera = async () => {
@@ -378,6 +381,20 @@ export default function CameraPage() {
     canvasROIref.current.push({ x, y })
     canvasROIref.current = canvasROIref.current.slice(-2);
   };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        canvasROIref.current = []
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [])
 
   return (
     <div className="relative w-screen h-screen bg-black flex justify-center items-center overflow-hidden">
