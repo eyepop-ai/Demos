@@ -50,6 +50,8 @@ export const processors = [
 export default function CameraPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const roiCanvasRef = useRef<HTMLCanvasElement | null>(null)
+
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null)
 
   const [stream, setStream] = useState<MediaStream | null>(null)
@@ -67,7 +69,7 @@ export default function CameraPage() {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
 
   // const [canvasROI, setCanvasROI] = useState<any[]>([])
-  const canvasROIref = useRef<any[]>([])
+  const roiPointsRef = useRef<any[]>([])
 
   useEffect(() => {
     const fetchDevices = async () => {
@@ -98,7 +100,7 @@ export default function CameraPage() {
       const newStream = await navigator.mediaDevices.getUserMedia(constraints)
       setStream(newStream)
 
-      if(currentModuleRef.current)
+      if (currentModuleRef.current)
         await currentModuleRef.current.destroy()
 
       const m = await currentProcessor.module()
@@ -132,15 +134,44 @@ export default function CameraPage() {
     if (!ctx) return
 
     const updateFrame = async () => {
-      //console.log("updateFrame", drawPreviewRef.current) //videoRef.current, canvasRef.current, ctxRef.current)
+
+      //Draw ROI on canvas
+      if (roiCanvasRef.current && canvasRef.current) {
+        roiCanvasRef.current.width = canvasRef.current.width
+        roiCanvasRef.current.height = canvasRef.current.height
+        const roiCtx = roiCanvasRef.current.getContext("2d")
+        if (!roiCtx) return
+        roiCtx.clearRect(0, 0, roiCanvasRef.current.width, roiCanvasRef.current.height)
+        roiCtx.strokeStyle = "lightblue"
+        roiCtx.lineWidth = 2        
+
+        roiPointsRef.current.forEach(point => {
+          roiCtx.beginPath();
+          roiCtx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+          roiCtx.fillStyle = "lightblue";
+          roiCtx.fill();
+        });
+
+        if (roiPointsRef.current.length == 2) {
+
+          //console.log("canvasROI", canvasROI)
+          const roi = roiPointsRef.current
+          const [start, end] = roi
+          const width = end.x - start.x
+          const height = end.y - start.y
+          roiCtx.strokeRect(start.x, start.y, width, height)
+        }
+
+      }
+
+
       if (!videoRef.current || !canvasRef.current) return requestAnimationFrame(updateFrame)
       if (!drawPreviewRef.current) return requestAnimationFrame(updateFrame)
 
       DrawImage(videoRef.current, videoRef.current.videoWidth, videoRef.current.videoHeight, false)
-      await currentModuleRef.current?.processFrame(ctxRef.current, videoRef.current, canvasROIref.current)
+      await currentModuleRef.current?.processFrame(ctxRef.current, videoRef.current, roiPointsRef.current)
 
-      if(!currentModuleRef?.current?.endpoint)
-      {
+      if (!currentModuleRef?.current?.endpoint) {
         setEndpointDisconnected(true)
         return requestAnimationFrame(updateFrame)
       }
@@ -149,25 +180,7 @@ export default function CameraPage() {
 
       //console.log("canvasROI", canvasROIref.current.length, currentModuleRef.current?.endpoint)
 
-      canvasROIref.current.forEach(point => {
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
-        ctx.fillStyle = "red";
-        ctx.fill();
-      });
 
-      if (canvasROIref.current.length == 2) {
-
-        //console.log("canvasROI", canvasROI)
-        const roi = canvasROIref.current
-        const [start, end] = roi
-        const width = end.x - start.x
-        const height = end.y - start.y
-        ctx.strokeStyle = "red"
-        ctx.lineWidth = 2
-        ctx.strokeRect(start.x, start.y, width, height)
-
-      }
 
       requestAnimationFrame(updateFrame)
     }
@@ -192,6 +205,12 @@ export default function CameraPage() {
     console.log("Processing photo with:", currentProcessor)
     await freezeCanvas(image)
 
+    if(currentModuleRef.current?.roiRequired && roiPointsRef.current.length < 2) {
+      console.log("ROI required but not provided")
+      setShowLoading(false)
+      return
+    }
+
     if (image instanceof File) {
       image = await new Promise<Blob>((resolve, reject) => {
         canvasRef.current?.toBlob(blob => {
@@ -205,7 +224,8 @@ export default function CameraPage() {
     }
 
     console.log("Processing photo with:", currentProcessor, image)
-    await currentModuleRef.current?.processPhoto(image, ctx, name, canvasROIref.current)
+    await currentModuleRef.current?.processPhoto(image, ctx, name, roiPointsRef.current)
+    roiPointsRef.current = []
 
     setShowLoading(false)
   }
@@ -378,14 +398,14 @@ export default function CameraPage() {
     navigator.clipboard.writeText(coordinates);
     console.log("Coordinates copied to clipboard:", coordinates);
 
-    canvasROIref.current.push({ x, y })
-    canvasROIref.current = canvasROIref.current.slice(-2);
+    roiPointsRef.current.push({ x, y })
+    roiPointsRef.current = roiPointsRef.current.slice(-2);
   };
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        canvasROIref.current = []
+        roiPointsRef.current = []
       }
     }
 
@@ -406,13 +426,21 @@ export default function CameraPage() {
         <canvas
           ref={canvasRef}
           className="absolute w-full h-full object-cover"
+        // onMouseDown={handleMouseDown}
+        // onMouseUp={handleMouseUp}
+        // onMouseMove={handleMouseMove}
+        //onClick={handleCanvasClick}
+        />
+        <canvas
+          ref={roiCanvasRef}
+          className="absolute w-full h-full object-cover"
           // onMouseDown={handleMouseDown}
           // onMouseUp={handleMouseUp}
           // onMouseMove={handleMouseMove}
           onClick={handleCanvasClick}
         />
 
-        
+
 
         {/* UI Controls */}
         <div className="absolute bottom-5 w-full flex justify-center space-x-8">
@@ -463,53 +491,53 @@ export default function CameraPage() {
       </button>
       {/* Settings Modal */}
       {showSettings && (
-          <div className="text-black absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-80">
-            <div className="bg-white p-4 rounded-lg flex flex-col space-y-4">
-              <p className="text-lg font-bold">Select Camera</p>
-              <select
-                className="px-4 py-2 rounded-md border border-gray-300"
-                value={facingMode}
-                onChange={(e) => {
-                  setFacingMode(e.target.value as "user" | "environment")
-                  setShowSettings(false)
-                }}
-              >
-                {devices.map((device, index) => (
-                  <option key={index} value={device.deviceId}>
-                    {device.label || `Camera ${index + 1}`}
-                  </option>
-                ))}
-              </select>
+        <div className="text-black absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-80">
+          <div className="bg-white p-4 rounded-lg flex flex-col space-y-4">
+            <p className="text-lg font-bold">Select Camera</p>
+            <select
+              className="px-4 py-2 rounded-md border border-gray-300"
+              value={facingMode}
+              onChange={(e) => {
+                setFacingMode(e.target.value as "user" | "environment")
+                setShowSettings(false)
+              }}
+            >
+              {devices.map((device, index) => (
+                <option key={index} value={device.deviceId}>
+                  {device.label || `Camera ${index + 1}`}
+                </option>
+              ))}
+            </select>
 
 
-              {/* Processor Selection Dropdown */}
-              <p className="text-lg font-bold">Select Processor</p>
-              <select
-                className="px-4 py-2 rounded-md border border-gray-300"
-                value={selectedProcessorIndex}
-                onChange={(e) => {
-                  resetCanvas()
-                  setSelectedProcessorIndex(Number(e.target.value))
-                  setCurrentProcessor(processors[Number(e.target.value)])
-                  setShowSettings(false)
-                  console.log("Selected processor:", processors[Number(e.target.value)].name)
-                  console.log("Selected processor module:", processors[Number(e.target.value)].module)
-                }
-                }
-              >
-                {processors.map((processor, index) => (
-                  <option key={index} value={index}>
+            {/* Processor Selection Dropdown */}
+            <p className="text-lg font-bold">Select Processor</p>
+            <select
+              className="px-4 py-2 rounded-md border border-gray-300"
+              value={selectedProcessorIndex}
+              onChange={(e) => {
+                resetCanvas()
+                setSelectedProcessorIndex(Number(e.target.value))
+                setCurrentProcessor(processors[Number(e.target.value)])
+                setShowSettings(false)
+                console.log("Selected processor:", processors[Number(e.target.value)].name)
+                console.log("Selected processor module:", processors[Number(e.target.value)].module)
+              }
+              }
+            >
+              {processors.map((processor, index) => (
+                <option key={index} value={index}>
                   {processor.name}
-                  </option>
-                ))}
-              </select>
+                </option>
+              ))}
+            </select>
 
-              <button className="mt-4 px-4 py-2 bg-red-500 text-white rounded-md" onClick={() => setShowSettings(false)}>
-                Close
-              </button>
-            </div>
+            <button className="mt-4 px-4 py-2 bg-red-500 text-white rounded-md" onClick={() => setShowSettings(false)}>
+              Close
+            </button>
           </div>
-        )}
+        </div>
+      )}
     </div>
   )
 }

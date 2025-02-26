@@ -5,6 +5,7 @@ import { ComposablePops } from './composable_pops';
 
 class StickerAnyProcessor extends Processor {
     buffer = [];
+    roiRequired=true;
 
     constructor() {
         super();
@@ -30,14 +31,6 @@ class StickerAnyProcessor extends Processor {
 
         this.renderer = Render2d.renderer(canvasContext, [
             Render2d.renderContour(),
-            // Render2d.renderText({ fitToBounds: true }),
-            // Render2d.renderPose(),
-            // Render2d.renderBox({
-            //     showClass: false,
-            //     showTraceId: false,
-            //     showNestedClasses: false,
-            //     showConfidence: false,
-            // }),
         ])
     }
 
@@ -47,7 +40,7 @@ class StickerAnyProcessor extends Processor {
 
         let drawResult = null;
 
-        const cachedData = localStorage.getItem(name+JSON.stringify(roi));
+        const cachedData = localStorage.getItem(name + JSON.stringify(roi));
         if (cachedData) {
             drawResult = JSON.parse(cachedData);
         }
@@ -68,7 +61,12 @@ class StickerAnyProcessor extends Processor {
             let results = await this.endpoint.process({
                 file: photo,
                 mimeType: 'image/*',
-                roi: { boxes: [roi] }
+
+            }, { 
+                roi: 
+                { 
+                    boxes: [roi] 
+                } 
             })
 
             for await (let result of results) {
@@ -110,59 +108,6 @@ class StickerAnyProcessor extends Processor {
         });
     }
 
-    liftContour(context, contours, snapshot) {
-        context.drawImage(
-            snapshot, //videoRef.current,
-            0,
-            0,
-            context.canvas.width,
-            context.canvas.height
-        )
-        context.save()
-
-        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-
-        const xScale = 1
-        const xOffset = 0
-        const yScale = 1
-        const yOffset = 0
-
-        for (let j = 0; j < contours.length; j++) {
-            const contour = contours[j]
-
-            if (!contour.points)
-                continue
-
-            let p = contour.points[contour.points.length - 1];
-            context.moveTo(p.x * xScale + xOffset, p.y * yScale + yOffset);
-            for (let i = 0; i < contour.points.length; i++) {
-                p = contour.points[i];
-                context.lineTo(p.x * xScale + xOffset, p.y * yScale + yOffset);
-            }
-        }
-        context.closePath();
-
-
-        context.lineWidth = 20; // Set the desired thickness
-        context.strokeStyle = "#FFFFFF";   // Set the desired color
-        context.lineJoin = 'round';
-        context.lineCap = 'round';
-        context.stroke(); // Draw the outline'
-
-        // Clip to the contour
-        context.clip();
-        context.drawImage(
-            snapshot, //videoRef.current,
-            0,
-            0,
-            context.canvas.width,
-            context.canvas.height
-        )
-
-        context.restore();
-    }
-
-   
     async processFrame(canvasContext, video, roi) {
 
         //console.log('Processing video frame:', video, this.endpoint, this.renderer);

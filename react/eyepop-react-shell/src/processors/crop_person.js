@@ -77,7 +77,9 @@ class CropPersonProcessor extends Processor {
           biggestPerson.height = (biggestPerson.height / biggestPersonPrediction.source_height) * canvasContext.canvas.height;
     
           this.cropBuffer.push(biggestPerson);
-          if (this.cropBuffer.length > 60) this.cropBuffer.shift();
+          if (this.cropBuffer.length > 60) 
+            //this.cropBuffer.slice(-60);
+            this.cropBuffer.shift(); // Keep the buffer size manageable
         }
       }
     }
@@ -102,10 +104,7 @@ class CropPersonProcessor extends Processor {
     avgPerson.y /= count;
     avgPerson.width /= count;
     avgPerson.height /= count;
-  
-    // Determine the crop square size as the smaller of the average width and height
-    let size = Math.min(avgPerson.width, avgPerson.height);
-  
+    
     // Calculate the ideal center of the bounding box
     let centerX = avgPerson.x + avgPerson.width / 2;
     let centerY = avgPerson.y + avgPerson.height / 2;
@@ -116,21 +115,25 @@ class CropPersonProcessor extends Processor {
     const canvasWidth = canvasContext.canvas.width / videoAspectRatio;
     const canvasHeight = canvasContext.canvas.height;
 
-    centerX = Math.max(size / 2, Math.min(centerX, canvasWidth - size / 2));
-    centerY = Math.max(size / 2, Math.min(centerY, canvasHeight - size / 2));
+    let size = Math.min(canvasWidth,canvasHeight,Math.max(avgPerson.width, avgPerson.height)*1.1);
+  
+    //centerX = Math.max(size / 2, Math.min(centerX, canvasWidth - size / 2));
+    //centerY = Math.max(size / 2, Math.min(centerY, canvasHeight - size / 2));
+    centerX = Math.min(centerX, canvasWidth - size / 2);
+    centerY = Math.min(centerY, canvasHeight - size / 2);
   
     // Calculate the top-left coordinates of the crop region
-    let cropX = Math.min(centerX - size / 2, canvasWidth - size)
-    let cropY = Math.min(centerY - size / 2, canvasHeight - size)
+    let cropX = Math.max(0, Math.min(centerX - size / 2, canvasWidth - size))
+    let cropY = Math.max(0, Math.min(centerY - size / 2, canvasHeight - size))
 
     // Define the picture-in-picture (pip) box dimensions
     const pipBox = {
-      x: 0,
-      y: canvasHeight - 400,
+      x: canvasContext.canvas.width - 400,
+      y: canvasContext.canvas.height - 400,
       width: 400,
       height: 400
     };
-  
+
     // Draw the cropped image from the canvas into the pip box
     canvasContext.drawImage(
       canvasContext.canvas,
@@ -148,9 +151,8 @@ class CropPersonProcessor extends Processor {
     canvasContext.strokeStyle = 'white';
     canvasContext.lineWidth = 6;
     canvasContext.strokeRect(pipBox.x, pipBox.y, pipBox.width, pipBox.height);
+
   }
-
-
 }
 
 export default CropPersonProcessor;
