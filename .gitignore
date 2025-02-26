@@ -3,4 +3,4 @@ venv/
 env/
 __pycache__/
 node_modules/
-python/TextDetectionWorkshop/env.py
+python/*/env.py
