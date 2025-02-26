@@ -1,6 +1,13 @@
+# Ignore all hidden files and directories
 .*
+
+# Virtual environments
 venv/
 env/
+
+# Python cache and environment-specific files
 __pycache__/
-node_modules/
 python/*/env.py
+
+# Node.js dependencies
+node_modules/
