@@ -5,6 +5,7 @@ import Render2d from '@eyepop.ai/eyepop-render-2d'
 class CropPersonProcessor extends Processor {
 
   cropBuffer = [];
+  cropBufferSize = 10; // This allows for easing of the bounding box movement
 
   constructor() {
     super();
@@ -46,47 +47,67 @@ class CropPersonProcessor extends Processor {
     for await (const result of this.results) {
 
       const aspectRatio = result.source_width / result.source_height
-      //const canvasAspectRatio = canvasRef.current.width / canvasRef.current.height
-      // const drawWidth = canvasContext.canvas.width
-      // const drawHeight = canvasContext.canvas.width / aspectRatio
-      // const drawWidth = canvasContext.canvas.height * aspectRatio
-      // const drawHeight = canvasContext.canvas.height
-      
-      // canvasContext.canvas.width = drawWidth
-      // canvasContext.canvas.height = drawHeight
-
-      //console.log("Stream result:", result)
+     
       this.lastPrediction = result
-    }
 
-  }
+      if(this.lastPrediction) {
+        // Get the biggest person prediction
+        const biggestPersonPrediction = this.getBiggestObjectInScene(this.lastPrediction, 'person');
+        if (biggestPersonPrediction && biggestPersonPrediction.objects && biggestPersonPrediction.objects.length) {
+          
+          // Find the biggest person in the scene and deep copy it
+          //const biggestPerson = JSON.parse(JSON.stringify(biggestPersonPrediction.objects[0]));
+          const biggestPerson = structuredClone(biggestPersonPrediction.objects[0]);
+          if (!biggestPerson) 
+            continue;
 
-  async processFrame(canvasContext, videoRef, roi) {
-    if (!this.stream || !this.results || !this.endpoint || !this.renderer || !videoRef) return;
-  
-    if(this.lastPrediction) {
-      // Get the biggest person prediction
-      const biggestPersonPrediction = this.getBiggestObjectInScene(this.lastPrediction, 'person');
-      if (biggestPersonPrediction && biggestPersonPrediction.objects && biggestPersonPrediction.objects.length) {
-        const biggestPerson = JSON.parse(JSON.stringify(biggestPersonPrediction.objects[0]));
-        if (biggestPerson) {
           // Normalize the coordinates to the canvas size
           biggestPerson.x = (biggestPerson.x / biggestPersonPrediction.source_width) * canvasContext.canvas.width;
           biggestPerson.y = (biggestPerson.y / biggestPersonPrediction.source_height) * canvasContext.canvas.height;
           biggestPerson.width = (biggestPerson.width / biggestPersonPrediction.source_width) * canvasContext.canvas.width;
           biggestPerson.height = (biggestPerson.height / biggestPersonPrediction.source_height) * canvasContext.canvas.height;
     
+          // Push the biggest person to the crop buffer and crop to last <cropBufferSize> frames
           this.cropBuffer.push(biggestPerson);
-          if (this.cropBuffer.length > 60) 
-            //this.cropBuffer.slice(-60);
-            this.cropBuffer.shift(); // Keep the buffer size manageable
+          if (this.cropBuffer.length > this.cropBufferSize) 
+            this.cropBuffer.shift();
+
         }
       }
-    }
-  
 
+    }
+
+  }
+
+  async processFrame(canvasContext, videoRef, roi) {
+    if (!this.stream || !this.results || !this.endpoint || !this.renderer || !videoRef) return;
     if (!this.cropBuffer.length) return;
   
+    const avgPerson = this.getAvgPersonInCropBuffer();
+    
+    // Calculate the ideal center of the bounding box
+    let centerX = avgPerson.x + avgPerson.width / 2;
+    let centerY = avgPerson.y + avgPerson.height / 2;
+  
+    // Clamp the center so that the square crop stays fully within the canvas boundaries
+    const videoAspectRatio = videoRef.videoWidth / videoRef.videoHeight;
+
+    const canvasWidth = canvasContext.canvas.width / videoAspectRatio;
+    const canvasHeight = canvasContext.canvas.height;
+
+    let size = Math.min(canvasWidth,canvasHeight,Math.max(avgPerson.width, avgPerson.height)*1.1);
+  
+    centerX = Math.min(centerX, canvasWidth - size / 2);
+    centerY = Math.min(centerY, canvasHeight - size / 2);
+  
+    // Calculate the top-left coordinates of the crop region
+    let cropX = Math.max(0, Math.min(centerX - size / 2, canvasWidth - size))
+    let cropY = Math.max(0, Math.min(centerY - size / 2, canvasHeight - size))
+
+    this.drawPip(canvasContext, size, cropX, cropY);   
+  }
+
+  getAvgPersonInCropBuffer() {
     // Average the coordinates over the buffer
     const avgPerson = this.cropBuffer.reduce(
       (acc, person) => {
@@ -104,27 +125,11 @@ class CropPersonProcessor extends Processor {
     avgPerson.y /= count;
     avgPerson.width /= count;
     avgPerson.height /= count;
-    
-    // Calculate the ideal center of the bounding box
-    let centerX = avgPerson.x + avgPerson.width / 2;
-    let centerY = avgPerson.y + avgPerson.height / 2;
-  
-    // Clamp the center so that the square crop stays fully within the canvas boundaries
-    const videoAspectRatio = videoRef.videoWidth / videoRef.videoHeight;
 
-    const canvasWidth = canvasContext.canvas.width / videoAspectRatio;
-    const canvasHeight = canvasContext.canvas.height;
+    return avgPerson;
+  }
 
-    let size = Math.min(canvasWidth,canvasHeight,Math.max(avgPerson.width, avgPerson.height)*1.1);
-  
-    //centerX = Math.max(size / 2, Math.min(centerX, canvasWidth - size / 2));
-    //centerY = Math.max(size / 2, Math.min(centerY, canvasHeight - size / 2));
-    centerX = Math.min(centerX, canvasWidth - size / 2);
-    centerY = Math.min(centerY, canvasHeight - size / 2);
-  
-    // Calculate the top-left coordinates of the crop region
-    let cropX = Math.max(0, Math.min(centerX - size / 2, canvasWidth - size))
-    let cropY = Math.max(0, Math.min(centerY - size / 2, canvasHeight - size))
+  drawPip(canvasContext, size, cropX, cropY) {
 
     // Define the picture-in-picture (pip) box dimensions
     const pipBox = {
@@ -134,8 +139,8 @@ class CropPersonProcessor extends Processor {
       height: 400
     };
 
-    // Draw the cropped image from the canvas into the pip box
-    canvasContext.drawImage(
+     // Draw the cropped image from the canvas into the pip box
+     canvasContext.drawImage(
       canvasContext.canvas,
       cropX,
       cropY,
@@ -151,7 +156,6 @@ class CropPersonProcessor extends Processor {
     canvasContext.strokeStyle = 'white';
     canvasContext.lineWidth = 6;
     canvasContext.strokeRect(pipBox.x, pipBox.y, pipBox.width, pipBox.height);
-
   }
 }
 
