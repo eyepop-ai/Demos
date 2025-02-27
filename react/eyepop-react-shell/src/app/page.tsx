@@ -41,6 +41,10 @@ export const processors = [
         module: () => import("../processors/sticker_effect_any_upload"),
     },
     {
+      name: "(Upload Img) Building perimeter - Detect the perimeter of a building",
+      module: () => import("../processors/house_perimeter"),
+  },
+    {
         name: "(Live) Crop to Person - Detect Person and crop display to them",
         module: () => import("../processors/crop_person"),
     },
@@ -356,37 +360,7 @@ export default function CameraPage() {
         }
     }
 
-    // const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    //   if (!canvasRef.current) return
-    //   const rect = canvasRef.current.getBoundingClientRect()
-    //   const x = event.clientX - rect.left
-    //   const y = event.clientY - rect.top
-
-    //   currentModuleRef.current?.startDrawingBox(x, y)
-    // }
-
-    // const handleMouseUp = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    //   if (!canvasRef.current) return
-    //   const rect = canvasRef.current.getBoundingClientRect()
-    //   const x = event.clientX - rect.left
-    //   const y = event.clientY - rect.top
-
-    //   currentModuleRef.current?.stopDrawingBox(x, y)
-    //   currentModuleRef.current?.sendBoxCoordinates(x, y)
-    //   currentModuleRef.current?.resetBoxCoordinates()
-    // }
-
-    // const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    //   if (!canvasRef.current) return
-    //   const rect = canvasRef.current.getBoundingClientRect()
-    //   const x = event.clientX - rect.left
-    //   const y = event.clientY - rect.top
-
-    //   currentModuleRef.current?.updateDrawingBox(x, y)
-    //   currentModuleRef.current?.drawBoxOnCanvas(x, y)
-    // }
-
-    //on click on canvas copy the coordinates of the click to the clipboard
+    //on click on canvasset Region Of Interest for pipelines that contain segmentation    
     const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
         if (!canvasRef.current) return;
 
@@ -399,9 +373,9 @@ export default function CameraPage() {
         console.log("Coordinates copied to clipboard:", coordinates);
 
         roiPointsRef.current.push({ x, y })
-        roiPointsRef.current = roiPointsRef.current.slice(-2);
     };
 
+    //Esc clears the ROI
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === "Escape") {
@@ -426,25 +400,15 @@ export default function CameraPage() {
                 <canvas
                     ref={canvasRef}
                     className="absolute w-full h-full object-cover"
-                // onMouseDown={handleMouseDown}
-                // onMouseUp={handleMouseUp}
-                // onMouseMove={handleMouseMove}
-                //onClick={handleCanvasClick}
                 />
                 <canvas
                     ref={roiCanvasRef}
                     className="absolute w-full h-full object-cover"
-                    // onMouseDown={handleMouseDown}
-                    // onMouseUp={handleMouseUp}
-                    // onMouseMove={handleMouseMove}
                     onClick={handleCanvasClick}
                 />
 
-
-
                 {/* UI Controls */}
                 <div className="absolute bottom-5 w-full flex justify-center space-x-8">
-
 
                     {/* Capture Photo or Reset Button (Bottom-Center) */}
                     {!showReset ? (
