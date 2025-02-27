@@ -98,15 +98,18 @@ class CropPersonProcessor extends Processor {
 
     let size = Math.min(canvasWidth,canvasHeight,Math.max(avgPerson.width, avgPerson.height)*1.1);
   
-    //draw centerX, y on canvas
-    // canvasContext.fillStyle = 'white';
-    // canvasContext.fillRect(centerX - 2, centerY - 2, 4, 4);
+    const debug = false;
+    if(debug) {
+      // draw centerX, y on canvas    
+      canvasContext.fillStyle = 'white';
+      canvasContext.fillRect(centerX - 2, centerY - 2, 4, 4);
 
-    // //draw the average person bounding box
-    // canvasContext.strokeStyle = 'white';
-    // canvasContext.lineWidth = 2;
-    // canvasContext.strokeRect(avgPerson.x, avgPerson.y, avgPerson.width, avgPerson.height);
-
+      //draw the average person bounding box
+      canvasContext.strokeStyle = 'white';
+      canvasContext.lineWidth = 2;
+      canvasContext.strokeRect(avgPerson.x, avgPerson.y, avgPerson.width, avgPerson.height); 
+    }
+    
     // Calculate the top-left coordinates of the crop region
     let cropX = Math.max(0, Math.min(centerX - size / 2, canvasWidth - size))
     let cropY = Math.max(0, Math.min(centerY - size / 2, canvasHeight - size))
