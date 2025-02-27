@@ -127,6 +127,38 @@ export default function CameraPage() {
         }
     }
 
+    const drawRegionOfInterest = () =>{
+       //Draw ROI on canvas
+       if(!roiCanvasRef.current) return
+       if(!canvasRef.current) return
+
+      roiCanvasRef.current.width = canvasRef.current.width
+      roiCanvasRef.current.height = canvasRef.current.height
+      const roiCtx = roiCanvasRef.current.getContext("2d")
+      if (!roiCtx) return
+      roiCtx.clearRect(0, 0, roiCanvasRef.current.width, roiCanvasRef.current.height)
+      roiCtx.strokeStyle = "lightblue"
+      roiCtx.lineWidth = 2
+
+      roiPointsRef.current.forEach(point => {
+          roiCtx.beginPath();
+          roiCtx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+          roiCtx.fillStyle = "lightblue";
+          roiCtx.fill();
+      });
+
+      if (roiPointsRef.current.length == 2) {
+
+          //console.log("canvasROI", canvasROI)
+          const roi = roiPointsRef.current
+          const [start, end] = roi
+          const width = end.x - start.x
+          const height = end.y - start.y
+          roiCtx.strokeRect(start.x, start.y, width, height)
+      }
+
+    }
+
     const drawToCanvas = () => {
         console.log("drawToCanvas", videoRef.current, canvasRef.current, ctxRef.current)
         if (!videoRef.current || !canvasRef.current) return
@@ -135,35 +167,7 @@ export default function CameraPage() {
 
         const updateFrame = async () => {
 
-            //Draw ROI on canvas
-            if (roiCanvasRef.current && canvasRef.current) {
-                roiCanvasRef.current.width = canvasRef.current.width
-                roiCanvasRef.current.height = canvasRef.current.height
-                const roiCtx = roiCanvasRef.current.getContext("2d")
-                if (!roiCtx) return
-                roiCtx.clearRect(0, 0, roiCanvasRef.current.width, roiCanvasRef.current.height)
-                roiCtx.strokeStyle = "lightblue"
-                roiCtx.lineWidth = 2
-
-                roiPointsRef.current.forEach(point => {
-                    roiCtx.beginPath();
-                    roiCtx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
-                    roiCtx.fillStyle = "lightblue";
-                    roiCtx.fill();
-                });
-
-                if (roiPointsRef.current.length == 2) {
-
-                    //console.log("canvasROI", canvasROI)
-                    const roi = roiPointsRef.current
-                    const [start, end] = roi
-                    const width = end.x - start.x
-                    const height = end.y - start.y
-                    roiCtx.strokeRect(start.x, start.y, width, height)
-                }
-
-            }
-
+            drawRegionOfInterest();
 
             if (!videoRef.current || !canvasRef.current) return requestAnimationFrame(updateFrame)
             if (!drawPreviewRef.current) return requestAnimationFrame(updateFrame)
@@ -177,10 +181,6 @@ export default function CameraPage() {
             }
 
             setEndpointDisconnected(false)
-
-            //console.log("canvasROI", canvasROIref.current.length, currentModuleRef.current?.endpoint)
-
-
 
             requestAnimationFrame(updateFrame)
         }
