@@ -47,7 +47,7 @@ class CropPersonProcessor extends Processor {
     for await (const result of this.results) {
 
       const aspectRatio = result.source_width / result.source_height
-     
+      
       this.lastPrediction = result
 
       if(this.lastPrediction) {
@@ -62,9 +62,10 @@ class CropPersonProcessor extends Processor {
             continue;
 
           // Normalize the coordinates to the canvas size
-          biggestPerson.x = (biggestPerson.x / biggestPersonPrediction.source_width) * canvasContext.canvas.width;
+          const canvasWidth = canvasContext.canvas.height * aspectRatio
+          biggestPerson.x = (biggestPerson.x / biggestPersonPrediction.source_width) * canvasWidth ;
           biggestPerson.y = (biggestPerson.y / biggestPersonPrediction.source_height) * canvasContext.canvas.height;
-          biggestPerson.width = (biggestPerson.width / biggestPersonPrediction.source_width) * canvasContext.canvas.width;
+          biggestPerson.width = (biggestPerson.width / biggestPersonPrediction.source_width) * canvasWidth;
           biggestPerson.height = (biggestPerson.height / biggestPersonPrediction.source_height) * canvasContext.canvas.height;
     
           // Push the biggest person to the crop buffer and crop to last <cropBufferSize> frames
@@ -97,9 +98,15 @@ class CropPersonProcessor extends Processor {
 
     let size = Math.min(canvasWidth,canvasHeight,Math.max(avgPerson.width, avgPerson.height)*1.1);
   
-    centerX = Math.min(centerX, canvasWidth - size / 2);
-    centerY = Math.min(centerY, canvasHeight - size / 2);
-  
+    //draw centerX, y on canvas
+    // canvasContext.fillStyle = 'white';
+    // canvasContext.fillRect(centerX - 2, centerY - 2, 4, 4);
+
+    // //draw the average person bounding box
+    // canvasContext.strokeStyle = 'white';
+    // canvasContext.lineWidth = 2;
+    // canvasContext.strokeRect(avgPerson.x, avgPerson.y, avgPerson.width, avgPerson.height);
+
     // Calculate the top-left coordinates of the crop region
     let cropX = Math.max(0, Math.min(centerX - size / 2, canvasWidth - size))
     let cropY = Math.max(0, Math.min(centerY - size / 2, canvasHeight - size))

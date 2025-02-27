@@ -3,7 +3,7 @@ import EyePop from '@eyepop.ai/eyepop';
 import Render2d from '@eyepop.ai/eyepop-render-2d'
 import { ComposablePops } from './composable_pops';
 
-class StickerAnyProcessor extends Processor {
+class HousePerimeterProcessor extends Processor {
     buffer = [];
     roiRequired=true;
 
@@ -26,8 +26,6 @@ class StickerAnyProcessor extends Processor {
         }).connect()
 
         await this.endpoint.changePop(ComposablePops.SAM2);
-
-        //await this.endpoint.changePop(ComposablePops.PersonSAM2)
 
         this.renderer = Render2d.renderer(canvasContext, [
             Render2d.renderContour(),
@@ -100,14 +98,19 @@ class StickerAnyProcessor extends Processor {
             const url = URL.createObjectURL(blob);
             const img = new Image();
             img.onload = () => {
-                //const contours = drawResult.objects[0].objects[0].contours
-                const contours = drawResult.objects[0].contours
-                this.liftContour(canvasContext, contours, img)
+
+                //console.log("sides of contours", drawResult.objects[0].contours[0].points.length)
+                //drawResult.objects[0].contours = this.simplifyContours(drawResult.objects[0].contours, 50)
+                //console.log("sides of contours (simp)", drawResult.objects[0].contours[0].points.length)
+                
+                //console.log("Drawing mask for photo:", drawResult)
+                this.renderer.draw(drawResult)
                 URL.revokeObjectURL(url);
             };
             img.src = url;
         });
     }
+
 }
 
-export default StickerAnyProcessor;
+export default HousePerimeterProcessor;

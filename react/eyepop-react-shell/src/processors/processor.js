@@ -207,6 +207,58 @@ class Processor {
         context.restore();
     }
 
+    simplifyContours(contours, epsilon) {
+        // Simplify each contour using the Douglas-Peucker algorithm
+        return contours.map((contour) => {
+            const simplifiedPoints = this.simplifyContourDouglasPeucker(contour.points, epsilon);
+            return { ...contour, points: simplifiedPoints };
+        });
+    }
+
+    simplifyContourDouglasPeucker(points, epsilon) {
+        // Douglas-Peucker algorithm for contour simplification
+        // https://en.wikipedia.org/wiki/Ramer–Douglas–Peucker_algorithm
+        // higher episolon = more simplification
+
+        if (!points || points.length < 3) return points; // A line cannot be simplified further
+    
+        const perpendicularDistance = (point, lineStart, lineEnd) => {
+            const x0 = point.x, y0 = point.y;
+            const x1 = lineStart.x, y1 = lineStart.y;
+            const x2 = lineEnd.x, y2 = lineEnd.y;
+    
+            const numerator = Math.abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1);
+            const denominator = Math.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2);
+
+            console.log("perpendicularDistance", numerator, denominator, x0, y0, x1, y1, x2, y2);
+            return numerator / denominator;
+        };
+    
+        let maxDistance = 0, index = 0;
+    
+        for (let i = 1; i < points.length - 1; i++) {
+            const distance = perpendicularDistance(points[i], points[0], points[points.length - 1]);
+
+            console.log(`Distance for point ${i}:`, distance); // Debug distances
+
+            if (distance > maxDistance) {
+                maxDistance = distance;
+                index = i;
+            }
+        }
+
+        console.log("maxDistance", maxDistance)
+
+    
+        if (maxDistance > epsilon) {
+            const leftSimplified = douglasPeucker(points.slice(0, index + 1), epsilon);
+            const rightSimplified = douglasPeucker(points.slice(index), epsilon);
+            return [...leftSimplified.slice(0, -1), ...rightSimplified]; 
+        } else {
+            return [points[0], points[points.length - 1]];
+        }
+    }
+
 }
 
 export default Processor;
