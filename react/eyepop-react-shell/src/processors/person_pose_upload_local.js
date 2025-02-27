@@ -1,6 +1,7 @@
 import Processor from './processor';
 import { ContourType, EndpointState, EyePop, ForwardOperatorType, InferenceType, PopComponentType, TransientPopId } from "@eyepop.ai/eyepop";
 import Render2d from '@eyepop.ai/eyepop-render-2d'
+import { ComposablePops } from './composable_pops';
 
 class PersonPoseUploadLocal extends Processor {
     buffer = [];
@@ -20,11 +21,9 @@ class PersonPoseUploadLocal extends Processor {
             isLocalMode: true
         }).connect()
 
-        this.endpoint.changePop(this.PERSON2D);
+        await this.endpoint.changePop(ComposablePops.Person2D);
 
         this.renderer = Render2d.renderer(canvasContext, [
-            Render2d.renderContour(),
-            Render2d.renderText({ fitToBounds: true }),
             Render2d.renderPose(),
             Render2d.renderBox({
                 showClass: false,
@@ -97,6 +96,7 @@ class PersonPoseUploadLocal extends Processor {
         //localStorage.setItem(video.name, JSON.stringify(this.buffer));
         //console.log("Cached video data.");
     }
+
     async processFrame(canvasContext, video, roi) {
 
         //console.log('Processing video frame:', video, this.endpoint, this.renderer);

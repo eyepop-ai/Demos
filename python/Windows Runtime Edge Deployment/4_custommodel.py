@@ -11,7 +11,7 @@ import json
 from PIL import Image
 import matplotlib.pyplot as plt
 
-example_image_path = './images/example5.jpg'
+example_image_path = './images/example2.jpg'
 
 with EyePopSdk.workerEndpoint() as endpoint:
     endpoint.set_pop(examplePops["eye glasses + person2D"])
